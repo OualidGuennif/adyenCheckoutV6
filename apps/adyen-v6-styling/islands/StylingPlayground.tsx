@@ -271,6 +271,32 @@ const DEFAULT_CARD: CardOptions = {
   disclaimerLink: "",
 };
 
+// Adyen's own DisclaimerMessage component silently renders nothing at all
+// (not even the message text) unless every url passed to it is a valid
+// http(s) URL — an empty or missing link string means the whole disclaimer
+// disappears, message included. Guard against sending a config that would
+// silently vanish.
+function isValidHttpUrl(value: string): boolean {
+  try {
+    return ["http:", "https:"].includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
+}
+
+function disclaimerMessageField(card: CardOptions) {
+  if (!card.disclaimerEnabled || !card.disclaimerMessage || !isValidHttpUrl(card.disclaimerLink)) {
+    return {};
+  }
+  return {
+    disclaimerMessage: {
+      message: card.disclaimerMessage,
+      linkText: card.disclaimerLinkText,
+      link: card.disclaimerLink,
+    },
+  };
+}
+
 function cardConfigObject(styles: SecureStyles, card: CardOptions, country: string) {
   const upperCountry = country.toUpperCase();
   return {
@@ -292,15 +318,7 @@ function cardConfigObject(styles: SecureStyles, card: CardOptions, country: stri
     ...(INSTALLMENT_COUNTRIES.includes(upperCountry)
       ? { showInstallmentAmounts: card.showInstallmentAmounts }
       : {}),
-    ...(card.disclaimerEnabled && card.disclaimerMessage
-      ? {
-        disclaimerMessage: {
-          message: card.disclaimerMessage,
-          linkText: card.disclaimerLinkText,
-          link: card.disclaimerLink,
-        },
-      }
-      : {}),
+    ...disclaimerMessageField(card),
   };
 }
 
@@ -316,15 +334,7 @@ function storedCardConfigObject(styles: SecureStyles, card: CardOptions) {
     styles: secureStyleObject(styles),
     hideCVC: card.hideCVC,
     maskSecurityCode: card.maskSecurityCode,
-    ...(card.disclaimerEnabled && card.disclaimerMessage
-      ? {
-        disclaimerMessage: {
-          message: card.disclaimerMessage,
-          linkText: card.disclaimerLinkText,
-          link: card.disclaimerLink,
-        },
-      }
-      : {}),
+    ...disclaimerMessageField(card),
   };
 }
 
@@ -1119,6 +1129,11 @@ export default function StylingPlayground() {
                     {cardOptions.disclaimerEnabled
                       ? (
                         <>
+                          <small class="field--full">
+                            Adyen renders nothing at all — not even the message — unless Link URL is
+                            a valid http(s):// address. Fill it in even if you don't need a
+                            clickable link text.
+                          </small>
                           <Field label="Message" htmlFor="disclaimer-message">
                             <input
                               id="disclaimer-message"
@@ -1144,9 +1159,18 @@ export default function StylingPlayground() {
                               id="disclaimer-link"
                               type="url"
                               value={cardOptions.disclaimerLink}
+                              placeholder="https://example.com/terms"
                               onInput={(event) =>
                                 updateCard("disclaimerLink", event.currentTarget.value)}
                             />
+                            {cardOptions.disclaimerMessage &&
+                                !isValidHttpUrl(cardOptions.disclaimerLink)
+                              ? (
+                                <small class="field-warning">
+                                  Not shown yet — enter a valid http(s):// URL above.
+                                </small>
+                              )
+                              : null}
                           </Field>
                         </>
                       )

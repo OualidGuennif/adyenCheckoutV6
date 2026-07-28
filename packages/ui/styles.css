@@ -716,6 +716,10 @@ p {
   font-size: 0.75rem;
 }
 
+.field-warning {
+  color: var(--color-amber);
+}
+
 .color-field {
   display: flex;
   gap: 6px;
