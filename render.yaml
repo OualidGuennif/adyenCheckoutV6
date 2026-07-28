@@ -2,6 +2,7 @@ services:
   - type: web
     name: adyen-digital
     runtime: docker
+    plan: starter
     dockerfilePath: ./apps/adyen-digital/Dockerfile
     dockerContext: .
     healthCheckPath: /healthz
@@ -30,14 +31,13 @@ services:
   - type: web
     name: ipp-endless-aisle
     runtime: docker
+    plan: free
     dockerfilePath: ./apps/adyen-ipp-endless-aisle/Dockerfile
     dockerContext: .
     healthCheckPath: /healthz
     envVars:
       - key: PUBLIC_ORIGIN
         value: https://ipp-endless-aisle.onrender.com
-      - key: DATABASE_PATH
-        value: /var/data/ipp.sqlite
       - key: PROFILE_ENCRYPTION_KEY
         generateValue: true
       - key: SESSION_SIGNING_SECRET
@@ -50,22 +50,17 @@ services:
         sync: false
       - key: ADYEN_HMAC_KEY
         sync: false
-    disk:
-      name: ipp-data
-      mountPath: /var/data
-      sizeGB: 1
 
   - type: web
     name: adyen-agentic-commerce
     runtime: docker
+    plan: free
     dockerfilePath: ./apps/adyen-agentic-commerce/Dockerfile
     dockerContext: .
     healthCheckPath: /healthz
     envVars:
       - key: PUBLIC_ORIGIN
         value: https://adyen-agentic-commerce.onrender.com
-      - key: DATABASE_PATH
-        value: /var/data/agentic.sqlite
       - key: AGENTIC_REAL_ENABLED
         value: "false"
       - key: PROFILE_ENCRYPTION_KEY
@@ -80,14 +75,11 @@ services:
         sync: false
       - key: ADYEN_AGENTIC_BEARER_TOKEN
         sync: false
-    disk:
-      name: agentic-data
-      mountPath: /var/data
-      sizeGB: 1
 
   - type: web
     name: adyen-v6-styling
     runtime: docker
+    plan: starter
     dockerfilePath: ./apps/adyen-v6-styling/Dockerfile
     dockerContext: .
     healthCheckPath: /healthz
