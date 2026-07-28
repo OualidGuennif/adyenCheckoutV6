@@ -86,7 +86,7 @@ export async function ensureSession(c: Context, signingSecret: string): Promise<
   return { id: sessionId, csrfToken };
 }
 
-export function csrfProtection(signingSecret: string): MiddlewareHandler {
+export function csrfProtection(signingSecret: string, publicOrigin: string): MiddlewareHandler {
   return async (c, next) => {
     const session = await ensureSession(c, signingSecret);
     c.set("session", session);
@@ -97,7 +97,10 @@ export function csrfProtection(signingSecret: string): MiddlewareHandler {
         return c.json({ error: "CSRF validation failed." }, 403);
       }
       const origin = c.req.header("origin");
-      if (origin && origin !== new URL(c.req.url).origin) {
+      // Behind Render's proxy, c.req.url reflects the internal http:// hop, not the
+      // public https:// origin the browser actually sent — compare against the
+      // configured public origin instead, or same-origin checks always fail in prod.
+      if (origin && origin !== publicOrigin) {
         return c.json({ error: "Cross-origin request rejected." }, 403);
       }
     }

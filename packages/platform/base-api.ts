@@ -36,7 +36,7 @@ export function createPlatformContext(appId: AppId): PlatformContext {
   api.use("*", securityHeaders());
   api.use("*", optionalBasicAuth());
   api.use("*", rateLimit());
-  api.use("/api/*", csrfProtection(config.signingSecret));
+  api.use("/api/*", csrfProtection(config.signingSecret, config.publicOrigin));
 
   api.onError((error, c) => {
     const correlationId = c.req.header("x-correlation-id") ?? crypto.randomUUID();
