@@ -7,6 +7,7 @@ import {
   sessionRiskFields,
 } from "@suite/platform/sessionContext.ts";
 import { weeklyShopperReference } from "@suite/platform/shopper.ts";
+import { INSTALLMENT_COUNTRIES } from "@suite/ui/paymentMethods.ts";
 
 const context = createPlatformContext("styling");
 export const api = context.api;
@@ -36,11 +37,17 @@ api.post("/api/styling/session", async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as {
     countryCode?: unknown;
     shopperLocale?: unknown;
+    installments?: unknown;
   };
   const countryCode = /^[A-Z]{2}$/.test(String(body.countryCode)) ? String(body.countryCode) : "FR";
   const shopperLocale = /^[a-z]{2}-[A-Z]{2}$/.test(String(body.shopperLocale))
     ? String(body.shopperLocale)
     : "en-US";
+  // For the Sessions flow, Adyen only honors the installment plan baked into
+  // the session token at creation time — a client-side
+  // paymentMethodsConfiguration.card.installmentOptions override is ignored.
+  const installmentsRequested = body.installments === true &&
+    INSTALLMENT_COUNTRIES.includes(countryCode);
   const selected = await selectedSecrets(context, c.req.raw);
   if (!selected.secrets.merchantAccount || !selected.secrets.clientKey) {
     return c.json({
@@ -77,6 +84,7 @@ api.post("/api/styling/session", async (c) => {
       lastName: "Shopper",
     },
     ...sessionRiskFields(countryCode),
+    ...(installmentsRequested ? { installmentOptions: { card: { values: [1, 3, 5] } } } : {}),
   };
   const started = performance.now();
   try {
