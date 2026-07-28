@@ -250,7 +250,6 @@ interface CardOptions {
   hideCVC: boolean;
   maskSecurityCode: boolean;
   socialSecurityNumberMode: SocialSecurityNumberMode;
-  installments: boolean;
   showInstallmentAmounts: boolean;
   disclaimerEnabled: boolean;
   disclaimerMessage: string;
@@ -265,7 +264,6 @@ const DEFAULT_CARD: CardOptions = {
   hideCVC: false,
   maskSecurityCode: false,
   socialSecurityNumberMode: "auto",
-  installments: false,
   showInstallmentAmounts: false,
   disclaimerEnabled: false,
   disclaimerMessage: "",
@@ -287,10 +285,11 @@ function cardConfigObject(styles: SecureStyles, card: CardOptions, country: stri
       : {}),
     // installmentOptions itself is NOT set here: for the Sessions flow, Adyen
     // only honors the installment plan baked into the session token at
-    // creation time (sent server-side in /api/styling/session) — a
-    // client-side override here is silently ignored. showInstallmentAmounts
-    // is a pure Component display toggle, so it's still set client-side.
-    ...(INSTALLMENT_COUNTRIES.includes(upperCountry) && card.installments
+    // creation time (sent server-side in /api/styling/session, automatically
+    // for BR/MX/JP) — a client-side override here is silently ignored.
+    // showInstallmentAmounts is a pure Component display toggle, so it's
+    // still set client-side.
+    ...(INSTALLMENT_COUNTRIES.includes(upperCountry)
       ? { showInstallmentAmounts: card.showInstallmentAmounts }
       : {}),
     ...(card.disclaimerEnabled && card.disclaimerMessage
@@ -511,24 +510,6 @@ export default function StylingPlayground() {
     return () => clearTimeout(timeout);
   }, [country, locale]);
 
-  // Installments are also baked server-side into the /sessions request
-  // (Adyen ignores a client-side installmentOptions override for the
-  // Sessions flow), so toggling it needs a fresh session too, not just a
-  // Dropin remount.
-  const skipFirstInstallmentsRefresh = useRef(true);
-  useEffect(() => {
-    if (skipFirstInstallmentsRefresh.current) {
-      skipFirstInstallmentsRefresh.current = false;
-      return;
-    }
-    const timeout = setTimeout(() => {
-      refreshSession().catch((cause) =>
-        setError(cause instanceof Error ? cause.message : "Session refresh failed.")
-      );
-    }, 400);
-    return () => clearTimeout(timeout);
-  }, [cardOptions.installments]);
-
   // Secure-field styles, native Drop-in options and card component options are
   // all Dropin-construction props — none of them need a new Core / /sessions
   // call, only re-instantiating the Dropin element against the existing Core.
@@ -572,7 +553,7 @@ export default function StylingPlayground() {
       body: JSON.stringify({
         countryCode: country,
         shopperLocale: locale,
-        installments: cardOptions.installments,
+        installments: INSTALLMENT_COUNTRIES.includes(country.toUpperCase()),
       }),
     });
     setSession(created);
@@ -591,7 +572,7 @@ export default function StylingPlayground() {
         body: JSON.stringify({
           countryCode,
           shopperLocale,
-          installments: cardOptions.installments,
+          installments: INSTALLMENT_COUNTRIES.includes(countryCode.toUpperCase()),
         }),
       });
       setSession(created);
@@ -1088,24 +1069,15 @@ export default function StylingPlayground() {
                       ? (
                         <>
                           <small class="field--full">
-                            Baked into the /sessions request when enabled — the Sessions flow
-                            ignores a client-side installmentOptions override.
+                            installmentOptions is automatically sent in the /sessions request for
+                            this market (Brazil, Mexico, Japan) — no toggle needed. This only
+                            controls whether the per-installment amount is displayed.
                           </small>
-                          <label class="switch-row">
-                            <span>Installments</span>
-                            <input
-                              type="checkbox"
-                              checked={cardOptions.installments}
-                              onChange={(event) =>
-                                updateCard("installments", event.currentTarget.checked)}
-                            />
-                          </label>
                           <label class="switch-row">
                             <span>Show installment amounts</span>
                             <input
                               type="checkbox"
                               checked={cardOptions.showInstallmentAmounts}
-                              disabled={!cardOptions.installments}
                               onChange={(event) =>
                                 updateCard(
                                   "showInstallmentAmounts",

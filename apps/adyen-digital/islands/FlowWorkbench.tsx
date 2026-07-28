@@ -2,7 +2,11 @@ import { AdyenCheckout, CustomCard, Dropin } from "@adyen/adyen-web";
 import type { Core } from "@adyen/adyen-web";
 import { apiFetch, formatMinorAmount, prettyJson } from "@suite/ui/client.ts";
 import { Callout, Field, StatusPill } from "@suite/ui/components.tsx";
-import { isNonFatalWalletError, paymentMethodsConfiguration } from "@suite/ui/paymentMethods.ts";
+import {
+  INSTALLMENT_COUNTRIES,
+  isNonFatalWalletError,
+  paymentMethodsConfiguration,
+} from "@suite/ui/paymentMethods.ts";
 import "@suite/ui/registerPaymentMethods.ts";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -212,7 +216,9 @@ export default function FlowWorkbench(
   const [currency, setCurrency] = useState(MARKET_DEFAULTS[initialMarket].currency);
   const [country, setCountry] = useState(initialMarket);
   const [locale, setLocale] = useState(MARKET_DEFAULTS[initialMarket].locale);
-  const [installments, setInstallments] = useState(false);
+  // Whether installments are offered is a property of the market, not a
+  // manual preference — always derived from country rather than a toggle.
+  const installments = INSTALLMENT_COUNTRIES.includes(country.toUpperCase());
   const [correlationId, setCorrelationId] = useState<string | null>(null);
   const [callbacks, setCallbacks] = useState<TimelineEntry[]>([]);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
@@ -814,18 +820,14 @@ export default function FlowWorkbench(
                     </Field>
                   )
                   : null}
-                {flow === "sessions"
+                {flow === "sessions" && installments
                   ? (
                     <div class="field">
                       <span>Installments</span>
-                      <label class="switch-row">
-                        <span>Send installmentOptions</span>
-                        <input
-                          type="checkbox"
-                          checked={installments}
-                          onChange={(event) => setInstallments(event.currentTarget.checked)}
-                        />
-                      </label>
+                      <small>
+                        installmentOptions is automatically sent in /sessions for this market
+                        (Brazil, Mexico, Japan).
+                      </small>
                     </div>
                   )
                   : null}
