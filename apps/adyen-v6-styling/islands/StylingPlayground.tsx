@@ -304,12 +304,28 @@ function cardConfigObject(styles: SecureStyles, card: CardOptions, country: stri
   };
 }
 
-// storedCard only ever re-collects a CVC — it never renders a holder name or
-// billing address field. Applying holderNameRequired/billingAddressRequired
-// to it anyway makes the Component report isValid: false with no visible
-// field to fix, so clicking "Pay" on a saved card silently does nothing.
-function storedCardConfigObject(styles: SecureStyles) {
-  return { styles: secureStyleObject(styles) };
+// storedCard only ever re-collects a CVC — it never renders a holder name,
+// billing address or social security number field. Applying
+// holderNameRequired/billingAddressRequired to it anyway makes the
+// Component report isValid: false with no visible field to fix, so
+// clicking "Pay" on a saved card silently does nothing. hideCVC,
+// maskSecurityCode and disclaimerMessage all still apply to the CVC field
+// it does render, so those are forwarded same as the regular card.
+function storedCardConfigObject(styles: SecureStyles, card: CardOptions) {
+  return {
+    styles: secureStyleObject(styles),
+    hideCVC: card.hideCVC,
+    maskSecurityCode: card.maskSecurityCode,
+    ...(card.disclaimerEnabled && card.disclaimerMessage
+      ? {
+        disclaimerMessage: {
+          message: card.disclaimerMessage,
+          linkText: card.disclaimerLinkText,
+          link: card.disclaimerLink,
+        },
+      }
+      : {}),
+  };
 }
 
 function dropinProps(
@@ -329,7 +345,7 @@ function dropinProps(
     showRadioButton: native.showRadioButton,
     paymentMethodsConfiguration: {
       card: cardConfigObject(styles, card, country),
-      storedCard: storedCardConfigObject(styles),
+      storedCard: storedCardConfigObject(styles, card),
     },
   };
 }
@@ -912,7 +928,7 @@ export default function StylingPlayground() {
                     content={JSON.stringify(
                       {
                         card: cardConfigObject(secureStyles, cardOptions, country),
-                        storedCard: storedCardConfigObject(secureStyles),
+                        storedCard: storedCardConfigObject(secureStyles, cardOptions),
                       },
                       null,
                       2,
