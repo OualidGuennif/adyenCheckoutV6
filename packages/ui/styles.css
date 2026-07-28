@@ -474,90 +474,59 @@ p {
   padding-right: 24px;
 }
 
-.flows-layout {
-  display: flex;
-  max-width: 900px;
-  flex-direction: column;
-  gap: 14px;
-  margin: 0 auto;
-}
-
-.flows-row {
-  display: flex;
-  align-items: stretch;
-  gap: 16px;
+.flows-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 24px;
+  max-width: 1120px;
+  margin: 32px auto 0;
 }
 
 .flow-card-simple {
   display: flex;
-  flex: 1;
   flex-direction: column;
-  padding: 15px 17px;
+  justify-content: space-between;
+  gap: 28px;
+  min-height: 168px;
+  padding: 32px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-l);
+  border-radius: 22px;
   background: white;
   box-shadow: var(--shadow-card);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.flow-card-simple:hover {
+  border-color: var(--color-ink);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1);
+  transform: translateY(-3px);
 }
 
 .flow-card-simple h2 {
-  margin: 0 0 5px;
-  font-size: 1rem;
+  margin: 0 0 10px;
+  font-size: 1.3rem;
+  letter-spacing: -0.01em;
 }
 
 .flow-subtitle {
-  margin: 0 0 11px;
-  color: var(--color-ink-muted);
-  font-size: 0.76rem;
-}
-
-.flow-actions {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 7px;
-}
-
-.flow-actions--single {
-  justify-content: flex-start;
-}
-
-.flow-link-primary,
-.flow-link-secondary {
-  flex: 1;
-  padding: 7px 0;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 999px;
-  text-align: center;
-  text-decoration: none;
-  font-size: 0.74rem;
-  font-weight: 700;
-  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
-}
-
-.flow-link-primary {
-  border-color: var(--color-ink);
-  background: var(--color-ink);
-  color: white;
-}
-
-.flow-link-primary:hover {
-  border-color: var(--color-green-dark);
-  background: var(--color-green-dark);
-}
-
-.flow-link-secondary {
-  background: var(--color-surface-muted);
-  color: var(--color-ink);
-}
-
-.flow-link-secondary:hover {
-  border-color: var(--color-green);
-  color: var(--color-green-dark);
-}
-
-.flow-caption {
   margin: 0;
+  color: var(--color-ink-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.flow-card-arrow {
+  align-self: flex-end;
+  font-size: 1.4rem;
   color: var(--color-ink-subtle);
-  font-size: 0.68rem;
+  transition: transform 180ms ease, color 180ms ease;
+}
+
+.flow-card-simple:hover .flow-card-arrow {
+  color: var(--color-ink);
+  transform: translateX(5px);
 }
 
 .panel,
@@ -1737,10 +1706,6 @@ details > summary {
   .three-column,
   .metrics {
     grid-template-columns: 1fr;
-  }
-
-  .flows-row {
-    flex-direction: column;
   }
 
   .checkout-shell {
