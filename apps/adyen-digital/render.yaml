@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: adyen-digital
+    runtime: docker
+    dockerfilePath: ./apps/adyen-digital/Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    envVars:
+      - key: PUBLIC_ORIGIN
+        value: https://adyen-digital.onrender.com
+      - key: DATABASE_PATH
+        value: /var/data/digital.sqlite
+      - key: PROFILE_ENCRYPTION_KEY
+        generateValue: true
+      - key: SESSION_SIGNING_SECRET
+        generateValue: true
+      - key: ADYEN_API_KEY
+        sync: false
+      - key: ADYEN_MERCHANT_ACCOUNT
+        sync: false
+      - key: ADYEN_CLIENT_KEY
+        sync: false
+      - key: ADYEN_HMAC_KEY
+        sync: false
+    disk:
+      name: digital-data
+      mountPath: /var/data
+      sizeGB: 1

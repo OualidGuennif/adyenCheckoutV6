@@ -1,0 +1,23 @@
+# OS
+.DS_Store
+
+# Deno / npm interop
+node_modules/
+.deno/
+
+# Secrets — never commit real credentials, only *.env.example templates
+.env
+.env.local
+
+# Fresh / Vite build output
+_fresh/
+dist/
+.vite/
+
+# SQLite runtime data (per-app TEST databases, regenerated on first run)
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Logs
+*.log
