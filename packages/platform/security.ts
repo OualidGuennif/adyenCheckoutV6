@@ -86,7 +86,16 @@ export async function ensureSession(c: Context, signingSecret: string): Promise<
   return { id: sessionId, csrfToken };
 }
 
+// "localhost" and "127.0.0.1" are the same loopback host for local dev
+// purposes, but the browser's Origin header and a hand-set PUBLIC_ORIGIN
+// rarely agree on which spelling to use — normalize both to one form so
+// switching between them doesn't trip the check below.
+function normalizeHost(host: string): string {
+  return host.replace(/^localhost(?=:|$)/, "127.0.0.1");
+}
+
 export function csrfProtection(signingSecret: string, publicOrigin: string): MiddlewareHandler {
+  const expectedHost = normalizeHost(new URL(publicOrigin).host);
   return async (c, next) => {
     const session = await ensureSession(c, signingSecret);
     c.set("session", session);
@@ -97,11 +106,22 @@ export function csrfProtection(signingSecret: string, publicOrigin: string): Mid
         return c.json({ error: "CSRF validation failed." }, 403);
       }
       const origin = c.req.header("origin");
-      // Behind Render's proxy, c.req.url reflects the internal http:// hop, not the
-      // public https:// origin the browser actually sent — compare against the
-      // configured public origin instead, or same-origin checks always fail in prod.
-      if (origin && origin !== publicOrigin) {
-        return c.json({ error: "Cross-origin request rejected." }, 403);
+      if (origin) {
+        // Only the host:port is compared, not the scheme — behind Render's proxy,
+        // the public https:// origin the browser sends arrives at the container
+        // over an internal http:// hop, and locally "localhost" vs "127.0.0.1" is
+        // the same server under two names. SameSite=Strict on adyen_session
+        // already blocks genuine cross-site requests; this is a same-host sanity
+        // check on top; it doesn't need to also police scheme/loopback spelling.
+        let originHost: string;
+        try {
+          originHost = normalizeHost(new URL(origin).host);
+        } catch {
+          return c.json({ error: "Cross-origin request rejected." }, 403);
+        }
+        if (originHost !== expectedHost) {
+          return c.json({ error: "Cross-origin request rejected." }, 403);
+        }
       }
     }
     await next();
