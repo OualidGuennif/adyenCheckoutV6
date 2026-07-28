@@ -716,6 +716,41 @@ p {
   font-size: 0.75rem;
 }
 
+.color-field {
+  display: flex;
+  gap: 6px;
+}
+
+.color-field input[type="color"] {
+  width: 42px;
+  min-height: 42px;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.color-field__hex {
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  background: white;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  text-transform: lowercase;
+  min-width: 0;
+  flex: 1;
+}
+
+.color-field__hex:hover {
+  border-color: #8993a1;
+}
+
+.color-field__hex:focus {
+  border-color: var(--color-blue);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
 .switch-row {
   display: flex;
   min-height: 42px;

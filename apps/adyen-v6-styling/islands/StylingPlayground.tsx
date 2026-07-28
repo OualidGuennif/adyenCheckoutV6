@@ -1,8 +1,12 @@
 import { AdyenCheckout, Dropin } from "@adyen/adyen-web";
 import type { Core } from "@adyen/adyen-web";
 import { apiFetch } from "@suite/ui/client.ts";
-import { AdyenWordmark, Callout, Field } from "@suite/ui/components.tsx";
-import { isNonFatalWalletError } from "@suite/ui/paymentMethods.ts";
+import { AdyenWordmark, Callout, ColorField, Field } from "@suite/ui/components.tsx";
+import {
+  INSTALLMENT_COUNTRIES,
+  isNonFatalWalletError,
+  SOCIAL_SECURITY_NUMBER_COUNTRIES,
+} from "@suite/ui/paymentMethods.ts";
 import "@suite/ui/registerPaymentMethods.ts";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
@@ -237,22 +241,65 @@ const DEFAULT_NATIVE: NativeOptions = {
   showRadioButton: false,
 };
 
+type SocialSecurityNumberMode = "auto" | "show" | "hide";
+
 interface CardOptions {
+  hasHolderName: boolean;
   holderNameRequired: boolean;
   billingAddressRequired: boolean;
+  hideCVC: boolean;
+  maskSecurityCode: boolean;
+  socialSecurityNumberMode: SocialSecurityNumberMode;
+  installments: boolean;
+  showInstallmentAmounts: boolean;
+  disclaimerEnabled: boolean;
+  disclaimerMessage: string;
+  disclaimerLinkText: string;
+  disclaimerLink: string;
 }
 
 const DEFAULT_CARD: CardOptions = {
+  hasHolderName: true,
   holderNameRequired: true,
   billingAddressRequired: false,
+  hideCVC: false,
+  maskSecurityCode: false,
+  socialSecurityNumberMode: "auto",
+  installments: false,
+  showInstallmentAmounts: false,
+  disclaimerEnabled: false,
+  disclaimerMessage: "",
+  disclaimerLinkText: "",
+  disclaimerLink: "",
 };
 
-function cardConfigObject(styles: SecureStyles, card: CardOptions) {
+function cardConfigObject(styles: SecureStyles, card: CardOptions, country: string) {
+  const upperCountry = country.toUpperCase();
   return {
     styles: secureStyleObject(styles),
-    hasHolderName: true,
-    holderNameRequired: card.holderNameRequired,
+    hasHolderName: card.hasHolderName,
+    holderNameRequired: card.hasHolderName && card.holderNameRequired,
     billingAddressRequired: card.billingAddressRequired,
+    hideCVC: card.hideCVC,
+    maskSecurityCode: card.maskSecurityCode,
+    ...(SOCIAL_SECURITY_NUMBER_COUNTRIES.includes(upperCountry)
+      ? { configuration: { socialSecurityNumberMode: card.socialSecurityNumberMode } }
+      : {}),
+    ...(INSTALLMENT_COUNTRIES.includes(upperCountry) && card.installments
+      ? {
+        installmentOptions: { card: { values: [1, 3, 5] } },
+        showInstallmentAmounts: card.showInstallmentAmounts,
+      }
+      : {}),
+    ...(card.disclaimerEnabled && card.disclaimerMessage
+      ? {
+        disclaimerMessage: {
+          message: card.disclaimerMessage,
+          linkText: card.disclaimerLinkText,
+          link: card.disclaimerLink,
+        },
+      }
+      : {}),
   };
 }
 
@@ -264,7 +311,12 @@ function storedCardConfigObject(styles: SecureStyles) {
   return { styles: secureStyleObject(styles) };
 }
 
-function dropinProps(native: NativeOptions, styles: SecureStyles, card: CardOptions) {
+function dropinProps(
+  native: NativeOptions,
+  styles: SecureStyles,
+  card: CardOptions,
+  country: string,
+) {
   return {
     openFirstPaymentMethod: native.openFirstPaymentMethod,
     openFirstStoredPaymentMethod: native.openFirstStoredPaymentMethod,
@@ -275,7 +327,7 @@ function dropinProps(native: NativeOptions, styles: SecureStyles, card: CardOpti
     disableFinalAnimation: native.disableFinalAnimation,
     showRadioButton: native.showRadioButton,
     paymentMethodsConfiguration: {
-      card: cardConfigObject(styles, card),
+      card: cardConfigObject(styles, card, country),
       storedCard: storedCardConfigObject(styles),
     },
   };
@@ -556,11 +608,12 @@ export default function StylingPlayground() {
     native = nativeOptions,
     styles = secureStyles,
     card = cardOptions,
+    countryCode = country,
   ) {
     if (!host.current || mountToken.current !== token) return;
     mounted.current?.unmount();
     host.current.replaceChildren();
-    const dropin = new Dropin(checkout, dropinProps(native, styles, card));
+    const dropin = new Dropin(checkout, dropinProps(native, styles, card, countryCode));
     dropin.mount(host.current);
     mounted.current = dropin;
   }
@@ -756,22 +809,19 @@ export default function StylingPlayground() {
                 <>
                   <div class="form-grid">
                     {([
-                      ["baseColor", "Input text", "color"],
-                      ["background", "Input background", "color"],
-                      ["caretColor", "Caret", "color"],
-                      ["errorColor", "Invalid state", "color"],
-                      ["placeholderColor", "Placeholder", "color"],
-                      ["validatedColor", "Validated state", "color"],
-                    ] as const).map(([key, label, type]) => (
-                      <Field label={label} htmlFor={`secure-${key}`}>
-                        <input
-                          id={`secure-${key}`}
-                          type={type}
-                          value={secureStyles[key]}
-                          onInput={(event) =>
-                            updateSecure(key, event.currentTarget.value)}
-                        />
-                      </Field>
+                      ["baseColor", "Input text"],
+                      ["background", "Input background"],
+                      ["caretColor", "Caret"],
+                      ["errorColor", "Invalid state"],
+                      ["placeholderColor", "Placeholder"],
+                      ["validatedColor", "Validated state"],
+                    ] as const).map(([key, label]) => (
+                      <ColorField
+                        label={label}
+                        htmlFor={`secure-${key}`}
+                        value={secureStyles[key]}
+                        onChange={(value) => updateSecure(key, value)}
+                      />
                     ))}
                     <Field label="Font size" htmlFor="secure-font-size">
                       <input
@@ -852,8 +902,8 @@ export default function StylingPlayground() {
                   <RawOutput
                     content={JSON.stringify(
                       {
-                        card: { styles: secureStyleObject(secureStyles) },
-                        storedCard: { styles: secureStyleObject(secureStyles) },
+                        card: cardConfigObject(secureStyles, cardOptions, country),
+                        storedCard: storedCardConfigObject(secureStyles),
                       },
                       null,
                       2,
@@ -942,10 +992,20 @@ export default function StylingPlayground() {
                   <h3 class="styling-subheading">Card component</h3>
                   <div class="form-grid">
                     <label class="switch-row">
+                      <span>Show holder name</span>
+                      <input
+                        type="checkbox"
+                        checked={cardOptions.hasHolderName}
+                        onChange={(event) =>
+                          updateCard("hasHolderName", event.currentTarget.checked)}
+                      />
+                    </label>
+                    <label class="switch-row">
                       <span>Holder name required</span>
                       <input
                         type="checkbox"
                         checked={cardOptions.holderNameRequired}
+                        disabled={!cardOptions.hasHolderName}
                         onChange={(event) =>
                           updateCard("holderNameRequired", event.currentTarget.checked)}
                       />
@@ -959,7 +1019,128 @@ export default function StylingPlayground() {
                           updateCard("billingAddressRequired", event.currentTarget.checked)}
                       />
                     </label>
+                    <label class="switch-row">
+                      <span>Hide CVC field</span>
+                      <input
+                        type="checkbox"
+                        checked={cardOptions.hideCVC}
+                        onChange={(event) => updateCard("hideCVC", event.currentTarget.checked)}
+                      />
+                    </label>
+                    <label class="switch-row">
+                      <span>Mask security code</span>
+                      <input
+                        type="checkbox"
+                        checked={cardOptions.maskSecurityCode}
+                        onChange={(event) =>
+                          updateCard("maskSecurityCode", event.currentTarget.checked)}
+                      />
+                    </label>
+                    {SOCIAL_SECURITY_NUMBER_COUNTRIES.includes(country)
+                      ? (
+                        <Field label="Social security number" htmlFor="card-ssn-mode">
+                          <select
+                            id="card-ssn-mode"
+                            value={cardOptions.socialSecurityNumberMode}
+                            onChange={(event) =>
+                              updateCard(
+                                "socialSecurityNumberMode",
+                                event.currentTarget.value as SocialSecurityNumberMode,
+                              )}
+                          >
+                            <option value="auto">Auto (by card BIN)</option>
+                            <option value="show">Always show</option>
+                            <option value="hide">Never show</option>
+                          </select>
+                          <small>Brazil only.</small>
+                        </Field>
+                      )
+                      : null}
+                    {INSTALLMENT_COUNTRIES.includes(country)
+                      ? (
+                        <>
+                          <label class="switch-row">
+                            <span>Installments</span>
+                            <input
+                              type="checkbox"
+                              checked={cardOptions.installments}
+                              onChange={(event) =>
+                                updateCard("installments", event.currentTarget.checked)}
+                            />
+                          </label>
+                          <label class="switch-row">
+                            <span>Show installment amounts</span>
+                            <input
+                              type="checkbox"
+                              checked={cardOptions.showInstallmentAmounts}
+                              disabled={!cardOptions.installments}
+                              onChange={(event) =>
+                                updateCard(
+                                  "showInstallmentAmounts",
+                                  event.currentTarget.checked,
+                                )}
+                            />
+                          </label>
+                        </>
+                      )
+                      : null}
                   </div>
+                  <h3 class="styling-subheading">Disclaimer message</h3>
+                  <div class="form-grid">
+                    <label class="switch-row">
+                      <span>Enable disclaimer</span>
+                      <input
+                        type="checkbox"
+                        checked={cardOptions.disclaimerEnabled}
+                        onChange={(event) =>
+                          updateCard("disclaimerEnabled", event.currentTarget.checked)}
+                      />
+                    </label>
+                    {cardOptions.disclaimerEnabled
+                      ? (
+                        <>
+                          <Field label="Message" htmlFor="disclaimer-message">
+                            <input
+                              id="disclaimer-message"
+                              type="text"
+                              value={cardOptions.disclaimerMessage}
+                              placeholder="By continuing you agree to %{linkText}"
+                              onInput={(event) =>
+                                updateCard("disclaimerMessage", event.currentTarget.value)}
+                            />
+                            <small>{"Use %{linkText} to reference the link text below."}</small>
+                          </Field>
+                          <Field label="Link text" htmlFor="disclaimer-link-text">
+                            <input
+                              id="disclaimer-link-text"
+                              type="text"
+                              value={cardOptions.disclaimerLinkText}
+                              onInput={(event) =>
+                                updateCard("disclaimerLinkText", event.currentTarget.value)}
+                            />
+                          </Field>
+                          <Field label="Link URL" htmlFor="disclaimer-link">
+                            <input
+                              id="disclaimer-link"
+                              type="url"
+                              value={cardOptions.disclaimerLink}
+                              onInput={(event) =>
+                                updateCard("disclaimerLink", event.currentTarget.value)}
+                            />
+                          </Field>
+                        </>
+                      )
+                      : null}
+                  </div>
+                  <RawOutput
+                    content={JSON.stringify(
+                      { card: cardConfigObject(secureStyles, cardOptions, country) },
+                      null,
+                      2,
+                    )}
+                    filename="adyen-card-config.json"
+                    mime="application/json"
+                  />
                 </>
               )
               : (
@@ -975,24 +1156,21 @@ export default function StylingPlayground() {
                   </p>
                   <div class="form-grid">
                     {([
-                      ["labelPrimary", "Primary label", "color"],
-                      ["labelSecondary", "Secondary label", "color"],
-                      ["backgroundPrimary", "Primary surface", "color"],
-                      ["backgroundSecondary", "Secondary surface", "color"],
-                      ["outlinePrimary", "Primary outline", "color"],
-                      ["outlineSecondary", "Secondary outline", "color"],
-                      ["buttonBackground", "Pay button", "color"],
-                      ["buttonText", "Pay button text", "color"],
-                    ] as const).map(([key, label, type]) => (
-                      <Field label={label} htmlFor={`css-${key}`}>
-                        <input
-                          id={`css-${key}`}
-                          type={type}
-                          value={cssStyles[key]}
-                          onInput={(event) =>
-                            updateCss(key, event.currentTarget.value)}
-                        />
-                      </Field>
+                      ["labelPrimary", "Primary label"],
+                      ["labelSecondary", "Secondary label"],
+                      ["backgroundPrimary", "Primary surface"],
+                      ["backgroundSecondary", "Secondary surface"],
+                      ["outlinePrimary", "Primary outline"],
+                      ["outlineSecondary", "Secondary outline"],
+                      ["buttonBackground", "Pay button"],
+                      ["buttonText", "Pay button text"],
+                    ] as const).map(([key, label]) => (
+                      <ColorField
+                        label={label}
+                        htmlFor={`css-${key}`}
+                        value={cssStyles[key]}
+                        onChange={(value) => updateCss(key, value)}
+                      />
                     ))}
                     <Field label="Border width" htmlFor="css-border">
                       <input

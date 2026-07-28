@@ -10,7 +10,14 @@ export function isNonFatalWalletError(cause: unknown): boolean {
   return typeof name === "string" && NON_FATAL_ERROR_NAMES.has(name);
 }
 
-const INSTALLMENT_COUNTRIES = ["BR", "MX", "JP"];
+// Credit card installments only make sense on these markets — kept as the
+// single source of truth so the v6-styling playground's country-gated
+// installments toggle stays aligned with what adyen-digital actually sends.
+export const INSTALLMENT_COUNTRIES = ["BR", "MX", "JP"];
+
+// Brazil requires a CPF/CNPJ (social security number) field on certain card
+// payments — irrelevant everywhere else, so only gated on for BR.
+export const SOCIAL_SECURITY_NUMBER_COUNTRIES = ["BR"];
 
 export function installmentsConfiguration(countryCode: string): Record<string, unknown> {
   if (!INSTALLMENT_COUNTRIES.includes(countryCode.toUpperCase())) return {};
@@ -21,11 +28,14 @@ export function installmentsConfiguration(countryCode: string): Record<string, u
 }
 
 export function cardConfiguration(countryCode: string): Record<string, unknown> {
+  const upperCountry = countryCode.toUpperCase();
   return {
     showBrandIcon: true,
     hasHolderName: true,
     holderNameRequired: true,
     billingAddressRequired: false,
+    hideCVC: false,
+    maskSecurityCode: false,
     placeholders: {
       cardNumber: "1234 5678 9012 3456",
       expiryDate: "MM/YY",
@@ -33,6 +43,9 @@ export function cardConfiguration(countryCode: string): Record<string, unknown> 
       securityCodeFourDigits: "1234",
       holderName: "J. Smith",
     },
+    ...(SOCIAL_SECURITY_NUMBER_COUNTRIES.includes(upperCountry)
+      ? { configuration: { socialSecurityNumberMode: "auto" } }
+      : {}),
     ...installmentsConfiguration(countryCode),
   };
 }

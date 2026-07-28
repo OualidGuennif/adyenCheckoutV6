@@ -1,4 +1,5 @@
 import type { ComponentChildren } from "preact";
+import { useEffect, useState } from "preact/hooks";
 
 const TEST_DATA_LINKS = [
   {
@@ -181,6 +182,50 @@ export function Field(props: {
       <label for={props.htmlFor}>{props.label}</label>
       {props.children}
       {props.hint ? <small>{props.hint}</small> : null}
+    </div>
+  );
+}
+
+const HEX_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+// Native <input type="color"> has no way to type/paste a hex value directly —
+// pairs it with a text input kept in sync both ways, so the text field always
+// reflects the live color (not some unrelated default) and only pushes
+// upstream once the typed value is a valid hex, so a half-typed value doesn't
+// blank out the swatch.
+export function ColorField(
+  props: { label: string; htmlFor: string; value: string; onChange: (value: string) => void },
+) {
+  const [text, setText] = useState(props.value);
+  useEffect(() => setText(props.value), [props.value]);
+  return (
+    <div class="field">
+      <label for={props.htmlFor}>{props.label}</label>
+      <div class="color-field">
+        <input
+          id={props.htmlFor}
+          type="color"
+          value={props.value}
+          onInput={(event) => {
+            const next = event.currentTarget.value;
+            setText(next);
+            props.onChange(next);
+          }}
+        />
+        <input
+          type="text"
+          class="color-field__hex"
+          value={text}
+          spellcheck={false}
+          maxLength={7}
+          aria-label={`${props.label} hex value`}
+          onInput={(event) => {
+            const next = event.currentTarget.value;
+            setText(next);
+            if (HEX_PATTERN.test(next)) props.onChange(next);
+          }}
+        />
+      </div>
     </div>
   );
 }
