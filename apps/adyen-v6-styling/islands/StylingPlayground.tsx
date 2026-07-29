@@ -1130,9 +1130,8 @@ export default function StylingPlayground() {
                       ? (
                         <>
                           <small class="field--full">
-                            Adyen renders nothing at all — not even the message — unless Link URL is
-                            a valid http(s):// address. Fill it in even if you don't need a
-                            clickable link text.
+                            A valid http(s):// Link URL is required to render the message — add one
+                            below even if you don't need clickable link text.
                           </small>
                           <Field label="Message" htmlFor="disclaimer-message">
                             <input
@@ -1167,7 +1166,7 @@ export default function StylingPlayground() {
                                 !isValidHttpUrl(cardOptions.disclaimerLink)
                               ? (
                                 <small class="field-warning">
-                                  Not shown yet — enter a valid http(s):// URL above.
+                                  Add a valid http(s):// URL above to display the message.
                                 </small>
                               )
                               : null}
