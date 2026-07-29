@@ -961,6 +961,7 @@ p {
 .order-summary {
   position: sticky;
   top: 166px;
+  align-self: start;
   padding: 18px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-m);

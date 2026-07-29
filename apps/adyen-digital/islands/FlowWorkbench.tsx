@@ -1050,11 +1050,6 @@ export default function FlowWorkbench(
                 <span>Total</span>
                 <strong>{formatMinorAmount(Number.isFinite(amount) ? amount : 0, currency)}</strong>
               </div>
-              <p class="order-summary__meta">
-                {flagEmoji(country)} {MARKETS.find(([code]) => code === country)?.[1]} · {locale}
-                <br />
-                Billing and delivery addresses use the {country} TEST dataset.
-              </p>
             </aside>
           </div>
         </section>
