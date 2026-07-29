@@ -8,8 +8,7 @@ import { define } from "../utils.ts";
 const FLOWS = {
   sessions: {
     title: "Sessions — Drop-in & Components",
-    description:
-      "Checkout API v72 creates the session. installmentOptions belongs in the /sessions request, not in the card UI configuration.",
+    description: "Adyen Web manages 3DS and orchestration from a single /sessions call.",
   },
   advanced: {
     title: "Advanced Flow — Drop-in & Components",

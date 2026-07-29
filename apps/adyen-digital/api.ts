@@ -132,6 +132,13 @@ function requestBase(input: {
     returnUrl: `${context.config.publicOrigin}/result?orderId=${input.order.id}`,
     billingAddress,
     deliveryAddress,
+    // Lets the shopper opt in to saving the card (shown as a checkbox in the
+    // Card component) so the "save card" / one-click flow can be previewed —
+    // Sessions-only: the Advanced flow's equivalent is the client-side
+    // enableStoreDetails config plus a per-payment storePaymentMethod flag.
+    ...(input.context === "sessions"
+      ? { storePaymentMethodMode: "askForConsent", recurringProcessingModel: "CardOnFile" }
+      : {}),
     ...(input.context === "payments"
       ? paymentsRiskFields(billingAddress, deliveryAddress)
       : sessionRiskFields(countryCode)),

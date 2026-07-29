@@ -299,16 +299,21 @@ a {
 }
 
 .app-frame {
-  display: block;
+  display: flex;
+  flex-direction: column;
   min-height: calc(100vh - 144px);
 }
 
 .app-content {
+  display: flex;
   min-width: 0;
+  flex: 1;
+  flex-direction: column;
 }
 
 main {
   width: min(1380px, 100%);
+  flex: 1 0 auto;
   margin: 0 auto;
   padding: 40px clamp(20px, 4vw, 48px) 72px;
 }
@@ -905,11 +910,6 @@ p {
   border-bottom: 1px solid var(--color-border);
 }
 
-.checkout-context h1,
-.checkout-context h2 {
-  margin-bottom: 0;
-}
-
 .payment-stage {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(230px, 300px);
@@ -1052,68 +1052,19 @@ p {
   font-size: 0.8rem;
 }
 
-.country-dock {
-  position: sticky;
-  z-index: 12;
-  bottom: 12px;
-  display: flex;
-  width: fit-content;
-  max-width: 100%;
-  align-items: center;
-  gap: 10px;
-  margin: 24px 0 0 auto;
-  padding: 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 10px 30px rgba(0, 17, 44, 0.11);
-  backdrop-filter: blur(10px);
-}
-
-.country-dock__label {
-  padding: 0 4px 0 7px;
-  color: var(--color-ink-muted);
-  font-size: 0.67rem;
-  font-weight: 750;
-  white-space: nowrap;
-}
-
-.country-shortcuts {
+.checkout-market {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 8px;
 }
 
-.country-shortcuts button {
-  display: inline-flex;
-  width: 35px;
-  height: 35px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid transparent;
-  border-radius: 9px;
-  background: transparent;
-  cursor: pointer;
-  font-size: 1.05rem;
-}
-
-.country-shortcuts button:hover {
-  background: var(--color-surface-muted);
-}
-
-.country-shortcuts button[aria-pressed="true"] {
-  border-color: #a9dfbc;
-  background: var(--color-green-soft);
-}
-
-.country-dock select {
-  min-height: 35px;
-  max-width: 190px;
+.checkout-market select {
+  min-height: 38px;
   padding: 6px 30px 6px 10px;
   border: 1px solid var(--color-border);
   border-radius: 9px;
   background: white;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 700;
 }
 
@@ -1165,6 +1116,19 @@ p {
 .inspector__tabs button[aria-selected="true"] {
   background: #25344c;
   color: white;
+}
+
+.switch-row--inline {
+  min-height: unset;
+  flex: 0 0 auto;
+  gap: 6px;
+  padding: 4px 8px;
+  border-color: #2d3e57;
+  background: transparent;
+  color: #aab5c6;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .inspector__body {
@@ -1247,13 +1211,44 @@ p {
   background: #15243a;
 }
 
-.event-row__meta {
+.event-row__header {
   display: flex;
+  width: 100%;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.event-row__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.66rem;
+}
+
+.event-row__badge {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #2a3c58;
+  color: #91a0b5;
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.event-row__caret {
+  flex: 0 0 auto;
+  color: #91a0b5;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .event-row__meta time {
@@ -1731,22 +1726,9 @@ details > summary {
     min-height: 58px;
   }
 
-  .country-dock {
+  .checkout-market {
     width: 100%;
-    margin-left: 0;
-    overflow-x: auto;
-  }
-
-  .country-dock__label {
-    display: none;
-  }
-
-  .country-shortcuts {
-    flex: 1;
-  }
-
-  .country-dock select {
-    max-width: 150px;
+    flex-wrap: wrap;
   }
 
   .inspector {

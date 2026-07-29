@@ -32,11 +32,18 @@ export async function apiFetch<T>(
   return payload as T;
 }
 
+// Adyen's "minor units" are currency-exponent-aware — JPY has no fractional
+// unit, so its minor units equal its major units (¥110 is `{value: 110}`,
+// not 11000). Dividing by 100 unconditionally under-displays it 100x.
+const ZERO_DECIMAL_CURRENCIES = new Set(["JPY"]);
+
 export function formatMinorAmount(value: number, currency: string): string {
+  const upperCurrency = currency.toUpperCase();
+  const isZeroDecimal = ZERO_DECIMAL_CURRENCIES.has(upperCurrency);
   return new Intl.NumberFormat(undefined, {
     style: "currency",
-    currency,
-  }).format(value / 100);
+    currency: upperCurrency,
+  }).format(isZeroDecimal ? value : value / 100);
 }
 
 export function prettyJson(value: unknown): string {

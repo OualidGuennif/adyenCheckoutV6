@@ -27,7 +27,10 @@ export function installmentsConfiguration(countryCode: string): Record<string, u
   };
 }
 
-export function cardConfiguration(countryCode: string): Record<string, unknown> {
+export function cardConfiguration(
+  countryCode: string,
+  options: { enableStoreDetails?: boolean } = {},
+): Record<string, unknown> {
   const upperCountry = countryCode.toUpperCase();
   return {
     showBrandIcon: true,
@@ -36,6 +39,10 @@ export function cardConfiguration(countryCode: string): Record<string, unknown> 
     billingAddressRequired: false,
     hideCVC: false,
     maskSecurityCode: false,
+    // Sessions flow shows the "save card" checkbox on its own from the
+    // session's storePaymentMethodMode — this only matters for the Advanced
+    // flow, which owns the Card config directly with no session to drive it.
+    ...(options.enableStoreDetails ? { enableStoreDetails: true } : {}),
     placeholders: {
       cardNumber: "1234 5678 9012 3456",
       expiryDate: "MM/YY",
@@ -66,10 +73,11 @@ const GOOGLE_PAY_MERCHANT_ID = "0023022202";
 export function paymentMethodsConfiguration(
   countryCode: string,
   merchantAccount?: string | null,
+  options: { enableStoreDetails?: boolean } = {},
 ): Record<string, unknown> {
   return {
-    card: cardConfiguration(countryCode),
-    scheme: cardConfiguration(countryCode),
+    card: cardConfiguration(countryCode, options),
+    scheme: cardConfiguration(countryCode, options),
     applepay: { emailRequired: true },
     googlepay: {
       buttonType: "checkout",

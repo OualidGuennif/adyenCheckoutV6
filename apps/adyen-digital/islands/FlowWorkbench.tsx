@@ -46,7 +46,13 @@ interface TimelineEntry {
   payload: unknown;
   durationMs?: number;
   hmacValid?: boolean;
+  optional?: boolean;
 }
+
+// Only these two carry the actual payment outcome — every other frontend
+// callback is diagnostic/lifecycle noise that's useful to have but not
+// something you need staring at you by default.
+const MANDATORY_CALLBACKS = new Set(["onPaymentCompleted", "onPaymentFailed"]);
 
 interface CallbackActions {
   resolve(value?: unknown): void;
@@ -110,7 +116,51 @@ const MARKET_DEFAULTS: Record<string, { locale: string; currency: string }> = {
   US: { locale: "en-US", currency: "USD" },
 };
 
-const QUICK_MARKETS = ["FR", "NL", "US", "CA", "GB", "DE"];
+// Illustrative TEST-only FX rates (major units per 1 EUR) — good enough to
+// keep the order amount roughly equivalent across markets, not a live rate.
+const FX_RATE_FROM_EUR: Record<string, number> = {
+  EUR: 1,
+  USD: 1.08,
+  GBP: 0.85,
+  CAD: 1.47,
+  AUD: 1.63,
+  JPY: 160,
+  SGD: 1.45,
+};
+
+// JPY has no fractional unit — its minor units equal its major units.
+const ZERO_DECIMAL_CURRENCIES = new Set(["JPY"]);
+
+function minorToMajor(minor: number, currency: string): number {
+  return ZERO_DECIMAL_CURRENCIES.has(currency) ? minor : minor / 100;
+}
+
+function majorToMinor(major: number, currency: string): number {
+  return Math.round(ZERO_DECIMAL_CURRENCIES.has(currency) ? major : major * 100);
+}
+
+// Converts an amount between currencies via EUR as the pivot, so switching
+// market/currency keeps roughly the same real-world value instead of
+// reusing the same numeric amount under a different symbol.
+function convertAmount(amountMinor: number, fromCurrency: string, toCurrency: string): number {
+  if (fromCurrency === toCurrency) return amountMinor;
+  const majorInEur = minorToMajor(amountMinor, fromCurrency) /
+    (FX_RATE_FROM_EUR[fromCurrency] ?? 1);
+  return majorToMinor(majorInEur * (FX_RATE_FROM_EUR[toCurrency] ?? 1), toCurrency);
+}
+
+const LOCALE_OPTIONS = [
+  "fr-FR",
+  "en-US",
+  "en-GB",
+  "en-CA",
+  "en-AU",
+  "nl-NL",
+  "pt-PT",
+  "de-DE",
+  "ja-JP",
+  "en-SG",
+];
 
 // Reuses Adyen's own shipped CSS classes (imported globally as adyen.css) for
 // field box sizing/focus states, same as the legacy playground's hand-rolled
@@ -212,7 +262,7 @@ export default function FlowWorkbench(
   );
   const [componentType, setComponentType] = useState("scheme");
   const [availableComponents, setAvailableComponents] = useState<AvailableComponent[]>([]);
-  const [amount, setAmount] = useState(2599);
+  const [amount, setAmount] = useState(10999);
   const [currency, setCurrency] = useState(MARKET_DEFAULTS[initialMarket].currency);
   const [country, setCountry] = useState(initialMarket);
   const [locale, setLocale] = useState(MARKET_DEFAULTS[initialMarket].locale);
@@ -229,6 +279,8 @@ export default function FlowWorkbench(
     api: false,
   });
   const [openAdditionalData, setOpenAdditionalData] = useState<Set<string>>(new Set());
+  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
+  const [showOptionalCallbacks, setShowOptionalCallbacks] = useState(false);
   const [webhooksOpen, setWebhooksOpen] = useState(false);
   const [webhookWaiting, setWebhookWaiting] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -268,6 +320,20 @@ export default function FlowWorkbench(
     autoInitRef.current = true;
     start();
   }, [bootstrap]);
+
+  // No "Update settings" button — any change to the scenario reloads the
+  // checkout on its own, debounced so typing an amount or flipping through
+  // markets doesn't refire on every keystroke.
+  const skipFirstAutoRestart = useRef(true);
+  useEffect(() => {
+    if (!hasAutoInit || !autoInitRef.current) return;
+    if (skipFirstAutoRestart.current) {
+      skipFirstAutoRestart.current = false;
+      return;
+    }
+    const timeout = setTimeout(() => start({ silent: true }), 500);
+    return () => clearTimeout(timeout);
+  }, [amount, currency, country, locale, integration, profileId]);
 
   useEffect(() => {
     if (!correlationId || (!panelOpen && !webhooksOpen)) return;
@@ -312,8 +378,16 @@ export default function FlowWorkbench(
     const defaults = MARKET_DEFAULTS[nextCountry];
     if (defaults) {
       setLocale(defaults.locale);
+      if (defaults.currency !== currency) {
+        setAmount((current) => convertAmount(current, currency, defaults.currency));
+      }
       setCurrency(defaults.currency);
     }
+  }
+
+  function selectCurrency(nextCurrency: string) {
+    setAmount((current) => convertAmount(current, currency, nextCurrency));
+    setCurrency(nextCurrency);
   }
 
   function addCallback(name: string, payload: unknown, explicitCorrelation?: string) {
@@ -325,6 +399,7 @@ export default function FlowWorkbench(
       status: "received",
       occurredAt: timestamp(),
       payload: safePayload,
+      optional: !MANDATORY_CALLBACKS.has(name),
     };
     setCallbacks((current) => [...current, entry]);
     const id = explicitCorrelation ?? correlationId;
@@ -343,6 +418,15 @@ export default function FlowWorkbench(
 
   function toggleAdditionalData(id: string) {
     setOpenAdditionalData((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleEntryExpanded(id: string) {
+    setExpandedEntries((current) => {
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -393,9 +477,9 @@ export default function FlowWorkbench(
       }
       mounted.current?.unmount();
       dropinHost.current.replaceChildren();
-      const config = paymentMethodsConfiguration(country, bootstrap?.profile.merchantAccount)[
-        type
-      ] as Record<string, unknown> | undefined;
+      const config = paymentMethodsConfiguration(country, bootstrap?.profile.merchantAccount, {
+        enableStoreDetails: flow !== "sessions",
+      })[type] as Record<string, unknown> | undefined;
       // Card/PayPal/etc. have dedicated classes whose static `type` is already
       // correct, but every redirect-only method (Alma, Wero, WeChat...) shares
       // the same generic Redirect element — without an explicit `type` here it
@@ -463,6 +547,7 @@ export default function FlowWorkbench(
         paymentMethodsConfiguration: paymentMethodsConfiguration(
           country,
           bootstrap?.profile.merchantAccount,
+          { enableStoreDetails: flow !== "sessions" },
         ),
         openFirstPaymentMethod: false,
         instantPaymentTypes: ["applepay", "googlepay"],
@@ -497,7 +582,7 @@ export default function FlowWorkbench(
     await mountCheckout(commonConfiguration({
       session: data.session,
       beforeSubmit: (state: unknown, _component: unknown, actions: CallbackActions) => {
-        addCallback("beforeSubmit (optional)", state, data.correlationId);
+        addCallback("beforeSubmit", state, data.correlationId);
         // beforeSubmit's resolve() is not a plain continue — Adyen Web sends
         // back whatever is passed here as the actual /payments payload. An
         // empty resolve() submits with no paymentMethod at all, which Adyen
@@ -617,20 +702,21 @@ export default function FlowWorkbench(
     addCallback("mitResponse", response.result, response.correlationId);
   }
 
-  async function start() {
+  async function start(options: { silent?: boolean } = {}) {
     setError(null);
     setOutcome(null);
     setCallbacks([]);
     setTimeline([]);
     setExpandedTabs({ callbacks: false, api: false });
     setOpenAdditionalData(new Set());
+    setExpandedEntries(new Set());
     setLoading(true);
     try {
       if (flow === "sessions") await startSession();
       else if (flow === "advanced" || flow === "api-only") await startAdvanced();
       else if (flow === "pay-by-link") await createPaymentLink();
       else await runMit();
-      setPanelOpen(true);
+      if (!options.silent) setPanelOpen(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The flow could not start.");
     } finally {
@@ -640,7 +726,7 @@ export default function FlowWorkbench(
 
   const EVENT_PREVIEW_COUNT = 5;
   const allEvents = panelTab === "callbacks"
-    ? callbacks
+    ? (showOptionalCallbacks ? callbacks : callbacks.filter((entry) => !entry.optional))
     : timeline.filter((entry) => entry.kind === "api_call");
   const isExpanded = expandedTabs[panelTab];
   const visibleEvents = isExpanded ? allEvents : allEvents.slice(-EVENT_PREVIEW_COUNT);
@@ -669,21 +755,29 @@ export default function FlowWorkbench(
       <div class="checkout-layout">
         <section class="checkout-shell" aria-busy={loading}>
           <div class="checkout-context">
-            <div>
-              <span class="eyebrow">Ready to run</span>
-              <h2>
-                {flow === "pay-by-link"
-                  ? "Create a hosted payment link"
-                  : flow === "mit"
-                  ? "Run a token payment"
-                  : "Complete your TEST payment"}
-              </h2>
-            </div>
             <StatusPill
               tone={!bootstrap ? "neutral" : selectedProfile?.isConfigured ? "positive" : "warning"}
             >
               {selectedProfile?.label ?? "Loading profile"}
             </StatusPill>
+            <div class="checkout-market">
+              <select
+                aria-label="Checkout market"
+                value={country}
+                onChange={(event) => selectMarket(event.currentTarget.value)}
+              >
+                {MARKETS.map(([code, name]) => (
+                  <option key={code} value={code}>{flagEmoji(code)} {name}</option>
+                ))}
+              </select>
+              <select
+                aria-label="Shopper language"
+                value={locale}
+                onChange={(event) => setLocale(event.currentTarget.value)}
+              >
+                {LOCALE_OPTIONS.map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+            </div>
           </div>
 
           <details class="scenario-settings">
@@ -719,7 +813,11 @@ export default function FlowWorkbench(
                     ))}
                   </select>
                 </Field>
-                <Field label="Amount (minor units)" htmlFor="amount" hint="2599 = 25.99">
+                <Field
+                  label="Amount (minor units)"
+                  htmlFor="amount"
+                  hint={`= ${formatMinorAmount(Number.isFinite(amount) ? amount : 0, currency)}`}
+                >
                   <input
                     id="amount"
                     type="number"
@@ -733,46 +831,11 @@ export default function FlowWorkbench(
                   <select
                     id="currency"
                     value={currency}
-                    onChange={(event) => setCurrency(event.currentTarget.value)}
+                    onChange={(event) => selectCurrency(event.currentTarget.value)}
                   >
                     {["EUR", "USD", "CAD", "GBP", "AUD", "JPY", "SGD"].map((value) => (
                       <option key={value} value={value}>{value}</option>
                     ))}
-                  </select>
-                </Field>
-                <Field
-                  label="Checkout market"
-                  htmlFor="country"
-                  hint="Selects dynamic billing and delivery fixtures"
-                >
-                  <select
-                    id="country"
-                    value={country}
-                    onChange={(event) => selectMarket(event.currentTarget.value)}
-                  >
-                    {MARKETS.map(([code, name]) => (
-                      <option key={code} value={code}>{flagEmoji(code)} {name}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Shopper language" htmlFor="locale">
-                  <select
-                    id="locale"
-                    value={locale}
-                    onChange={(event) => setLocale(event.currentTarget.value)}
-                  >
-                    {[
-                      "fr-FR",
-                      "en-US",
-                      "en-GB",
-                      "en-CA",
-                      "en-AU",
-                      "nl-NL",
-                      "pt-PT",
-                      "de-DE",
-                      "ja-JP",
-                      "en-SG",
-                    ].map((value) => <option key={value} value={value}>{value}</option>)}
                   </select>
                 </Field>
                 {flow === "sessions" || flow === "advanced" || flow === "api-only"
@@ -907,14 +970,7 @@ export default function FlowWorkbench(
               {hasAutoInit
                 ? (
                   <div class="form-actions">
-                    <button
-                      class="button button--primary"
-                      type="button"
-                      disabled={loading || !selectedProfile?.isConfigured}
-                      onClick={start}
-                    >
-                      {loading ? "Updating…" : "Update settings"}
-                    </button>
+                    {loading ? <span class="mono">Reloading checkout…</span> : null}
                     {correlationId
                       ? <span class="mono">Correlation {correlationId.slice(0, 13)}…</span>
                       : null}
@@ -931,7 +987,7 @@ export default function FlowWorkbench(
                   class="button button--primary"
                   type="button"
                   disabled={loading || !selectedProfile?.isConfigured}
-                  onClick={start}
+                  onClick={() => start()}
                 >
                   {loading
                     ? "Starting…"
@@ -1034,33 +1090,6 @@ export default function FlowWorkbench(
               </p>
             </aside>
           </div>
-
-          <footer class="country-dock" aria-label="Checkout market selector">
-            <span class="country-dock__label">Checkout market</span>
-            <div class="country-shortcuts">
-              {QUICK_MARKETS.map((code) => (
-                <button
-                  key={code}
-                  type="button"
-                  title={MARKETS.find(([candidate]) => candidate === code)?.[1]}
-                  aria-label={`Use ${MARKETS.find(([candidate]) => candidate === code)?.[1]}`}
-                  aria-pressed={country === code}
-                  onClick={() => selectMarket(code)}
-                >
-                  {flagEmoji(code)}
-                </button>
-              ))}
-            </div>
-            <select
-              aria-label="All checkout markets"
-              value={country}
-              onChange={(event) => selectMarket(event.currentTarget.value)}
-            >
-              {MARKETS.map(([code, name]) => (
-                <option key={code} value={code}>{flagEmoji(code)} {name}</option>
-              ))}
-            </select>
-          </footer>
         </section>
 
         <aside class="inspector" hidden={!panelOpen} aria-label="Payment observability panel">
@@ -1083,6 +1112,18 @@ export default function FlowWorkbench(
                 API calls
               </button>
             </div>
+            {panelTab === "callbacks"
+              ? (
+                <label class="switch-row switch-row--inline">
+                  <span>Show optional</span>
+                  <input
+                    type="checkbox"
+                    checked={showOptionalCallbacks}
+                    onChange={(event) => setShowOptionalCallbacks(event.currentTarget.checked)}
+                  />
+                </label>
+              )
+              : null}
             <button
               class="button button--small button--secondary"
               type="button"
@@ -1126,51 +1167,67 @@ export default function FlowWorkbench(
                       ? extractAdditionalData(apiPayload.response)
                       : { rest: null, additionalData: null };
                     const additionalDataOpen = openAdditionalData.has(entry.id);
+                    const entryOpen = expandedEntries.has(entry.id);
                     return (
                       <article class="event-row" key={entry.id}>
-                        <div class="event-row__meta">
-                          <strong>{entry.name}</strong>
-                          <time datetime={entry.occurredAt}>
-                            {new Date(entry.occurredAt).toLocaleTimeString()}
-                            {entry.durationMs ? ` · ${entry.durationMs} ms` : ""}
-                          </time>
-                        </div>
-                        {apiPayload
-                          ? (
-                            <>
-                              <div class="event-row__section">
-                                <span class="event-row__label">Request</span>
-                                <pre>{prettyJson(apiPayload.request)}</pre>
-                              </div>
-                              <div class="event-row__section">
-                                <span class="event-row__label">Response</span>
-                                <pre>
-                                  {prettyJson(
-                                    apiPayload.error ? { error: apiPayload.error } : responseRest,
-                                  )}
-                                </pre>
-                                {additionalData
-                                  ? (
-                                    <>
-                                      <button
-                                        class="button button--quiet button--small"
-                                        type="button"
-                                        onClick={() => toggleAdditionalData(entry.id)}
-                                      >
-                                        {additionalDataOpen
-                                          ? "Hide additionalData"
-                                          : "Show additionalData"}
-                                      </button>
-                                      {additionalDataOpen
-                                        ? <pre>{prettyJson(additionalData)}</pre>
-                                        : null}
-                                    </>
-                                  )
-                                  : null}
-                              </div>
-                            </>
-                          )
-                          : <pre>{prettyJson(entry.payload)}</pre>}
+                        <button
+                          type="button"
+                          class="event-row__header"
+                          aria-expanded={entryOpen}
+                          onClick={() => toggleEntryExpanded(entry.id)}
+                        >
+                          <span class="event-row__meta">
+                            <strong>{entry.name}</strong>
+                            {entry.optional ? <span class="event-row__badge">optional</span> : null}
+                            <time datetime={entry.occurredAt}>
+                              {new Date(entry.occurredAt).toLocaleTimeString()}
+                              {entry.durationMs ? ` · ${entry.durationMs} ms` : ""}
+                            </time>
+                          </span>
+                          <span class="event-row__caret" aria-hidden="true">
+                            {entryOpen ? "−" : "+"}
+                          </span>
+                        </button>
+                        {entryOpen
+                          ? apiPayload
+                            ? (
+                              <>
+                                <div class="event-row__section">
+                                  <span class="event-row__label">Request</span>
+                                  <pre>{prettyJson(apiPayload.request)}</pre>
+                                </div>
+                                <div class="event-row__section">
+                                  <span class="event-row__label">Response</span>
+                                  <pre>
+                                    {prettyJson(
+                                      apiPayload.error
+                                        ? { error: apiPayload.error }
+                                        : responseRest,
+                                    )}
+                                  </pre>
+                                  <button
+                                    class="button button--quiet button--small"
+                                    type="button"
+                                    onClick={() => toggleAdditionalData(entry.id)}
+                                  >
+                                    {additionalDataOpen
+                                      ? "Hide additionalData"
+                                      : "Show additionalData"}
+                                  </button>
+                                  {additionalDataOpen
+                                    ? (
+                                      <pre>
+                                        {additionalData
+                                          ? prettyJson(additionalData)
+                                          : "No additionalData in this response."}
+                                      </pre>
+                                    )
+                                    : null}
+                                </div>
+                              </>
+                            )
+                            : <pre>{prettyJson(entry.payload)}</pre>
+                          : null}
                       </article>
                     );
                   })}
