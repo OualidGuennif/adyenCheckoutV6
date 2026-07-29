@@ -116,37 +116,14 @@ const MARKET_DEFAULTS: Record<string, { locale: string; currency: string }> = {
   US: { locale: "en-US", currency: "USD" },
 };
 
-// Illustrative TEST-only FX rates (major units per 1 EUR) — good enough to
-// keep the order amount roughly equivalent across markets, not a live rate.
-const FX_RATE_FROM_EUR: Record<string, number> = {
-  EUR: 1,
-  USD: 1.08,
-  GBP: 0.85,
-  CAD: 1.47,
-  AUD: 1.63,
-  JPY: 160,
-  SGD: 1.45,
-};
-
 // JPY has no fractional unit — its minor units equal its major units.
 const ZERO_DECIMAL_CURRENCIES = new Set(["JPY"]);
 
-function minorToMajor(minor: number, currency: string): number {
-  return ZERO_DECIMAL_CURRENCIES.has(currency) ? minor : minor / 100;
-}
-
-function majorToMinor(major: number, currency: string): number {
-  return Math.round(ZERO_DECIMAL_CURRENCIES.has(currency) ? major : major * 100);
-}
-
-// Converts an amount between currencies via EUR as the pivot, so switching
-// market/currency keeps roughly the same real-world value instead of
-// reusing the same numeric amount under a different symbol.
-function convertAmount(amountMinor: number, fromCurrency: string, toCurrency: string): number {
-  if (fromCurrency === toCurrency) return amountMinor;
-  const majorInEur = minorToMajor(amountMinor, fromCurrency) /
-    (FX_RATE_FROM_EUR[fromCurrency] ?? 1);
-  return majorToMinor(majorInEur * (FX_RATE_FROM_EUR[toCurrency] ?? 1), toCurrency);
+// Not a real conversion — 109.99 reads fine in any 2-decimal currency
+// (USD, GBP, CAD...), so it's reused as-is; zero-decimal currencies just
+// get a clean round number in the same ballpark instead.
+function defaultAmountForCurrency(currency: string): number {
+  return ZERO_DECIMAL_CURRENCIES.has(currency) ? 11000 : 10999;
 }
 
 const LOCALE_OPTIONS = [
@@ -278,9 +255,9 @@ export default function FlowWorkbench(
     callbacks: false,
     api: false,
   });
-  const [openAdditionalData, setOpenAdditionalData] = useState<Set<string>>(new Set());
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
   const [showOptionalCallbacks, setShowOptionalCallbacks] = useState(false);
+  const [showAdditionalData, setShowAdditionalData] = useState(false);
   const [webhooksOpen, setWebhooksOpen] = useState(false);
   const [webhookWaiting, setWebhookWaiting] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -379,14 +356,14 @@ export default function FlowWorkbench(
     if (defaults) {
       setLocale(defaults.locale);
       if (defaults.currency !== currency) {
-        setAmount((current) => convertAmount(current, currency, defaults.currency));
+        setAmount(defaultAmountForCurrency(defaults.currency));
       }
       setCurrency(defaults.currency);
     }
   }
 
   function selectCurrency(nextCurrency: string) {
-    setAmount((current) => convertAmount(current, currency, nextCurrency));
+    setAmount(defaultAmountForCurrency(nextCurrency));
     setCurrency(nextCurrency);
   }
 
@@ -414,15 +391,6 @@ export default function FlowWorkbench(
         }),
       }, profileId).catch(() => undefined);
     }
-  }
-
-  function toggleAdditionalData(id: string) {
-    setOpenAdditionalData((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
   }
 
   function toggleEntryExpanded(id: string) {
@@ -708,7 +676,6 @@ export default function FlowWorkbench(
     setCallbacks([]);
     setTimeline([]);
     setExpandedTabs({ callbacks: false, api: false });
-    setOpenAdditionalData(new Set());
     setExpandedEntries(new Set());
     setLoading(true);
     try {
@@ -1115,7 +1082,7 @@ export default function FlowWorkbench(
             {panelTab === "callbacks"
               ? (
                 <label class="switch-row switch-row--inline">
-                  <span>Show optional</span>
+                  <span>Show optional callbacks</span>
                   <input
                     type="checkbox"
                     checked={showOptionalCallbacks}
@@ -1123,7 +1090,16 @@ export default function FlowWorkbench(
                   />
                 </label>
               )
-              : null}
+              : (
+                <label class="switch-row switch-row--inline">
+                  <span>Show additionalData</span>
+                  <input
+                    type="checkbox"
+                    checked={showAdditionalData}
+                    onChange={(event) => setShowAdditionalData(event.currentTarget.checked)}
+                  />
+                </label>
+              )}
             <button
               class="button button--small button--secondary"
               type="button"
@@ -1166,7 +1142,6 @@ export default function FlowWorkbench(
                     const { rest: responseRest, additionalData } = apiPayload && !apiPayload.error
                       ? extractAdditionalData(apiPayload.response)
                       : { rest: null, additionalData: null };
-                    const additionalDataOpen = openAdditionalData.has(entry.id);
                     const entryOpen = expandedEntries.has(entry.id);
                     return (
                       <article class="event-row" key={entry.id}>
@@ -1205,22 +1180,16 @@ export default function FlowWorkbench(
                                         : responseRest,
                                     )}
                                   </pre>
-                                  <button
-                                    class="button button--quiet button--small"
-                                    type="button"
-                                    onClick={() => toggleAdditionalData(entry.id)}
-                                  >
-                                    {additionalDataOpen
-                                      ? "Hide additionalData"
-                                      : "Show additionalData"}
-                                  </button>
-                                  {additionalDataOpen
+                                  {showAdditionalData
                                     ? (
-                                      <pre>
-                                        {additionalData
-                                          ? prettyJson(additionalData)
-                                          : "No additionalData in this response."}
-                                      </pre>
+                                      <>
+                                        <span class="event-row__label">additionalData</span>
+                                        <pre>
+                                          {additionalData
+                                            ? prettyJson(additionalData)
+                                            : "No additionalData in this response."}
+                                        </pre>
+                                      </>
                                     )
                                     : null}
                                 </div>
