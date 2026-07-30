@@ -39,6 +39,15 @@ export function addressesAreEqual(a: Address, b: Address): boolean {
 const SPLIT_CARD_FUNDING_COUNTRIES = new Set(["BR", "MX", "FI"]);
 
 /**
+ * Markets where Adyen returns debit and credit cards as separate payment
+ * methods. Needed on /paymentMethods as well as /sessions — without it the
+ * Advanced flow gets a single merged "Cards" entry on those markets.
+ */
+export function splitsCardFundingSources(countryCode: string): boolean {
+  return SPLIT_CARD_FUNDING_COUNTRIES.has(countryCode.toUpperCase());
+}
+
+/**
  * The risk/context fields the legacy playground's adyenService.js always
  * sent, common to both /sessions and /payments — shopperInteraction,
  * shopperName, telephoneNumber, riskdata, 3DS preference and accountInfo.

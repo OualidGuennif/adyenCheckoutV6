@@ -60,6 +60,13 @@ body {
   gap: 14px;
 }
 
+/* The shared menu anchors its dropdown to the right edge; here it is not the
+   rightmost element, so anchor it left to keep it inside the viewport. */
+.toolbar-markets .header-tools__menu {
+  right: auto;
+  left: 0;
+}
+
 .styling-layout {
   display: grid;
   min-height: calc(100vh - 102px);
@@ -342,11 +349,20 @@ body {
   }
 
   /* Two selects side by side don't fit; give each half the row and let them
-     shrink instead of pushing the toolbar wider than the viewport. */
+     shrink instead of pushing the toolbar wider than the viewport. The
+     dataset menu takes the full row above them. */
   .toolbar-markets {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
+  }
+
+  .toolbar-markets > .header-tools {
+    grid-column: 1 / -1;
+  }
+
+  .toolbar-markets .header-tools__toggle {
+    justify-content: space-between;
   }
 
   .toolbar-country {

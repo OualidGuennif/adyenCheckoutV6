@@ -1,7 +1,7 @@
 import { AdyenCheckout, CustomCard, Dropin } from "@adyen/adyen-web";
 import type { Core } from "@adyen/adyen-web";
 import { apiFetch, formatMinorAmount, prettyJson } from "@suite/ui/client.ts";
-import { Callout, Field, StatusPill } from "@suite/ui/components.tsx";
+import { Callout, Field, StatusPill, TestDataAndTools } from "@suite/ui/components.tsx";
 import {
   currencyForCountry,
   defaultAmountForCurrency,
@@ -715,6 +715,7 @@ export default function FlowWorkbench(
               {selectedProfile?.label ?? "Loading profile"}
             </StatusPill>
             <div class="checkout-market">
+              <TestDataAndTools />
               <select
                 aria-label="Checkout market"
                 value={country}

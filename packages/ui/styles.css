@@ -1059,6 +1059,19 @@ p {
   gap: 8px;
 }
 
+/* Sits inline with the market selectors rather than in the header nav. */
+.checkout-market .header-tools__toggle,
+.toolbar-markets .header-tools__toggle {
+  min-height: 38px;
+  white-space: nowrap;
+}
+
+/* Not the rightmost element here, so anchor the dropdown to its left edge. */
+.checkout-market .header-tools__menu {
+  right: auto;
+  left: 0;
+}
+
 .checkout-market select {
   min-height: 38px;
   padding: 6px 30px 6px 10px;
@@ -1658,8 +1671,10 @@ details > summary {
     font-size: 0.6rem;
   }
 
+  /* Hidden only in the cramped header bar — pages that moved it next to their
+     market selector keep it, since there it has room of its own. */
   .header-link,
-  .header-tools {
+  .app-header__actions .header-tools {
     display: none;
   }
 

@@ -62,7 +62,7 @@ export default define.page<typeof handler>(function FlowPage({ data }) {
   const { flow, bootstrap, integration } = data;
   const content = FLOWS[flow];
   return (
-    <DigitalLayout path={`/${flow}`}>
+    <DigitalLayout path={`/${flow}`} ownTestingDataset>
       <PageHeader
         title={content.title}
         description={content.description}

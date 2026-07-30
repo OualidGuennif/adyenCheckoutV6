@@ -1,7 +1,7 @@
 import { AdyenCheckout, Dropin } from "@adyen/adyen-web";
 import type { Core } from "@adyen/adyen-web";
 import { apiFetch } from "@suite/ui/client.ts";
-import { AdyenWordmark, ColorField, Field } from "@suite/ui/components.tsx";
+import { AdyenWordmark, ColorField, Field, TestDataAndTools } from "@suite/ui/components.tsx";
 import {
   detectCountryFromLanguages,
   FALLBACK_COUNTRY,
@@ -63,42 +63,42 @@ const COUNTRIES = [
 ] as const;
 
 const LOCALES = [
-  ["en-GB", "English (GB)"],
-  ["en-US", "English (US)"],
-  ["fr-FR", "Français (FR)"],
-  ["nl-NL", "Nederlands (NL)"],
-  ["nl-BE", "Nederlands (BE)"],
-  ["zh-CN", "中文 (CN)"],
-  ["de-DE", "Deutsch (DE)"],
-  ["de-AT", "Deutsch (AT)"],
-  ["de-CH", "Deutsch (CH)"],
-  ["es-ES", "Español (ES)"],
-  ["es-MX", "Español (MX)"],
-  ["it-IT", "Italiano (IT)"],
-  ["pt-PT", "Português (PT)"],
-  ["pt-BR", "Português (BR)"],
-  ["en-CA", "English (CA)"],
-  ["en-AU", "English (AU)"],
-  ["en-NZ", "English (NZ)"],
-  ["sv-SE", "Svenska (SE)"],
-  ["nb-NO", "Norsk (NO)"],
-  ["da-DK", "Dansk (DK)"],
-  ["fi-FI", "Suomi (FI)"],
-  ["pl-PL", "Polski (PL)"],
-  ["cs-CZ", "Čeština (CZ)"],
-  ["en-SG", "English (SG)"],
-  ["zh-HK", "中文 (HK)"],
-  ["ja-JP", "日本語 (JP)"],
-  ["ko-KR", "한국어 (KR)"],
-  ["en-IN", "English (IN)"],
-  ["id-ID", "Bahasa Indonesia (ID)"],
-  ["en-MY", "English (MY)"],
-  ["th-TH", "ไทย (TH)"],
-  ["en-PH", "English (PH)"],
-  ["vi-VN", "Tiếng Việt (VN)"],
-  ["en-ZA", "English (ZA)"],
-  ["en-KE", "English (KE)"],
-  ["ar-AE", "العربية (AE)"],
+  ["en-GB", "English"],
+  ["en-US", "English"],
+  ["fr-FR", "Français"],
+  ["nl-NL", "Nederlands"],
+  ["nl-BE", "Nederlands"],
+  ["zh-CN", "中文"],
+  ["de-DE", "Deutsch"],
+  ["de-AT", "Deutsch"],
+  ["de-CH", "Deutsch"],
+  ["es-ES", "Español"],
+  ["es-MX", "Español"],
+  ["it-IT", "Italiano"],
+  ["pt-PT", "Português"],
+  ["pt-BR", "Português"],
+  ["en-CA", "English"],
+  ["en-AU", "English"],
+  ["en-NZ", "English"],
+  ["sv-SE", "Svenska"],
+  ["nb-NO", "Norsk"],
+  ["da-DK", "Dansk"],
+  ["fi-FI", "Suomi"],
+  ["pl-PL", "Polski"],
+  ["cs-CZ", "Čeština"],
+  ["en-SG", "English"],
+  ["zh-HK", "中文"],
+  ["ja-JP", "日本語"],
+  ["ko-KR", "한국어"],
+  ["en-IN", "English"],
+  ["id-ID", "Bahasa Indonesia"],
+  ["en-MY", "English"],
+  ["th-TH", "ไทย"],
+  ["en-PH", "English"],
+  ["vi-VN", "Tiếng Việt"],
+  ["en-ZA", "English"],
+  ["en-KE", "English"],
+  ["ar-AE", "العربية"],
 ] as const;
 
 function flagEmoji(countryCode: string): string {
@@ -757,10 +757,11 @@ export default function StylingPlayground() {
           <small class="styling-brand__sdk">Adyen Web SDK {ADYEN_WEB_VERSION}</small>
         </div>
         <div class="toolbar-markets">
+          <TestDataAndTools />
           <div class="toolbar-country">
-            <label for="preview-country">Country</label>
             <select
               id="preview-country"
+              aria-label="Checkout market"
               value={country}
               onChange={(event) => updateCountry(event.currentTarget.value)}
             >
@@ -772,13 +773,15 @@ export default function StylingPlayground() {
             </select>
           </div>
           <div class="toolbar-country">
-            <label for="preview-locale">Locale</label>
             <select
               id="preview-locale"
+              aria-label="Shopper locale"
               value={locale}
               onChange={(event) => updateLocale(event.currentTarget.value)}
             >
-              {LOCALES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+              {LOCALES.map(([code, name]) => (
+                <option key={code} value={code}>{name} ({code})</option>
+              ))}
             </select>
           </div>
         </div>

@@ -10,6 +10,7 @@ import {
   paymentsRiskFields,
   resolveShopperEmail,
   sessionRiskFields,
+  splitsCardFundingSources,
 } from "@suite/platform/sessionContext.ts";
 import { weeklyShopperReference } from "@suite/platform/shopper.ts";
 import { mapAdyenResultCode, resolveOrder } from "@suite/platform/state-machine.ts";
@@ -28,6 +29,16 @@ function object(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {};
+}
+
+/**
+ * checkoutAttemptId is already carried inside sdkData, so forwarding it as a
+ * sibling field duplicates the analytics payload — the legacy playground
+ * stripped it for the same reason.
+ */
+function sanitizePaymentMethod(paymentMethod: Record<string, unknown>) {
+  const { checkoutAttemptId: _dropped, ...rest } = paymentMethod;
+  return rest;
 }
 
 function amountFrom(value: unknown, defaultCurrency = "EUR"): Amount {
@@ -113,7 +124,11 @@ function requestBase(input: {
     deliveryAddress: input.body.deliveryAddress,
   });
   const billingAddress = addresses.billingAddress;
-  const deliveryAddress = {
+  // /sessions and /payments accept a recipient name inside deliveryAddress;
+  // /paymentLinks validates it against a plain address schema and rejects
+  // them ("Structure of address contains the following unknown fields:
+  // [firstName, lastName]"), so it only gets the postal fields.
+  const deliveryAddress = input.context === "paymentLinks" ? addresses.deliveryAddress : {
     ...addresses.deliveryAddress,
     firstName: String(input.body.firstName ?? "Test"),
     lastName: String(input.body.lastName ?? "Shopper"),
@@ -122,6 +137,11 @@ function requestBase(input: {
     amount: input.order.amount,
     reference: input.order.reference,
     merchantAccount: input.secrets.merchantAccount,
+    // Required by /sessions and /payments — /payments rejects the request
+    // outright ("Required field 'channel' is not provided") without it. Left
+    // off /paymentLinks, whose request schema has no channel field and
+    // rejects unknown ones.
+    ...(input.context === "paymentLinks" ? {} : { channel: "Web" }),
     countryCode,
     shopperLocale: String(input.body.shopperLocale ?? "en-US"),
     shopperReference: weeklyShopperReference(),
@@ -201,7 +221,6 @@ api.post("/api/digital/sessions", async (c) => {
   const idempotencyKey = crypto.randomUUID();
   const request = {
     ...requestBase({ body, secrets, order, context: "sessions" }),
-    channel: "Web",
     ...(body.installments === true
       ? { installmentOptions: { card: { values: [2, 3, 4], preselectedValue: 2 } } }
       : {}),
@@ -249,6 +268,9 @@ api.post("/api/digital/payment-methods", async (c) => {
     countryCode,
     channel: "Web",
     shopperLocale: String(body.shopperLocale ?? "en-US"),
+    shopperEmail: resolveShopperEmail(body.shopperEmail),
+    shopperReference: weeklyShopperReference(),
+    splitCardFundingSources: splitsCardFundingSources(countryCode),
   };
   const result = await recordedCall({
     correlationId,
@@ -274,7 +296,8 @@ api.post("/api/digital/payments", async (c) => {
     amount,
     metadata: { profileId },
   });
-  const paymentMethod = object(body.paymentMethod);
+  const paymentMethod = sanitizePaymentMethod(object(body.paymentMethod));
+  const isStoredPaymentMethod = Boolean(paymentMethod.storedPaymentMethodId);
   const attempt = context.repository.createAttempt({
     orderId: order.id,
     amount,
@@ -287,11 +310,18 @@ api.post("/api/digital/payments", async (c) => {
     paymentMethod,
     browserInfo: body.browserInfo,
     origin: context.config.publicOrigin,
-    shopperInteraction: body.shopperInteraction ?? "Ecommerce",
+    // Paying with a token, or asking to store one, is a card-on-file
+    // transaction — the legacy playground derived both fields from the payload
+    // instead of trusting the client to label it correctly.
+    shopperInteraction: body.shopperInteraction ??
+      (isStoredPaymentMethod ? "ContAuth" : "Ecommerce"),
     ...(body.recurringProcessingModel
       ? { recurringProcessingModel: body.recurringProcessingModel }
+      : isStoredPaymentMethod || body.storePaymentMethod
+      ? { recurringProcessingModel: "CardOnFile" }
       : {}),
-    ...(body.storePaymentMethod ? { storePaymentMethod: true } : {}),
+    // A stored method is already on file; re-storing it is rejected.
+    ...(body.storePaymentMethod && !isStoredPaymentMethod ? { storePaymentMethod: true } : {}),
     ...(body.order && typeof body.order === "object" ? { order: body.order } : {}),
   };
   const result = await recordedCall({
@@ -494,6 +524,8 @@ api.post("/api/digital/mit", async (c) => {
     amount,
     reference: order.reference,
     merchantAccount: secrets.merchantAccount,
+    // /payments requires channel on every call, MIT included.
+    channel: "Web",
     paymentMethod: { storedPaymentMethodId: token },
     shopperReference,
     shopperInteraction: "ContAuth",

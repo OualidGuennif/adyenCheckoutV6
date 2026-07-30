@@ -27,7 +27,7 @@ const TEST_DATA_LINKS = [
 export function TestDataAndTools() {
   return (
     <details class="header-tools">
-      <summary class="header-tools__toggle">Test data &amp; tools</summary>
+      <summary class="header-tools__toggle">Testing dataset</summary>
       <div class="header-tools__menu">
         {TEST_DATA_LINKS.map((link) => (
           <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer">
@@ -80,6 +80,8 @@ export function AppShell(props: {
   currentPath: string;
   children: ComponentChildren;
   compact?: boolean;
+  /** Set when the page renders <TestDataAndTools /> itself. */
+  ownTestingDataset?: boolean;
 }) {
   return (
     <>
@@ -110,7 +112,11 @@ export function AppShell(props: {
                 <span aria-hidden="true" />
                 TEST connected
               </span>
-              <TestDataAndTools />
+              {
+                /* Apps with their own market selector render this next to it
+                  instead, so it sits with the things it relates to. */
+              }
+              {props.ownTestingDataset ? null : <TestDataAndTools />}
               <a class="button button--quiet button--small" href="/settings">Settings</a>
             </div>
           </div>
