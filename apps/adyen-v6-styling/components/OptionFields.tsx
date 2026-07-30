@@ -24,9 +24,7 @@ export function OptionGroup(props: {
     >
       <summary class="option-group__summary">
         <span class="option-group__title">{props.title}</span>
-        {props.count
-          ? <span class="option-group__count">{props.count} set</span>
-          : null}
+        {props.count ? <span class="option-group__count">{props.count} set</span> : null}
       </summary>
       {props.hint ? <p class="option-group__hint">{props.hint}</p> : null}
       <div class="option-group__body">{props.children}</div>

@@ -15,12 +15,7 @@ import {
 import "@suite/ui/registerPaymentMethods.ts";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { TestCards } from "../components/TestCards.tsx";
-import {
-  CheckboxCloud,
-  OptionGroup,
-  OptionRow,
-  SwitchRow,
-} from "../components/OptionFields.tsx";
+import { CheckboxCloud, OptionGroup, OptionRow, SwitchRow } from "../components/OptionFields.tsx";
 import {
   ADDRESS_FIELDS,
   ADYEN_CSS_URL,
@@ -696,9 +691,9 @@ export default function StylingPlayground() {
               ? (
                 <>
                   <p class="css-note">
-                    The card number, expiry date and security code are rendered inside
-                    Adyen-hosted iframes, so no page CSS can reach them: they are styled only
-                    through this object. All {SECURE_PROPERTY_SPECS.length}{" "}
+                    The card number, expiry date and security code are rendered inside Adyen-hosted
+                    iframes, so no page CSS can reach them: they are styled only through this
+                    object. All {SECURE_PROPERTY_SPECS.length}{" "}
                     properties Adyen accepts are below, for each of its four states.
                   </p>
                   <div class="styling-segmented" role="tablist" aria-label="Field state">
@@ -713,9 +708,7 @@ export default function StylingPlayground() {
                           onClick={() => setSecureState(state)}
                         >
                           {SECURE_STATE_META[state].label}
-                          {count
-                            ? <span class="styling-segmented__count">{count}</span>
-                            : null}
+                          {count ? <span class="styling-segmented__count">{count}</span> : null}
                         </button>
                       );
                     })}
@@ -1001,8 +994,8 @@ export default function StylingPlayground() {
                                 )}
                             />
                             <small>
-                              billingAddressRequiredFields — leave empty for Adyen's own
-                              per-country schema.
+                              billingAddressRequiredFields — leave empty for Adyen's own per-country
+                              schema.
                             </small>
                           </div>
                           <div class="field">
