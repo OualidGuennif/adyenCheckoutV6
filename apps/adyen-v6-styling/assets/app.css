@@ -220,9 +220,11 @@ body {
 
 .test-card__top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  row-gap: 5px;
 }
 
 .test-card__scheme {
@@ -231,6 +233,8 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* Full country names run long next to the scheme, so the badge keeps its own
+   line rather than squeezing "United States" against "Klarna". */
 .test-card__note {
   padding: 1px 7px;
   border-radius: 999px;
@@ -239,6 +243,7 @@ body {
   font-size: 0.56rem;
   font-weight: 800;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .test-card__pan {
@@ -790,6 +795,16 @@ body {
   max-height: 220px;
 }
 
+/* Past this width the preview column grows faster than a checkout should, and
+   the pair ends up marooned in the middle of it. Handing the extra to the
+   options panel — which is genuinely cramped — keeps the composition tight
+   instead of banding it with empty space. */
+@media (min-width: 1700px) {
+  .styling-layout {
+    grid-template-columns: minmax(420px, 1fr) minmax(360px, 560px);
+  }
+}
+
 /* The Drop-in and the dataset stand side by side as one centred pair, so the
    preview column reads as a composition instead of two blocks pushed left
    with dead space beside them. 1180px is where both still fit at full width. */
@@ -808,13 +823,25 @@ body {
     margin: 0;
   }
 
-  /* Wide enough to keep the tiles two per row and still leave the Drop-in the
-     larger half of the pair. */
+  /* Two per row throughout, and allowed to widen on a big screen so the pair
+     fills the column instead of floating in the middle of it. Not sticky: the
+     tiles belong to the page and stay where they were put. */
   .test-data {
-    position: sticky;
-    top: 90px;
-    flex: 0 0 344px;
-    width: 344px;
+    flex: 0 1 auto;
+    width: clamp(344px, 26vw, 500px);
+    max-width: none;
+  }
+
+  /* The bar earns its place on a phone, where it keeps the checkout above the
+     fold. Beside the checkout there is nothing to save, so the cards are
+     simply there. */
+  .test-cards--primary > .test-cards__toggle {
+    display: none;
+  }
+
+  .test-cards--primary[data-open="false"] > .test-cards__body {
+    display: block;
+    margin-top: 0;
   }
 }
 

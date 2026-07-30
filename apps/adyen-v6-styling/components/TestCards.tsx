@@ -39,8 +39,8 @@ interface AltMethod {
 
 /**
  * Wallets first: they are the ones people reach for and the ones that need
- * explaining. Then the gift card, then Klarna — whose flow only needs the
- * approved shopper phone number for the market you are testing.
+ * explaining. Then the gift card and iDEAL, then Klarna — whose flow only
+ * needs the approved shopper phone number for the market you are testing.
  */
 const ALT_METHODS: AltMethod[] = [
   {
@@ -62,15 +62,15 @@ const ALT_METHODS: AltMethod[] = [
     },
   },
   {
-    name: "Gift card",
-    note: "givex",
+    name: "GiftCard (Givex)",
     value: "6036 2800 0000 0000 000",
     detail: "PIN 122222",
   },
-  { name: "Klarna", note: "NL", value: "+31 689124321", detail: "approved shopper" },
-  { name: "Klarna", note: "FR", value: "+33 689854321", detail: "approved shopper" },
-  { name: "Klarna", note: "DE", value: "+49 017614284340", detail: "approved shopper" },
-  { name: "Klarna", note: "US", value: "+1 3106683312", detail: "approved shopper" },
+  { name: "iDEAL", note: "bank", value: "TESTNL2A" },
+  { name: "Klarna", note: "Netherlands", value: "+31689124321" },
+  { name: "Klarna", note: "France", value: "+33689854321" },
+  { name: "Klarna", note: "Germany", value: "+49017614284340" },
+  { name: "Klarna", note: "United States", value: "+13106683312" },
 ];
 
 const KLARNA_DOCS =
@@ -96,7 +96,10 @@ function useCopy() {
  * material, and the checkout is what the page is about.
  */
 export function TestCards() {
-  const [cardsOpen, setCardsOpen] = useState(true);
+  // Closed is the phone's starting point, where the checkout has to come
+  // first. On a desktop the cards sit beside it and cost nothing, so CSS drops
+  // the bar entirely and shows them whatever this says.
+  const [cardsOpen, setCardsOpen] = useState(false);
   const [altOpen, setAltOpen] = useState(false);
   const [showAllCards, setShowAllCards] = useState(false);
   const { copied, copy } = useCopy();
@@ -106,7 +109,7 @@ export function TestCards() {
   return (
     <div class="test-data">
       <section
-        class="test-cards"
+        class="test-cards test-cards--primary"
         data-open={cardsOpen ? "true" : "false"}
         data-expanded={showAllCards ? "true" : "false"}
         aria-label="Card dataset"
