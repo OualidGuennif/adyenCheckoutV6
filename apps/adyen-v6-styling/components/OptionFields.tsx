@@ -56,10 +56,15 @@ export function SwitchRow(props: {
 }
 
 /**
- * A checkbox list folded into a dropdown, for options whose full set is long
+ * A checkbox list folded behind a summary, for options whose full set is long
  * enough that a flat cloud of chips swamps the panel. "(empty)" is a real
  * entry rather than a hint, since leaving the list empty is the meaningful
  * default: Adyen then applies its own per-country schema.
+ *
+ * The list expands in the flow rather than floating over it. An absolutely
+ * positioned menu gets clipped by the group's own `overflow: hidden` (there
+ * for the rounded corners) and disappears under the next section; in-flow it
+ * simply pushes the panel down and scrolls with everything else.
  */
 export function CheckboxDropdown(props: {
   id: string;
@@ -89,7 +94,7 @@ export function CheckboxDropdown(props: {
       </button>
       {open
         ? (
-          <div class="checkbox-dropdown__menu" role="group">
+          <div class="checkbox-dropdown__list" role="group">
             <label class="checkbox-dropdown__item">
               <input
                 type="checkbox"

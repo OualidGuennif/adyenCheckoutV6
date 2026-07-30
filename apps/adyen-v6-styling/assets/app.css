@@ -123,8 +123,10 @@ body {
   width: 100%;
 }
 
+/* Both sections collapse on every screen, phone or desktop: this is reference
+   material you open when you need it, not part of the checkout. */
 .test-cards__toggle {
-  display: none;
+  display: flex;
   width: 100%;
   min-height: 40px;
   align-items: center;
@@ -139,26 +141,24 @@ body {
   font-weight: 750;
 }
 
-/* The alternative dataset is collapsible everywhere, not just on phones —
-   it is reference material you open when you need it. */
-.test-cards__toggle--always {
-  display: flex;
-}
-
 .test-cards[data-open="false"] .test-cards__body {
   display: none;
 }
 
-.test-cards__toggle--always + .test-cards__body {
+.test-cards__body {
   margin-top: 10px;
 }
 
-/* Only phones fold the extra cards away, so the button is hidden by default
-   and revealed in the narrow breakpoint below. */
-.test-cards__more {
+/* Four everyday schemes are enough to start on any screen; the market-specific
+   ones stay one tap away rather than filling the column. */
+.test-cards[data-expanded="false"] .test-card[data-secondary="true"] {
   display: none;
+}
+
+.test-cards__more {
+  display: block;
   width: 100%;
-  padding: 6px 2px 0;
+  padding: 8px 2px 0;
   border: 0;
   background: none;
   color: var(--color-green-dark);
@@ -268,14 +268,6 @@ body {
   transform: none;
 }
 
-.test-card__pan--sm {
-  font-family: inherit;
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0;
-  color: var(--color-ink-muted);
-}
-
 .test-card__disclaimer {
   color: var(--color-ink-subtle);
   font-size: 0.64rem;
@@ -306,60 +298,65 @@ body {
   overflow: auto;
 }
 
-/* Full-width slim bar pinned above the panel tabs. Reads as a button — it has
-   a visible pill outline, an icon and an active press state — while still
-   spanning the panel so it never looks like a section heading. */
-.styling-reset {
+/* A toolbar rather than a lone button: naming the panel on the left gives the
+   reset something to sit against, so it reads as this panel's action instead
+   of a floating control with no obvious scope. */
+.styling-panel__bar {
   position: sticky;
   z-index: 3;
   top: 0;
   display: flex;
-  width: 100%;
   min-height: 42px;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 8px 12px;
-  border: 0;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 12px;
   border-bottom: 1px solid var(--color-border);
+  background: white;
+}
+
+.styling-panel__title {
+  color: var(--color-ink-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.styling-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
   background: white;
   color: var(--color-ink);
   cursor: pointer;
-  font-size: 0.76rem;
-  font-weight: 750;
-}
-
-.styling-reset__label {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 16px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 999px;
-  background: var(--color-surface-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
   transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
 }
 
-.styling-reset:hover .styling-reset__label {
+.styling-reset:hover {
   border-color: var(--color-green);
   background: var(--color-green-soft);
   color: var(--color-green-dark);
 }
 
-.styling-reset:active .styling-reset__label {
+.styling-reset:active {
   transform: translateY(1px);
 }
 
 .styling-reset:focus-visible {
+  border-color: var(--color-green);
+  box-shadow: var(--shadow-focus);
   outline: none;
 }
 
-.styling-reset:focus-visible .styling-reset__label {
-  border-color: var(--color-green);
-  box-shadow: var(--shadow-focus);
-}
-
-.styling-reset--success .styling-reset__label {
+/* Confirms the click landed — the panel itself snapping back to defaults is
+   otherwise the only feedback, and that is easy to miss. */
+.styling-reset--success {
   border-color: var(--color-green);
   background: var(--color-green-soft);
   color: var(--color-green-dark);
@@ -577,10 +574,13 @@ body {
   text-align: right;
 }
 
-/* Long option lists (address fields, 36 countries) fold into a dropdown so
-   they never swamp the panel. */
+/* Long option lists (address fields, 36 countries) fold behind a summary so
+   they never swamp the panel, and expand in the flow — a floating menu gets
+   clipped by .option-group's overflow and vanishes under the next section. */
 .checkbox-dropdown {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .checkbox-dropdown__toggle {
@@ -620,34 +620,40 @@ body {
   font-size: 0.7rem;
 }
 
-.checkbox-dropdown__menu {
-  position: absolute;
-  z-index: 5;
-  right: 0;
-  left: 0;
-  top: calc(100% + 4px);
-  max-height: 240px;
+/* Two columns keep 36 countries to a few lines instead of a long ribbon, and
+   the cap turns anything longer into a scroll rather than a page of its own. */
+.checkbox-dropdown__list {
+  display: grid;
+  max-height: 210px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
   padding: 5px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xs);
-  background: white;
-  box-shadow: var(--shadow-card);
+  background: var(--color-surface-muted);
   overflow-y: auto;
 }
 
 .checkbox-dropdown__item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: 7px;
+  padding: 5px 7px;
   border-radius: 6px;
   color: var(--color-ink);
   cursor: pointer;
-  font-size: 0.74rem;
+  font-size: 0.71rem;
+  line-height: 1.25;
+}
+
+/* "(empty)" is the default, not one option among many — it gets the full row. */
+.checkbox-dropdown__item:first-child {
+  grid-column: 1 / -1;
+  font-weight: 700;
 }
 
 .checkbox-dropdown__item:hover {
-  background: var(--color-surface-muted);
+  background: white;
 }
 
 .checkbox-dropdown__item input {
@@ -787,15 +793,13 @@ body {
     margin: 0;
   }
 
+  /* Wide enough to keep the tiles two per row and still leave the Drop-in the
+     larger half of the pair. */
   .test-data {
     position: sticky;
     top: 90px;
-    flex: 0 0 260px;
-    width: 260px;
-  }
-
-  .test-cards__list {
-    grid-template-columns: 1fr;
+    flex: 0 0 344px;
+    width: 344px;
   }
 }
 
@@ -804,24 +808,6 @@ body {
   .test-data {
     order: -1;
     max-width: none;
-  }
-
-  .test-cards__toggle {
-    display: flex;
-  }
-
-  .test-cards__list {
-    margin-top: 10px;
-  }
-
-  /* Only the four everyday schemes are worth the vertical space here; the
-     rest stay one tap away behind "Show more". */
-  .test-cards[data-expanded="false"] .test-card[data-secondary="true"] {
-    display: none;
-  }
-
-  .test-cards__more {
-    display: block;
   }
 
   /* A 3DS challenge replaces the method list with a shorter iframe; without a

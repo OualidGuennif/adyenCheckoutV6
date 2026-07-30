@@ -785,56 +785,6 @@ export const DEFAULT_NATIVE: NativeOptions = {
 
 export type SocialSecurityNumberMode = "auto" | "show" | "hide";
 export type BillingAddressMode = "full" | "partial" | "none";
-export type ChallengeWindowSize = "01" | "02" | "03" | "04" | "05";
-
-export const CHALLENGE_WINDOW_SIZES: [ChallengeWindowSize, string][] = [
-  ["01", "01 — 250 × 400"],
-  ["02", "02 — 390 × 400 (default)"],
-  ["03", "03 — 500 × 600"],
-  ["04", "04 — 600 × 400"],
-  ["05", "05 — full screen"],
-];
-
-/** Card types the component can recognise, from the supported card types list. */
-export const CARD_BRANDS: [string, string][] = [
-  ["mc", "Mastercard"],
-  ["visa", "Visa"],
-  ["amex", "Amex"],
-  ["cartebancaire", "Cartes Bancaires"],
-  ["bcmc", "Bancontact"],
-  ["maestro", "Maestro"],
-  ["maestrouk", "Maestro UK"],
-  ["diners", "Diners Club"],
-  ["discover", "Discover"],
-  ["jcb", "JCB"],
-  ["cup", "China Union Pay"],
-  ["dankort", "Dankort"],
-  ["visadankort", "Visa Dankort"],
-  ["electron", "Visa Electron"],
-  ["elo", "Elo"],
-  ["hiper", "Hiper"],
-  ["hipercard", "Hipercard"],
-  ["mir", "MIR"],
-  ["rupay", "RuPay"],
-  ["troy", "Troy"],
-  ["uatp", "UATP"],
-  ["argencard", "Argencard"],
-  ["cabal", "Cabal"],
-  ["codensa", "Codensa"],
-  ["naranja", "Naranja"],
-  ["shopping", "Tarjeta Shopping"],
-  ["forbrugsforeningen", "Forbrugsforeningen"],
-  ["laser", "Laser"],
-  ["solo", "Solo"],
-  ["bijcard", "de Bijenkorf Card"],
-  ["mcalphabankbonus", "Alpha Bank Mastercard Bonus"],
-  ["visaalphabankbonus", "Alpha Bank Visa Bonus"],
-  ["karenmillen", "Karen Millen gift card"],
-  ["oasis", "Oasis gift card"],
-  ["warehouse", "Warehouse gift card"],
-];
-
-export const DEFAULT_BRANDS = ["mc", "visa", "amex"];
 
 /** Adyen's own address schema, used for billingAddressRequiredFields. */
 export const ADDRESS_FIELDS: [string, string][] = [
@@ -876,14 +826,12 @@ export interface CardOptions {
   maskSecurityCode: boolean;
   showBrandIcon: boolean;
   showContextualElement: boolean;
-  brands: string[];
   placeholders: Partial<Record<PlaceholderKey, string>>;
   billingAddressRequired: boolean;
   billingAddressMode: BillingAddressMode;
   billingAddressAllowedCountries: string[];
   billingAddressRequiredFields: string[];
   autoFocus: boolean;
-  doBinLookup: boolean;
   keypadFix: boolean;
   legacyInputMode: boolean;
   disableIOSArrowKeys: boolean;
@@ -891,7 +839,6 @@ export interface CardOptions {
   exposeExpiryDate: boolean;
   enableStoreDetails: boolean;
   minimumExpiryDate: string;
-  challengeWindowSize: ChallengeWindowSize;
   socialSecurityNumberMode: SocialSecurityNumberMode;
   showInstallmentAmounts: boolean;
   disclaimerEnabled: boolean;
@@ -909,14 +856,12 @@ export const DEFAULT_CARD: CardOptions = {
   maskSecurityCode: false,
   showBrandIcon: true,
   showContextualElement: true,
-  brands: DEFAULT_BRANDS,
   placeholders: {},
   billingAddressRequired: false,
   billingAddressMode: "full",
   billingAddressAllowedCountries: [],
   billingAddressRequiredFields: [],
   autoFocus: true,
-  doBinLookup: true,
   keypadFix: true,
   legacyInputMode: false,
   disableIOSArrowKeys: false,
@@ -924,7 +869,6 @@ export const DEFAULT_CARD: CardOptions = {
   exposeExpiryDate: false,
   enableStoreDetails: false,
   minimumExpiryDate: "",
-  challengeWindowSize: "02",
   socialSecurityNumberMode: "auto",
   showInstallmentAmounts: false,
   disclaimerEnabled: false,
@@ -980,7 +924,6 @@ function sharedFieldOptions(styles: SecureStyles, card: CardOptions) {
     keypadFix: card.keypadFix,
     legacyInputMode: card.legacyInputMode,
     disableIOSArrowKeys: card.disableIOSArrowKeys,
-    challengeWindowSize: card.challengeWindowSize,
     ...placeholdersField(card),
     ...disclaimerMessageField(card),
   };
@@ -1008,8 +951,6 @@ export function cardConfigObject(styles: SecureStyles, card: CardOptions, countr
           : {}),
       }
       : {}),
-    ...(card.brands.length > 0 ? { brands: card.brands } : {}),
-    doBinLookup: card.doBinLookup,
     trimTrailingSeparator: card.trimTrailingSeparator,
     exposeExpiryDate: card.exposeExpiryDate,
     // Only sent when on: an explicit false can suppress the "save card"

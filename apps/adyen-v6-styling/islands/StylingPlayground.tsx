@@ -26,7 +26,6 @@ import {
   ADYEN_CSS_URL,
   ADYEN_WEB_VERSION,
   cardConfigObject,
-  CHALLENGE_WINDOW_SIZES,
   CSS_RULE_SPECS,
   CSS_TOKEN_GROUPS,
   CSS_TOKEN_SPECS,
@@ -53,7 +52,6 @@ import {
 import type {
   BillingAddressMode,
   CardOptions,
-  ChallengeWindowSize,
   CssRules,
   CssTokens,
   InstantPaymentType,
@@ -186,12 +184,10 @@ interface Mounted {
   unmount(): void;
 }
 
-const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {
-  "secure:Color": true,
-  "css:Labels": true,
-  "config:Drop-in": true,
-  "config:Card fields": true,
-};
+// Every group starts closed: the panel is a list of what you *can* change, and
+// opening one is the reader's choice. Anything open by default is just noise
+// between them and the section they came for.
+const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {};
 
 const PLACEHOLDERS_HINT = "placeholders — Adyen ships localised placeholders; anything " +
   "set here replaces them.";
@@ -641,16 +637,17 @@ export default function StylingPlayground() {
           <TestCards />
         </section>
         <aside id="styling-panel" class="styling-panel">
-          <button
-            class={`styling-reset${successFlash ? " styling-reset--success" : ""}`}
-            type="button"
-            onClick={reset}
-          >
-            <span class="styling-reset__label">
+          <div class="styling-panel__bar">
+            <span class="styling-panel__title">Customisation</span>
+            <button
+              class={`styling-reset${successFlash ? " styling-reset--success" : ""}`}
+              type="button"
+              onClick={reset}
+            >
               <ResetIcon />
-              Reset all options
-            </span>
-          </button>
+              {successFlash ? "Reset" : "Reset all"}
+            </button>
+          </div>
           <div class="styling-tabs" role="tablist">
             <button
               type="button"
@@ -952,10 +949,13 @@ export default function StylingPlayground() {
                               id="card-billing-required"
                               items={ADDRESS_FIELDS}
                               selected={cardOptions.billingAddressRequiredFields}
-                              emptyLabel="(empty) — Adyen's per-country schema"
+                              emptyLabel="(empty) no required fields"
                               onChange={(next) => updateCard("billingAddressRequiredFields", next)}
                             />
-                            <small>billingAddressRequiredFields</small>
+                            <small>
+                              billingAddressRequiredFields — empty means Adyen applies its own
+                              per-country schema.
+                            </small>
                           </div>
                           <div class="field">
                             <label for="card-billing-countries">Allowed countries</label>
@@ -963,11 +963,14 @@ export default function StylingPlayground() {
                               id="card-billing-countries"
                               items={COUNTRY_ITEMS}
                               selected={cardOptions.billingAddressAllowedCountries}
-                              emptyLabel="(empty) — every country"
+                              emptyLabel="(empty) all countries"
                               onChange={(next) =>
                                 updateCard("billingAddressAllowedCountries", next)}
                             />
-                            <small>billingAddressAllowedCountries</small>
+                            <small>
+                              billingAddressAllowedCountries — empty means every country Adyen
+                              supports.
+                            </small>
                           </div>
                         </>
                       )
@@ -986,38 +989,38 @@ export default function StylingPlayground() {
                       onChange={(value) => updateCard("autoFocus", value)}
                     />
                     <SwitchRow
-                      label="BIN lookup"
-                      hint="doBinLookup — brand detection while the PAN is typed"
-                      checked={cardOptions.doBinLookup}
-                      onChange={(value) => updateCard("doBinLookup", value)}
-                    />
-                    <SwitchRow
                       label="Trim trailing separator"
-                      hint="trimTrailingSeparator"
+                      hint={"trimTrailingSeparator — once the PAN reaches a valid length, " +
+                        "drops the space formatting just added after it."}
                       checked={cardOptions.trimTrailingSeparator}
                       onChange={(value) => updateCard("trimTrailingSeparator", value)}
                     />
                     <SwitchRow
                       label="iOS keypad fix"
-                      hint="keypadFix"
+                      hint={"keypadFix — works around an iOS/Safari bug where the keypad " +
+                        "stays up after the card field is no longer active."}
                       checked={cardOptions.keypadFix}
                       onChange={(value) => updateCard("keypadFix", value)}
                     />
                     <SwitchRow
                       label="Legacy input mode"
-                      hint="legacyInputMode — type=tel instead of numeric text"
+                      hint={"legacyInputMode — gives the fields type=tel instead of " +
+                        'type=text inputmode="numeric", for keyboards that ignore inputmode.'}
                       checked={cardOptions.legacyInputMode}
                       onChange={(value) => updateCard("legacyInputMode", value)}
                     />
                     <SwitchRow
                       label="Disable iOS arrow keys"
-                      hint="disableIOSArrowKeys"
+                      hint={"disableIOSArrowKeys — hides the ‹ › keys above the iOS keyboard, " +
+                        "which otherwise jump focus out of the secured field."}
                       checked={cardOptions.disableIOSArrowKeys}
                       onChange={(value) => updateCard("disableIOSArrowKeys", value)}
                     />
                     <SwitchRow
                       label="Expose expiry date"
-                      hint="exposeExpiryDate — returns it unencrypted in the state"
+                      hint={"exposeExpiryDate — the secured field also returns the expiry " +
+                        "unencrypted. Only the expiry, never the PAN, so it stays out of " +
+                        "PCI scope — but it does leave the iframe in clear."}
                       checked={cardOptions.exposeExpiryDate}
                       onChange={(value) => updateCard("exposeExpiryDate", value)}
                     />
@@ -1040,22 +1043,6 @@ export default function StylingPlayground() {
                           !isValidExpiryDate(cardOptions.minimumExpiryDate)
                         ? <small class="field-warning">Use the mm/yy format.</small>
                         : <small>minimumExpiryDate — rejects cards expiring before this.</small>}
-                    </Field>
-                    <Field label="3-D Secure challenge size" htmlFor="card-challenge-size">
-                      <select
-                        id="card-challenge-size"
-                        value={cardOptions.challengeWindowSize}
-                        onChange={(event) =>
-                          updateCard(
-                            "challengeWindowSize",
-                            event.currentTarget.value as ChallengeWindowSize,
-                          )}
-                      >
-                        {CHALLENGE_WINDOW_SIZES.map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
-                        ))}
-                      </select>
-                      <small>challengeWindowSize</small>
                     </Field>
                   </OptionGroup>
                   {socialSecurityMarket || installmentMarket

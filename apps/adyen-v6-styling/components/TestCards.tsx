@@ -10,8 +10,8 @@ interface TestCard {
 
 /**
  * The first four are the everyday schemes; the rest are the ones you only
- * reach for when testing a specific market or flow, so small screens show
- * them behind "Show more".
+ * reach for when testing a specific market or flow, so every screen starts
+ * with these four and keeps the others behind "Show more".
  */
 const PRIMARY_CARD_COUNT = 4;
 
@@ -28,35 +28,49 @@ const TEST_CARDS: TestCard[] = [
 
 interface AltMethod {
   name: string;
-  value: string;
+  /** The pasteable credential. Absent on wallets, which have none. */
+  value?: string;
   note?: string;
-  /** Rendered in italics under the value — for methods you can't fully fake. */
+  /** Second line under the value, as on a card tile: PIN, expiry, and so on. */
+  detail?: string;
+  /** Rendered in italics — for wallets you can only test with your own account. */
   disclaimer?: { text: string; linkLabel: string; href: string };
 }
 
+/**
+ * Wallets first: they are the ones people reach for and the ones that need
+ * explaining. Then the gift card, then Klarna — whose flow only needs the
+ * approved shopper phone number for the market you are testing.
+ */
 const ALT_METHODS: AltMethod[] = [
-  { name: "Givex", note: "gift card", value: "6036 2800 0000 0000 000" },
-  { name: "Klarna — Netherlands", note: "NL", value: "Any NL address · DOB 01/01/1970" },
-  { name: "Klarna — Germany", note: "DE", value: "Any DE address · DOB 01/07/1960" },
-  { name: "Klarna — United States", note: "US", value: "Any US address · phone 3106683312" },
   {
     name: "Apple Pay",
-    value: "Not simulatable from this playground",
     disclaimer: {
-      text: "You need your own Apple sandbox account and a verified domain.",
+      text: "You need your own Apple sandbox account to perform test transactions, " +
+        "please visit:",
       linkLabel: "Apple Pay sandbox testing",
       href: "https://developer.apple.com/apple-pay/sandbox-testing/",
     },
   },
   {
     name: "PayPal",
-    value: "Not simulatable from this playground",
     disclaimer: {
-      text: "You need to generate your own PayPal personal (sandbox) account.",
+      text: "You need your own PayPal sandbox account to perform test transactions, " +
+        "please visit:",
       linkLabel: "PayPal sandbox accounts",
       href: "https://developer.paypal.com/sandbox-testing/accounts",
     },
   },
+  {
+    name: "Gift card",
+    note: "givex",
+    value: "6036 2800 0000 0000 000",
+    detail: "PIN 122222",
+  },
+  { name: "Klarna", note: "NL", value: "+31 689124321", detail: "approved shopper" },
+  { name: "Klarna", note: "FR", value: "+33 689854321", detail: "approved shopper" },
+  { name: "Klarna", note: "DE", value: "+49 017614284340", detail: "approved shopper" },
+  { name: "Klarna", note: "US", value: "+1 3106683312", detail: "approved shopper" },
 ];
 
 const KLARNA_DOCS =
@@ -78,8 +92,8 @@ function useCopy() {
 
 /**
  * Test credentials sit one tap away from the Drop-in instead of behind a trip
- * to the docs. Cards are open by default; the alternative methods — which are
- * mostly pointers rather than numbers you paste — start collapsed.
+ * to the docs. Both sections collapse on every screen — this is reference
+ * material, and the checkout is what the page is about.
  */
 export function TestCards() {
   const [cardsOpen, setCardsOpen] = useState(true);
@@ -87,7 +101,7 @@ export function TestCards() {
   const [showAllCards, setShowAllCards] = useState(false);
   const { copied, copy } = useCopy();
 
-  const hiddenOnMobile = TEST_CARDS.length - PRIMARY_CARD_COUNT;
+  const foldedAway = TEST_CARDS.length - PRIMARY_CARD_COUNT;
 
   return (
     <div class="test-data">
@@ -135,7 +149,7 @@ export function TestCards() {
             type="button"
             onClick={() => setShowAllCards(!showAllCards)}
           >
-            {showAllCards ? "Show less" : `Show ${hiddenOnMobile} more`}
+            {showAllCards ? "Show less" : `Show ${foldedAway} more`}
           </button>
         </div>
       </section>
@@ -146,7 +160,7 @@ export function TestCards() {
         aria-label="Alternative payment dataset"
       >
         <button
-          class="test-cards__toggle test-cards__toggle--always"
+          class="test-cards__toggle"
           type="button"
           aria-expanded={altOpen}
           onClick={() => setAltOpen(!altOpen)}
@@ -157,13 +171,14 @@ export function TestCards() {
         <div class="test-cards__body">
           <div class="test-cards__list">
             {ALT_METHODS.map((method) => {
+              const key = `${method.name}-${method.note ?? ""}`;
               const content = (
                 <>
                   <span class="test-card__top">
                     <span class="test-card__scheme">{method.name}</span>
                     {method.note ? <span class="test-card__note">{method.note}</span> : null}
                   </span>
-                  <span class="test-card__pan test-card__pan--sm">{method.value}</span>
+                  {method.value ? <span class="test-card__pan">{method.value}</span> : null}
                   {method.disclaimer
                     ? (
                       <span class="test-card__disclaimer">
@@ -180,6 +195,7 @@ export function TestCards() {
                     )
                     : (
                       <span class="test-card__bottom">
+                        {method.detail ? <span>{method.detail}</span> : null}
                         <span class="test-card__copy">
                           {copied === method.value ? "Copied" : "Copy"}
                         </span>
@@ -187,21 +203,21 @@ export function TestCards() {
                     )}
                 </>
               );
-              // Only the pasteable ones are buttons; the pointer-only cards
-              // would be a button that does nothing.
-              return method.disclaimer
-                ? <div class="test-card test-card--static" key={method.name}>{content}</div>
-                : (
+              // Only the pasteable ones are buttons; a wallet tile carries no
+              // credential, so a button there would do nothing when pressed.
+              return method.value
+                ? (
                   <button
                     class="test-card"
                     type="button"
-                    key={method.name}
+                    key={key}
                     title={`Copy ${method.value}`}
-                    onClick={() => copy(method.value)}
+                    onClick={() => copy(method.value as string)}
                   >
                     {content}
                   </button>
-                );
+                )
+                : <div class="test-card test-card--static" key={key}>{content}</div>;
             })}
           </div>
           <a
