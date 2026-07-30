@@ -1,7 +1,7 @@
 import { AdyenCheckout, Dropin } from "@adyen/adyen-web";
 import type { Core } from "@adyen/adyen-web";
 import { apiFetch } from "@suite/ui/client.ts";
-import { AdyenWordmark, Field, TestDataAndTools } from "@suite/ui/components.tsx";
+import { AdyenWordmark, Field } from "@suite/ui/components.tsx";
 import {
   detectCountryFromLanguages,
   FALLBACK_COUNTRY,
@@ -15,12 +15,16 @@ import {
 import "@suite/ui/registerPaymentMethods.ts";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { TestCards } from "../components/TestCards.tsx";
-import { CheckboxCloud, OptionGroup, OptionRow, SwitchRow } from "../components/OptionFields.tsx";
+import {
+  CheckboxDropdown,
+  OptionGroup,
+  OptionRow,
+  SwitchRow,
+} from "../components/OptionFields.tsx";
 import {
   ADDRESS_FIELDS,
   ADYEN_CSS_URL,
   ADYEN_WEB_VERSION,
-  CARD_BRANDS,
   cardConfigObject,
   CHALLENGE_WINDOW_SIZES,
   CSS_RULE_SPECS,
@@ -31,7 +35,6 @@ import {
   cssText,
   cssTokenSetCount,
   cssTokenSpec,
-  DEFAULT_BRANDS,
   DEFAULT_CARD,
   DEFAULT_CSS_RULES,
   DEFAULT_NATIVE,
@@ -190,24 +193,11 @@ const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {
   "config:Card fields": true,
 };
 
-const BRANDS_HINT = "brands — which card types the component recognises. Adyen defaults " +
-  "to Mastercard, Visa and Amex; what you can actually charge still depends on your account.";
-
 const PLACEHOLDERS_HINT = "placeholders — Adyen ships localised placeholders; anything " +
   "set here replaces them.";
 
 const RULES_HINT = "No design token covers these, so they are written against Adyen's own " +
   "class names — review them after every SDK upgrade.";
-
-function matchesFilter(filter: string, ...values: string[]): boolean {
-  if (!filter) return true;
-  const needle = filter.trim().toLowerCase();
-  return values.some((value) => value.toLowerCase().includes(needle));
-}
-
-function withValue(list: string[], value: string, checked: boolean): string[] {
-  return checked ? [...list, value] : list.filter((entry) => entry !== value);
-}
 
 function download(name: string, content: string, type: string) {
   const link = document.createElement("a");
@@ -304,7 +294,6 @@ export default function StylingPlayground() {
   const [availableMethods, setAvailableMethods] = useState<AvailableMethod[]>([]);
   const [section, setSection] = useState<"styling" | "configuration" | "css">("configuration");
   const [openGroups, setOpenGroups] = useState(DEFAULT_OPEN_GROUPS);
-  const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successFlash, setSuccessFlash] = useState(false);
@@ -446,6 +435,11 @@ export default function StylingPlayground() {
         flashSuccess();
       },
       onPaymentFailed: () => undefined,
+      // Swapping the method list for a 3DS challenge changes the host's
+      // height, and on a phone — where the dataset sits above the Drop-in —
+      // that leaves the challenge scrolled off screen. Bring it back into
+      // view once Adyen has actually rendered the action.
+      onActionHandled: () => revealDropin(),
       onError: (cause: Error) => {
         if (isNonFatalWalletError(cause)) return;
         setError(cause.message);
@@ -539,6 +533,21 @@ export default function StylingPlayground() {
     setLocale(nextLocale);
   }
 
+  /**
+   * Scrolls the Drop-in back under the viewport top. Only does anything on the
+   * stacked (phone) layout, where the host can leave the screen; on the
+   * side-by-side layout it is already in view and moving the page would be
+   * the more surprising behaviour.
+   */
+  function revealDropin() {
+    if (typeof globalThis.matchMedia !== "function") return;
+    if (!globalThis.matchMedia("(max-width: 900px)").matches) return;
+    // Let Adyen finish swapping the DOM before measuring where it landed.
+    requestAnimationFrame(() => {
+      host.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
   function flashSuccess() {
     setSuccessFlash(true);
     setTimeout(() => setSuccessFlash(false), 2500);
@@ -565,11 +574,10 @@ export default function StylingPlayground() {
 
   function selectSection(next: "styling" | "configuration" | "css") {
     setSection(next);
-    setFilter("");
   }
 
   function groupOpen(key: string): boolean {
-    return filter ? true : openGroups[key] === true;
+    return openGroups[key] === true;
   }
 
   function setGroupOpen(key: string, open: boolean) {
@@ -589,7 +597,6 @@ export default function StylingPlayground() {
           <small class="styling-brand__sdk">Adyen Web SDK {ADYEN_WEB_VERSION}</small>
         </div>
         <div class="toolbar-markets">
-          <TestDataAndTools />
           <div class="toolbar-country">
             <select
               id="preview-country"
@@ -651,7 +658,7 @@ export default function StylingPlayground() {
               aria-selected={section === "styling"}
               onClick={() => selectSection("styling")}
             >
-              Secured fields
+              Native Styling
             </button>
             <button
               type="button"
@@ -714,18 +721,9 @@ export default function StylingPlayground() {
                     })}
                   </div>
                   <p class="option-group__hint">{SECURE_STATE_META[secureState].hint}</p>
-                  <input
-                    class="styling-filter"
-                    type="search"
-                    value={filter}
-                    placeholder="Filter properties…"
-                    aria-label="Filter properties"
-                    onInput={(event) => setFilter(event.currentTarget.value)}
-                  />
                   {SECURE_GROUPS.map((group) => {
                     const specs = SECURE_PROPERTY_SPECS
-                      .filter((spec) => spec.group === group)
-                      .filter((spec) => matchesFilter(filter, spec.property, group));
+                      .filter((spec) => spec.group === group);
                     if (specs.length === 0) return null;
                     const key = `secure:${group}`;
                     return (
@@ -900,36 +898,6 @@ export default function StylingPlayground() {
                     />
                   </OptionGroup>
                   <OptionGroup
-                    title="Accepted brands"
-                    hint={BRANDS_HINT}
-                    count={cardOptions.brands.length}
-                    open={groupOpen("config:Brands")}
-                    onToggle={(open) => setGroupOpen("config:Brands", open)}
-                  >
-                    <div class="option-group__actions">
-                      <button
-                        type="button"
-                        class="button button--quiet button--small"
-                        onClick={() => updateCard("brands", CARD_BRANDS.map(([value]) => value))}
-                      >
-                        Select all
-                      </button>
-                      <button
-                        type="button"
-                        class="button button--quiet button--small"
-                        onClick={() => updateCard("brands", DEFAULT_BRANDS)}
-                      >
-                        Adyen default
-                      </button>
-                    </div>
-                    <CheckboxCloud
-                      items={CARD_BRANDS}
-                      selected={cardOptions.brands}
-                      onToggle={(value, checked) =>
-                        updateCard("brands", withValue(cardOptions.brands, value, checked))}
-                    />
-                  </OptionGroup>
-                  <OptionGroup
                     title="Placeholders"
                     hint={PLACEHOLDERS_HINT}
                     count={Object.values(cardOptions.placeholders).filter(Boolean).length}
@@ -979,43 +947,27 @@ export default function StylingPlayground() {
                             <small>billingAddressMode</small>
                           </Field>
                           <div class="field">
-                            <span>Required fields</span>
-                            <CheckboxCloud
+                            <label for="card-billing-required">Required fields</label>
+                            <CheckboxDropdown
+                              id="card-billing-required"
                               items={ADDRESS_FIELDS}
                               selected={cardOptions.billingAddressRequiredFields}
-                              onToggle={(value, checked) =>
-                                updateCard(
-                                  "billingAddressRequiredFields",
-                                  withValue(
-                                    cardOptions.billingAddressRequiredFields,
-                                    value,
-                                    checked,
-                                  ),
-                                )}
+                              emptyLabel="(empty) — Adyen's per-country schema"
+                              onChange={(next) => updateCard("billingAddressRequiredFields", next)}
                             />
-                            <small>
-                              billingAddressRequiredFields — leave empty for Adyen's own per-country
-                              schema.
-                            </small>
+                            <small>billingAddressRequiredFields</small>
                           </div>
                           <div class="field">
-                            <span>Allowed countries</span>
-                            <CheckboxCloud
+                            <label for="card-billing-countries">Allowed countries</label>
+                            <CheckboxDropdown
+                              id="card-billing-countries"
                               items={COUNTRY_ITEMS}
                               selected={cardOptions.billingAddressAllowedCountries}
-                              onToggle={(value, checked) =>
-                                updateCard(
-                                  "billingAddressAllowedCountries",
-                                  withValue(
-                                    cardOptions.billingAddressAllowedCountries,
-                                    value,
-                                    checked,
-                                  ),
-                                )}
+                              emptyLabel="(empty) — every country"
+                              onChange={(next) =>
+                                updateCard("billingAddressAllowedCountries", next)}
                             />
-                            <small>
-                              billingAddressAllowedCountries — leave empty for the full list.
-                            </small>
+                            <small>billingAddressAllowedCountries</small>
                           </div>
                         </>
                       )
@@ -1240,14 +1192,6 @@ export default function StylingPlayground() {
                     </a>
                   </p>
                   <div class="styling-filter-row">
-                    <input
-                      class="styling-filter"
-                      type="search"
-                      value={filter}
-                      placeholder="Filter custom properties…"
-                      aria-label="Filter custom properties"
-                      onInput={(event) => setFilter(event.currentTarget.value)}
-                    />
                     {tokenOverrides
                       ? (
                         <button
@@ -1261,9 +1205,7 @@ export default function StylingPlayground() {
                       : null}
                   </div>
                   {CSS_TOKEN_GROUPS.map((group) => {
-                    const specs = CSS_TOKEN_SPECS
-                      .filter((spec) => spec.group === group)
-                      .filter((spec) => matchesFilter(filter, spec.token, spec.label, group));
+                    const specs = CSS_TOKEN_SPECS.filter((spec) => spec.group === group);
                     if (specs.length === 0) return null;
                     const key = `css:${group}`;
                     return (

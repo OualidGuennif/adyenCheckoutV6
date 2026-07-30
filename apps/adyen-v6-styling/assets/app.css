@@ -111,9 +111,16 @@ body {
 
 /* Translucent tiles, Wallet-style: the PAN is the point, so it is the only
    thing set in a large mono face and the whole tile is the copy button. */
-.test-cards {
+.test-data {
+  display: flex;
   width: 100%;
   max-width: 650px;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.test-cards {
+  width: 100%;
 }
 
 .test-cards__toggle {
@@ -130,6 +137,44 @@ body {
   cursor: pointer;
   font-size: 0.76rem;
   font-weight: 750;
+}
+
+/* The alternative dataset is collapsible everywhere, not just on phones —
+   it is reference material you open when you need it. */
+.test-cards__toggle--always {
+  display: flex;
+}
+
+.test-cards[data-open="false"] .test-cards__body {
+  display: none;
+}
+
+.test-cards__toggle--always + .test-cards__body {
+  margin-top: 10px;
+}
+
+/* Only phones fold the extra cards away, so the button is hidden by default
+   and revealed in the narrow breakpoint below. */
+.test-cards__more {
+  display: none;
+  width: 100%;
+  padding: 6px 2px 0;
+  border: 0;
+  background: none;
+  color: var(--color-green-dark);
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 750;
+  text-align: right;
+}
+
+.test-cards__more--link {
+  display: block;
+  text-decoration: none;
+}
+
+.test-cards__more:hover {
+  text-decoration: underline;
 }
 
 .test-cards__chevron {
@@ -209,6 +254,37 @@ body {
   margin-left: auto;
   color: var(--color-green-dark);
   font-weight: 800;
+}
+
+/* Wallets can't be faked from here, so their tile is informational: no copy
+   affordance, no hover lift, just the pointer to the provider's sandbox. */
+.test-card--static {
+  cursor: default;
+}
+
+.test-card--static:hover {
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 6px 18px rgba(0, 17, 44, 0.08);
+  transform: none;
+}
+
+.test-card__pan--sm {
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--color-ink-muted);
+}
+
+.test-card__disclaimer {
+  color: var(--color-ink-subtle);
+  font-size: 0.64rem;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.test-card__disclaimer a {
+  color: var(--color-ink-muted);
 }
 
 .styling-preview .dropin-host {
@@ -501,36 +577,84 @@ body {
   text-align: right;
 }
 
-.checkbox-cloud {
+/* Long option lists (address fields, 36 countries) fold into a dropdown so
+   they never swamp the panel. */
+.checkbox-dropdown {
+  position: relative;
+}
+
+.checkbox-dropdown__toggle {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.checkbox-chip {
-  display: inline-flex;
+  width: 100%;
+  min-height: 42px;
   align-items: center;
-  gap: 5px;
-  padding: 5px 9px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 11px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
   background: white;
-  color: var(--color-ink-muted);
+  color: var(--color-ink);
   cursor: pointer;
-  font-size: 0.68rem;
-  font-weight: 650;
+  font-size: 0.76rem;
+  text-align: left;
 }
 
-.checkbox-chip input {
-  width: 13px;
-  height: 13px;
-  accent-color: var(--color-green);
+.checkbox-dropdown__toggle:hover {
+  border-color: #8993a1;
 }
 
-.checkbox-chip--on {
+.checkbox-dropdown[data-open="true"] .checkbox-dropdown__toggle {
   border-color: var(--color-green);
-  background: var(--color-green-soft);
-  color: var(--color-green-dark);
+}
+
+.checkbox-dropdown__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.checkbox-dropdown__chevron {
+  flex: 0 0 auto;
+  color: var(--color-ink-muted);
+  font-size: 0.7rem;
+}
+
+.checkbox-dropdown__menu {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  left: 0;
+  top: calc(100% + 4px);
+  max-height: 240px;
+  padding: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  background: white;
+  box-shadow: var(--shadow-card);
+  overflow-y: auto;
+}
+
+.checkbox-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--color-ink);
+  cursor: pointer;
+  font-size: 0.74rem;
+}
+
+.checkbox-dropdown__item:hover {
+  background: var(--color-surface-muted);
+}
+
+.checkbox-dropdown__item input {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  accent-color: var(--color-green);
 }
 
 .styling-segmented {
@@ -645,23 +769,29 @@ body {
   max-height: 220px;
 }
 
-/* Wide enough for the tiles to stand beside the Drop-in without squeezing
-   it: below this they stack under it, still inside the preview column. */
-@media (min-width: 1500px) {
+/* The Drop-in and the dataset stand side by side as one centred pair, so the
+   preview column reads as a composition instead of two blocks pushed left
+   with dead space beside them. 1180px is where both still fit at full width. */
+@media (min-width: 1180px) {
   .styling-preview {
     flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 28px;
   }
 
   .styling-preview .dropin-host {
-    flex: 1 1 auto;
+    flex: 1 1 620px;
     min-width: 0;
+    max-width: 650px;
+    margin: 0;
   }
 
-  .test-cards {
+  .test-data {
     position: sticky;
     top: 90px;
-    flex: 0 0 210px;
-    width: 210px;
+    flex: 0 0 260px;
+    width: 260px;
   }
 
   .test-cards__list {
@@ -671,7 +801,7 @@ body {
 
 @media (max-width: 900px) {
   /* The checkout is the page on a phone: the tiles go above it, folded. */
-  .test-cards {
+  .test-data {
     order: -1;
     max-width: none;
   }
@@ -680,12 +810,24 @@ body {
     display: flex;
   }
 
-  .test-cards[data-open="false"] .test-cards__list {
+  .test-cards__list {
+    margin-top: 10px;
+  }
+
+  /* Only the four everyday schemes are worth the vertical space here; the
+     rest stay one tap away behind "Show more". */
+  .test-cards[data-expanded="false"] .test-card[data-secondary="true"] {
     display: none;
   }
 
-  .test-cards__list {
-    margin-top: 10px;
+  .test-cards__more {
+    display: block;
+  }
+
+  /* A 3DS challenge replaces the method list with a shorter iframe; without a
+     floor the host collapses and the page jumps under the reader. */
+  .styling-preview .dropin-host {
+    min-height: 70vh;
   }
 
   .styling-layout {

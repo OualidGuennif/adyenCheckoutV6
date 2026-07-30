@@ -55,26 +55,70 @@ export function SwitchRow(props: {
   );
 }
 
-export function CheckboxCloud(props: {
+/**
+ * A checkbox list folded into a dropdown, for options whose full set is long
+ * enough that a flat cloud of chips swamps the panel. "(empty)" is a real
+ * entry rather than a hint, since leaving the list empty is the meaningful
+ * default: Adyen then applies its own per-country schema.
+ */
+export function CheckboxDropdown(props: {
+  id: string;
   items: [string, string][];
   selected: string[];
-  onToggle: (value: string, checked: boolean) => void;
+  emptyLabel: string;
+  onChange: (next: string[]) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const summary = props.selected.length === 0
+    ? props.emptyLabel
+    : props.selected.length <= 3
+    ? props.selected.join(", ")
+    : `${props.selected.length} selected`;
+
   return (
-    <div class="checkbox-cloud">
-      {props.items.map(([value, label]) => {
-        const on = props.selected.includes(value);
-        return (
-          <label key={value} class={`checkbox-chip${on ? " checkbox-chip--on" : ""}`}>
-            <input
-              type="checkbox"
-              checked={on}
-              onChange={(event) => props.onToggle(value, event.currentTarget.checked)}
-            />
-            {label}
-          </label>
-        );
-      })}
+    <div class="checkbox-dropdown" data-open={open ? "true" : "false"}>
+      <button
+        type="button"
+        id={props.id}
+        class="checkbox-dropdown__toggle"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        <span class="checkbox-dropdown__value">{summary}</span>
+        <span class="checkbox-dropdown__chevron" aria-hidden="true">▾</span>
+      </button>
+      {open
+        ? (
+          <div class="checkbox-dropdown__menu" role="group">
+            <label class="checkbox-dropdown__item">
+              <input
+                type="checkbox"
+                checked={props.selected.length === 0}
+                onChange={() => props.onChange([])}
+              />
+              {props.emptyLabel}
+            </label>
+            {props.items.map(([value, label]) => {
+              const on = props.selected.includes(value);
+              return (
+                <label key={value} class="checkbox-dropdown__item">
+                  <input
+                    type="checkbox"
+                    checked={on}
+                    onChange={(event) =>
+                      props.onChange(
+                        event.currentTarget.checked
+                          ? [...props.selected, value]
+                          : props.selected.filter((entry) => entry !== value),
+                      )}
+                  />
+                  {label}
+                </label>
+              );
+            })}
+          </div>
+        )
+        : null}
     </div>
   );
 }

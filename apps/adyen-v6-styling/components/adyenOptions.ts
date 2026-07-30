@@ -42,7 +42,7 @@ const FONT_SMOOTHING = ["antialiased", "subpixel-antialiased", "none"];
  * iframes, so no page CSS can reach them: they are styled exclusively through
  * this object, and only these four states exist.
  */
-export const SECURE_STATES = ["base", "error", "placeholder", "validated"] as const;
+export const SECURE_STATES = ["base", "placeholder", "error", "validated"] as const;
 export type SecureState = typeof SECURE_STATES[number];
 
 export const SECURE_STATE_META: Record<SecureState, { label: string; hint: string }> = {
