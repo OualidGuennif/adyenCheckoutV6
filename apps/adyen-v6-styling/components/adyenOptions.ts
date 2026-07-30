@@ -835,9 +835,7 @@ export interface CardOptions {
   keypadFix: boolean;
   legacyInputMode: boolean;
   disableIOSArrowKeys: boolean;
-  trimTrailingSeparator: boolean;
   exposeExpiryDate: boolean;
-  enableStoreDetails: boolean;
   minimumExpiryDate: string;
   socialSecurityNumberMode: SocialSecurityNumberMode;
   showInstallmentAmounts: boolean;
@@ -864,10 +862,8 @@ export const DEFAULT_CARD: CardOptions = {
   autoFocus: true,
   keypadFix: true,
   legacyInputMode: false,
-  disableIOSArrowKeys: false,
-  trimTrailingSeparator: true,
+  disableIOSArrowKeys: true,
   exposeExpiryDate: false,
-  enableStoreDetails: false,
   minimumExpiryDate: "",
   socialSecurityNumberMode: "auto",
   showInstallmentAmounts: false,
@@ -951,11 +947,7 @@ export function cardConfigObject(styles: SecureStyles, card: CardOptions, countr
           : {}),
       }
       : {}),
-    trimTrailingSeparator: card.trimTrailingSeparator,
     exposeExpiryDate: card.exposeExpiryDate,
-    // Only sent when on: an explicit false can suppress the "save card"
-    // checkbox the session itself asked for.
-    ...(card.enableStoreDetails ? { enableStoreDetails: true } : {}),
     ...(isValidExpiryDate(card.minimumExpiryDate)
       ? { minimumExpiryDate: card.minimumExpiryDate }
       : {}),

@@ -989,13 +989,6 @@ export default function StylingPlayground() {
                       onChange={(value) => updateCard("autoFocus", value)}
                     />
                     <SwitchRow
-                      label="Trim trailing separator"
-                      hint={"trimTrailingSeparator — once the PAN reaches a valid length, " +
-                        "drops the space formatting just added after it."}
-                      checked={cardOptions.trimTrailingSeparator}
-                      onChange={(value) => updateCard("trimTrailingSeparator", value)}
-                    />
-                    <SwitchRow
                       label="iOS keypad fix"
                       hint={"keypadFix — works around an iOS/Safari bug where the keypad " +
                         "stays up after the card field is no longer active."}
@@ -1023,12 +1016,6 @@ export default function StylingPlayground() {
                         "PCI scope — but it does leave the iframe in clear."}
                       checked={cardOptions.exposeExpiryDate}
                       onChange={(value) => updateCard("exposeExpiryDate", value)}
-                    />
-                    <SwitchRow
-                      label="Store details checkbox"
-                      hint="enableStoreDetails — also needs the session to allow storing"
-                      checked={cardOptions.enableStoreDetails}
-                      onChange={(value) => updateCard("enableStoreDetails", value)}
                     />
                     <Field label="Minimum expiry date" htmlFor="card-min-expiry">
                       <input

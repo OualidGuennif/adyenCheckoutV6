@@ -189,6 +189,13 @@ body {
   gap: 10px;
 }
 
+/* An odd number of tiles (the alternative set has seven) would leave the last
+   one alone with a hole beside it; letting it span both columns closes the
+   row instead of ending the section on a gap. */
+.test-cards__list > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
 .test-card {
   display: flex;
   flex-direction: column;
@@ -323,25 +330,27 @@ body {
   text-transform: uppercase;
 }
 
+/* Carries Adyen's green at rest rather than only on hover: it is the one
+   control in this panel that undoes everything, so it has to be findable
+   without hunting for it among forty neutral rows. */
 .styling-reset {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 5px 13px;
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-green);
   border-radius: 999px;
-  background: white;
-  color: var(--color-ink);
+  background: var(--color-green-soft);
+  color: var(--color-green-dark);
   cursor: pointer;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 750;
   transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
 }
 
 .styling-reset:hover {
-  border-color: var(--color-green);
-  background: var(--color-green-soft);
-  color: var(--color-green-dark);
+  background: var(--color-green);
+  color: white;
 }
 
 .styling-reset:active {
@@ -355,11 +364,11 @@ body {
 }
 
 /* Confirms the click landed — the panel itself snapping back to defaults is
-   otherwise the only feedback, and that is easy to miss. */
+   otherwise the only feedback, and that is easy to miss. Fills solid, since
+   the resting state is already tinted. */
 .styling-reset--success {
-  border-color: var(--color-green);
-  background: var(--color-green-soft);
-  color: var(--color-green-dark);
+  background: var(--color-green);
+  color: white;
 }
 
 .styling-reset svg {
@@ -620,46 +629,52 @@ body {
   font-size: 0.7rem;
 }
 
-/* Two columns keep 36 countries to a few lines instead of a long ribbon, and
-   the cap turns anything longer into a scroll rather than a page of its own. */
+/* One option per row, tight enough that the whole list reads as a single
+   control rather than a second page inside the panel. */
 .checkbox-dropdown__list {
-  display: grid;
-  max-height: 210px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px;
-  padding: 5px;
+  max-height: 196px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xs);
-  background: var(--color-surface-muted);
-  overflow-y: auto;
+  overflow: hidden auto;
 }
 
+/* Banded rows: with no gaps and no per-row border, the alternating fill is
+   what separates one option from the next while you scan down. */
 .checkbox-dropdown__item {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 7px;
-  border-radius: 6px;
+  gap: 8px;
+  padding: 4px 10px;
+  background: white;
   color: var(--color-ink);
   cursor: pointer;
   font-size: 0.71rem;
-  line-height: 1.25;
+  line-height: 1.5;
+  white-space: nowrap;
 }
 
-/* "(empty)" is the default, not one option among many — it gets the full row. */
+.checkbox-dropdown__item:nth-child(odd) {
+  background: var(--color-surface-muted);
+}
+
 .checkbox-dropdown__item:first-child {
-  grid-column: 1 / -1;
   font-weight: 700;
 }
 
 .checkbox-dropdown__item:hover {
-  background: white;
+  background: var(--color-green-soft);
+  color: var(--color-green-dark);
 }
 
+/* These live inside a .field, which sizes inputs as full-width 42px-tall text
+   boxes — right for a text field, four times too tall for a checkbox. */
 .checkbox-dropdown__item input {
   width: 14px;
   height: 14px;
+  min-height: 0;
   flex: 0 0 auto;
+  padding: 0;
+  border: 0;
   accent-color: var(--color-green);
 }
 
