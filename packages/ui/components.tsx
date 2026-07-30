@@ -1,11 +1,19 @@
 import type { ComponentChildren } from "preact";
 import { useEffect, useState } from "preact/hooks";
 
-const TEST_DATA_LINKS = [
+interface TestDataLink {
+  href: string;
+  label: string;
+  /** Nothing on a phone can install a Chrome extension. */
+  needsExtensions?: boolean;
+}
+
+const TEST_DATA_LINKS: TestDataLink[] = [
   {
     href:
       "https://chromewebstore.google.com/detail/adyen-test-cards/icllkfleeahmemjgoibajcmeoehkeoag",
     label: "Card dataset (Chrome extension)",
+    needsExtensions: true,
   },
   {
     href:
@@ -22,20 +30,37 @@ const TEST_DATA_LINKS = [
       "https://docs.klarna.com/resources/developer-tools/sample-data/sample-customer-data/#all-countries",
     label: "Klarna dataset (phone numbers)",
   },
-] as const;
+];
+
+/**
+ * A Chrome Web Store listing is dead weight on a touch device: nothing there
+ * can install an extension. Dropped with a media query rather than a hook,
+ * because this menu also renders outside islands, where nothing hydrates.
+ */
+const EXTENSION_LINK_CSS =
+  "@media (pointer: coarse), (max-width: 760px) { .header-tools__menu a[data-needs-extensions] { display: none; } }";
 
 export function TestDataAndTools() {
   return (
-    <details class="header-tools">
-      <summary class="header-tools__toggle">Testing dataset</summary>
-      <div class="header-tools__menu">
-        {TEST_DATA_LINKS.map((link) => (
-          <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer">
-            {link.label}
-          </a>
-        ))}
-      </div>
-    </details>
+    <>
+      <style>{EXTENSION_LINK_CSS}</style>
+      <details class="header-tools">
+        <summary class="header-tools__toggle">Testing dataset</summary>
+        <div class="header-tools__menu">
+          {TEST_DATA_LINKS.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-needs-extensions={link.needsExtensions ? "" : undefined}
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+      </details>
+    </>
   );
 }
 
