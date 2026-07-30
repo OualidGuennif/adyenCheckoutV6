@@ -266,6 +266,9 @@ export default function FlowWorkbench(
   const correlationRef = useRef<string | null>(null);
   const checkoutRef = useRef<Core | null>(null);
   const customCardHolderNameRef = useRef<HTMLInputElement | null>(null);
+  // Minted by /paymentMethods and repeated on the /payments call it leads to,
+  // so Adyen sees both requests as one checkout conversion.
+  const shopperConversionRef = useRef<string | null>(null);
 
   function updateCorrelation(value: string) {
     correlationRef.current = value;
@@ -550,6 +553,7 @@ export default function FlowWorkbench(
   async function startAdvanced() {
     const methods = await apiFetch<{
       correlationId: string;
+      shopperConversionId: string;
       paymentMethodsResponse: unknown;
     }>("/api/digital/payment-methods", {
       method: "POST",
@@ -560,6 +564,7 @@ export default function FlowWorkbench(
       }),
     }, profileId);
     updateCorrelation(methods.correlationId);
+    shopperConversionRef.current = methods.shopperConversionId;
     await mountCheckout(commonConfiguration({
       amount: { value: amount, currency },
       paymentMethodsResponse: methods.paymentMethodsResponse,
@@ -584,6 +589,7 @@ export default function FlowWorkbench(
               amount: { value: amount, currency },
               countryCode: country,
               shopperLocale: locale,
+              shopperConversionId: shopperConversionRef.current,
               ...stateData,
             }),
           }, profileId);
@@ -664,6 +670,8 @@ export default function FlowWorkbench(
     setTimeline([]);
     setExpandedTabs({ callbacks: false, api: false });
     setExpandedEntries(new Set());
+    // A conversion id belongs to one checkout; the next one mints its own.
+    shopperConversionRef.current = null;
     setLoading(true);
     try {
       if (flow === "sessions") await startSession();
