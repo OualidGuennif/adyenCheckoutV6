@@ -2,3 +2,256 @@
   display: grid;
   gap: 18px;
 }
+
+/* The inspector is a debugging surface, not part of the demo: it stays shut
+   until asked for, and once open it must be able to take the room a 4 kB
+   payload actually needs. Flex column so the header can wrap without the
+   body overflowing the fixed height the shared sheet assumes. */
+.inspector {
+  display: flex;
+  flex-direction: column;
+}
+
+.inspector--wide {
+  width: min(760px, 50vw);
+  max-width: none;
+}
+
+.inspector--full {
+  position: fixed;
+  z-index: 60;
+  inset: 14px;
+  width: auto;
+  max-width: none;
+  height: auto;
+  resize: none;
+}
+
+.inspector__header {
+  flex-wrap: wrap;
+}
+
+.inspector__tabs {
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.inspector__body {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+.inspector__count {
+  display: inline-block;
+  min-width: 17px;
+  margin-left: 5px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: #2a3c58;
+  color: #c6d2e2;
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.inspector__tabs button[aria-selected="true"] .inspector__count {
+  background: var(--color-green);
+  color: #06210f;
+}
+
+.inspector__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.inspector__icon {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #2d3e57;
+  border-radius: 8px;
+  background: #16253c;
+  color: #aab5c6;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.inspector__icon:hover {
+  border-color: #46608a;
+  background: #1d2f4a;
+  color: white;
+}
+
+.inspector__icon--close:hover {
+  border-color: #b3455a;
+  background: #2b1723;
+  color: #ff9db0;
+}
+
+.inspector__empty,
+.inspector__note {
+  margin: 0;
+  color: #91a0b5;
+  font-size: 0.72rem;
+}
+
+.event-row__detail {
+  margin-top: 8px;
+}
+
+.event-row__hint {
+  margin: 0 0 8px;
+  color: #b8c4d6;
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.event-row__badge--required {
+  background: #4a3410;
+  color: #ffd08a;
+}
+
+.event-row__badge--recommended {
+  background: #12354f;
+  color: #9ed2ff;
+}
+
+.event-row__badge--app {
+  background: #3a2a52;
+  color: #d5bcff;
+}
+
+.event-row__badge--ok {
+  background: #123c26;
+  color: #7fd39c;
+}
+
+.event-row__badge--error {
+  background: #4a1720;
+  color: #ff9db0;
+}
+
+/* Truncation marker for values over 120 characters — sdkData alone is long
+   enough to bury the four fields printed around it. */
+.json-fold {
+  padding: 0 6px;
+  border: 1px solid #3d5170;
+  border-radius: 5px;
+  background: #1e3049;
+  color: #9ed2ff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.62rem;
+  line-height: 1.5;
+  vertical-align: baseline;
+}
+
+.json-fold:hover {
+  border-color: #6f8fbd;
+  color: white;
+}
+
+.data-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding: 5px 10px 5px 6px;
+  border: 1px solid #2d3e57;
+  border-radius: 999px;
+  background: #16253c;
+  color: #aab5c6;
+  cursor: pointer;
+  font-size: 0.66rem;
+  font-weight: 750;
+}
+
+.data-toggle__track {
+  position: relative;
+  width: 26px;
+  height: 15px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #33455f;
+  transition: background 160ms ease;
+}
+
+.data-toggle__track::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: #9aa8bd;
+  content: "";
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.data-toggle__state {
+  color: #7f8ea6;
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.data-toggle[aria-pressed="true"] {
+  border-color: var(--color-green);
+  color: white;
+}
+
+.data-toggle[aria-pressed="true"] .data-toggle__track {
+  background: var(--color-green);
+}
+
+.data-toggle[aria-pressed="true"] .data-toggle__track::after {
+  background: white;
+  transform: translateX(11px);
+}
+
+.data-toggle[aria-pressed="true"] .data-toggle__state {
+  color: var(--color-green);
+}
+
+.inspector-trigger {
+  padding: 11px 15px;
+  border-color: #33455f;
+}
+
+.inspector-trigger:hover {
+  background: #16253c;
+}
+
+.inspector-trigger__count {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (max-width: 1180px) {
+  .inspector--wide {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .inspector--wide,
+  .inspector--full {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100vh;
+  }
+}

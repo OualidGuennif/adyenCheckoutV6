@@ -75,6 +75,10 @@ body {
 }
 
 .styling-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
   padding: clamp(24px, 5vw, 68px);
   background: var(--adyen-sdk-color-background-secondary, var(--color-surface-muted));
 }
@@ -103,6 +107,108 @@ body {
 .toolbar-country__auto {
   color: var(--color-green);
   font-style: italic;
+}
+
+/* Translucent tiles, Wallet-style: the PAN is the point, so it is the only
+   thing set in a large mono face and the whole tile is the copy button. */
+.test-cards {
+  width: 100%;
+  max-width: 650px;
+}
+
+.test-cards__toggle {
+  display: none;
+  width: 100%;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--color-ink);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.test-cards__chevron {
+  color: var(--color-ink-muted);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.test-cards__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.test-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 6px 18px rgba(0, 17, 44, 0.08);
+  color: var(--color-ink);
+  cursor: pointer;
+  text-align: left;
+  backdrop-filter: blur(10px) saturate(140%);
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.test-card:hover {
+  border-color: var(--color-green);
+  box-shadow: 0 10px 24px rgba(0, 17, 44, 0.14);
+  transform: translateY(-1px);
+}
+
+.test-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.test-card__scheme {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.test-card__note {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--color-green-soft);
+  color: var(--color-green-dark);
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.test-card__pan {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.test-card__bottom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-ink-muted);
+  font-size: 0.66rem;
+}
+
+.test-card__copy {
+  margin-left: auto;
+  color: var(--color-green-dark);
+  font-weight: 800;
 }
 
 .styling-preview .dropin-host {
@@ -242,16 +348,257 @@ body {
   padding: 5px;
 }
 
-.styling-controls .form-grid {
-  min-width: 0;
-}
-
 .styling-controls .switch-row {
   min-width: 0;
 }
 
 .styling-controls .switch-row span {
   overflow-wrap: anywhere;
+}
+
+/* The API name (or a one-line caveat) under a toggle: the label stays the
+   plain-language one, the hint says what it maps to in the SDK. */
+.switch-row span small {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-ink-subtle);
+  font-size: 0.62rem;
+  font-weight: 600;
+}
+
+/* There are far too many native options to show flat, so each family is a
+   collapsible section carrying a count of what has been changed inside it. */
+.option-group {
+  margin-bottom: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-s);
+  background: white;
+  overflow: hidden;
+}
+
+.option-group__summary {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--color-surface-muted);
+  cursor: pointer;
+  font-size: 0.73rem;
+  font-weight: 800;
+  list-style: none;
+}
+
+.option-group__summary::-webkit-details-marker {
+  display: none;
+}
+
+.option-group__summary::after {
+  color: var(--color-ink-muted);
+  content: "▾";
+  font-size: 0.7rem;
+  transition: transform 140ms ease;
+}
+
+.option-group[open] .option-group__summary::after {
+  transform: rotate(180deg);
+}
+
+.option-group__summary:focus-visible {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.option-group__title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.option-group__count {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--color-green-soft);
+  color: var(--color-green-dark);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.option-group__hint {
+  margin: 0;
+  padding: 10px 12px 0;
+  color: var(--color-ink-muted);
+  font-size: 0.66rem;
+  line-height: 1.45;
+}
+
+.option-group__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 12px;
+}
+
+.option-group__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.option-note {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: 0.66rem;
+  line-height: 1.45;
+}
+
+.option-row__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.option-row__clear {
+  padding: 1px 5px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.option-row__clear:hover {
+  background: var(--color-green-soft);
+  color: var(--color-green-dark);
+}
+
+.option-row--set > .option-row__head label {
+  color: var(--color-green-dark);
+}
+
+.range-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.range-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.range-field small {
+  flex: 0 0 auto;
+  min-width: 66px;
+  color: var(--color-ink-muted);
+  font-size: 0.64rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.checkbox-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.checkbox-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: white;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.checkbox-chip input {
+  width: 13px;
+  height: 13px;
+  accent-color: var(--color-green);
+}
+
+.checkbox-chip--on {
+  border-color: var(--color-green);
+  background: var(--color-green-soft);
+  color: var(--color-green-dark);
+}
+
+.styling-segmented {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3px;
+  margin-bottom: 8px;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+}
+
+.styling-segmented button {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.styling-segmented button[aria-selected="true"] {
+  background: white;
+  box-shadow: 0 1px 2px rgba(0, 17, 44, 0.14);
+  color: var(--color-ink);
+}
+
+.styling-segmented__count {
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-green-soft);
+  color: var(--color-green-dark);
+  font-size: 0.56rem;
+}
+
+.styling-filter {
+  width: 100%;
+  min-height: 38px;
+  margin-bottom: 10px;
+  padding: 8px 11px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xs);
+  background: white;
+  font-size: 0.74rem;
+}
+
+.styling-filter:focus {
+  border-color: var(--color-blue);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.styling-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.styling-filter-row .styling-filter {
+  margin-bottom: 0;
 }
 
 .css-note {
@@ -298,16 +645,49 @@ body {
   max-height: 220px;
 }
 
-.styling-subheading {
-  margin: 20px 0 12px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--color-ink-muted);
+/* Wide enough for the tiles to stand beside the Drop-in without squeezing
+   it: below this they stack under it, still inside the preview column. */
+@media (min-width: 1500px) {
+  .styling-preview {
+    flex-direction: row;
+  }
+
+  .styling-preview .dropin-host {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .test-cards {
+    position: sticky;
+    top: 90px;
+    flex: 0 0 210px;
+    width: 210px;
+  }
+
+  .test-cards__list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {
+  /* The checkout is the page on a phone: the tiles go above it, folded. */
+  .test-cards {
+    order: -1;
+    max-width: none;
+  }
+
+  .test-cards__toggle {
+    display: flex;
+  }
+
+  .test-cards[data-open="false"] .test-cards__list {
+    display: none;
+  }
+
+  .test-cards__list {
+    margin-top: 10px;
+  }
+
   .styling-layout {
     grid-template-columns: 1fr;
   }
@@ -351,7 +731,9 @@ body {
 
   /* Two selects side by side don't fit; give each half the row and let them
      shrink instead of pushing the toolbar wider than the viewport. The
-     dataset menu takes the full row above them. */
+     dataset menu is a full-width row under them: as the first child of the
+     grid it used to land alone in the top-left corner, reading as a stray
+     button rather than a control belonging to this toolbar. */
   .toolbar-markets {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -359,11 +741,22 @@ body {
   }
 
   .toolbar-markets > .header-tools {
+    order: 1;
     grid-column: 1 / -1;
   }
 
   .toolbar-markets .header-tools__toggle {
-    justify-content: space-between;
+    min-height: 40px;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--color-surface-muted);
+    font-size: 0.78rem;
+  }
+
+  .toolbar-markets .header-tools__menu {
+    right: 0;
+    left: 0;
+    min-width: 0;
   }
 
   .toolbar-country {
@@ -382,5 +775,13 @@ body {
 
   .styling-preview {
     padding: 18px 14px;
+  }
+
+  .test-card {
+    padding: 10px;
+  }
+
+  .test-card__pan {
+    font-size: 0.72rem;
   }
 }

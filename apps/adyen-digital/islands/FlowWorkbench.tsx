@@ -56,10 +56,147 @@ interface TimelineEntry {
   optional?: boolean;
 }
 
-// Only these two carry the actual payment outcome — every other frontend
-// callback is diagnostic/lifecycle noise that's useful to have but not
-// something you need staring at you by default.
-const MANDATORY_CALLBACKS = new Set(["onPaymentCompleted", "onPaymentFailed"]);
+type CallbackRank = "required" | "recommended" | "optional" | "app";
+
+interface CallbackMeta {
+  rank: CallbackRank;
+  hint: string;
+}
+
+/**
+ * What each row of the callbacks tab actually is. A single "optional" badge
+ * on everything that was not a payment outcome was wrong twice over: it
+ * called `onSubmit` optional, and it presented this playground's own backend
+ * responses as if Adyen Web had emitted them. `app` marks the latter.
+ */
+const CALLBACK_CATALOG: Record<string, CallbackMeta> = {
+  onSubmit: {
+    rank: "required",
+    hint: "You must call /payments with this state and resolve with its response.",
+  },
+  onAdditionalDetails: {
+    rank: "required",
+    hint: "3DS or redirect result: forward it to /payments/details, resolve with the response.",
+  },
+  onPaymentCompleted: {
+    rank: "required",
+    hint: "Terminal success. The resultCode is final — show the success page here.",
+  },
+  onPaymentFailed: {
+    rank: "required",
+    hint: "Terminal failure (refused, cancelled, expired). The order can still be retried.",
+  },
+  onPaymentMethodsRequest: {
+    rank: "required",
+    hint: "Sessions flow: intercepts /paymentMethods. You must resolve with the response.",
+  },
+  onOrderRequest: {
+    rank: "required",
+    hint: "Partial payments: create the order via /orders and resolve with it.",
+  },
+  onOrderUpdated: {
+    rank: "required",
+    hint: "Partial payments: the remaining amount after each partial authorisation.",
+  },
+  onError: {
+    rank: "recommended",
+    hint: "Any Adyen Web error, including non-fatal wallet cancellations. Not a result.",
+  },
+  beforeSubmit: {
+    rank: "optional",
+    hint: "resolve() is not a plain continue: what you pass becomes the /payments payload.",
+  },
+  onChange: {
+    rank: "optional",
+    hint: "Fires on every field edit. Diagnostics only, never a payment decision.",
+  },
+  onBinLookup: {
+    rank: "optional",
+    hint: "Co-badged networks detected from the first digits. Diagnostics only.",
+  },
+  onBinValue: {
+    rank: "optional",
+    hint: "Hashed BIN of the card being typed. Diagnostics only.",
+  },
+  onBrand: {
+    rank: "optional",
+    hint: "Network detected inside the secured fields. Diagnostics only.",
+  },
+  sessionCreated: {
+    rank: "app",
+    hint: "Not an Adyen Web callback: the /sessions response from this playground.",
+  },
+  backendPaymentResponse: {
+    rank: "app",
+    hint: "Not an Adyen Web callback: this playground's /payments response, pre-resolve().",
+  },
+  paymentLinkCreated: {
+    rank: "app",
+    hint: "Not an Adyen Web callback: the /paymentLinks response from this playground.",
+  },
+  mitResponse: {
+    rank: "app",
+    hint: "Not an Adyen Web callback: the merchant-initiated /payments response.",
+  },
+};
+
+const UNLISTED_CALLBACK: CallbackMeta = {
+  rank: "optional",
+  hint: "Not in the reference list of this playground — check the Adyen Web changelog.",
+};
+
+function callbackMeta(name: string): CallbackMeta {
+  return CALLBACK_CATALOG[name] ?? UNLISTED_CALLBACK;
+}
+
+// Every Checkout endpoint the backend can record, in one line each, so the
+// API tab reads as a sequence of intentions rather than a pile of JSON.
+const API_HINTS: Array<[string, string]> = [
+  ["/sessions", "One call, Adyen Web owns 3DS and the rest of the orchestration."],
+  ["/paymentMethods", "Methods available for this amount, country and locale."],
+  ["/payments/details", "Second leg of a 3DS or redirect flow."],
+  ["/paymentLinks", "Creates the Adyen-hosted payment page."],
+  ["/orders", "Partial payments: opens the order the gift card pays into."],
+  ["/payments", "Authorisation attempt for the submitted payment method."],
+];
+
+function apiHint(name: string): string {
+  return API_HINTS.find(([endpoint]) => name.includes(endpoint))?.[1] ?? "Adyen Checkout API call.";
+}
+
+type PanelTab = "callbacks" | "api" | "webhooks";
+type PanelSize = "normal" | "wide" | "full";
+
+const RANK_LABEL: Record<CallbackRank, string> = {
+  required: "required",
+  recommended: "recommended",
+  optional: "optional",
+  app: "not Adyen Web",
+};
+
+const NEXT_PANEL_SIZE: Record<PanelSize, PanelSize> = {
+  normal: "wide",
+  wide: "full",
+  full: "normal",
+};
+
+const PANEL_SIZE_HINT: Record<PanelSize, string> = {
+  normal: "Widen the inspector",
+  wide: "Expand the inspector to the full screen",
+  full: "Dock the inspector back",
+};
+
+const EMPTY_TAB_COPY: Record<PanelTab, string> = {
+  callbacks: "Callbacks land here in the order Adyen Web fires them, oldest first.",
+  api: "Calls this playground makes to the Checkout API land here once a flow starts.",
+  webhooks: "Notifications sent by Adyen to this backend land here after the payment.",
+};
+
+function toggledSet(current: Set<string>, key: string): Set<string> {
+  const next = new Set(current);
+  if (!next.delete(key)) next.add(key);
+  return next;
+}
 
 interface CallbackActions {
   resolve(value?: unknown): void;
@@ -213,6 +350,81 @@ function extractAdditionalData(value: unknown): { rest: unknown; additionalData:
   return { rest, additionalData: additionalData ?? null };
 }
 
+const LONG_VALUE_LIMIT = 120;
+
+interface Fold {
+  key: string;
+  expanded: boolean;
+}
+
+/**
+ * Rewrites every string longer than LONG_VALUE_LIMIT to its first characters
+ * followed by a marker, which the renderer turns into a per-value expander.
+ * A single sdkData blob is otherwise long enough to bury the four fields
+ * around it, and hiding it outright would lose it.
+ */
+function foldLongValues(
+  value: unknown,
+  expandedValues: Set<string>,
+  baseKey: string,
+  folds: Fold[],
+  path = "",
+): unknown {
+  if (typeof value === "string" && value.length > LONG_VALUE_LIMIT) {
+    const key = `${baseKey}#${path}`;
+    const expanded = expandedValues.has(key);
+    folds.push({ key, expanded });
+    const shown = expanded ? value : `${value.slice(0, LONG_VALUE_LIMIT)}…`;
+    return `${shown}@@FOLD:${folds.length - 1}@@`;
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry, index) =>
+      foldLongValues(entry, expandedValues, baseKey, folds, `${path}[${index}]`)
+    );
+  }
+  if (value && typeof value === "object") {
+    const output: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+      output[key] = foldLongValues(entry, expandedValues, baseKey, folds, `${path}.${key}`);
+    }
+    return output;
+  }
+  return value;
+}
+
+function JsonBlock(
+  { value, entryKey, expandedValues, onToggleValue }: {
+    value: unknown;
+    entryKey: string;
+    expandedValues: Set<string>;
+    onToggleValue: (key: string) => void;
+  },
+) {
+  const folds: Fold[] = [];
+  const text = prettyJson(foldLongValues(value, expandedValues, entryKey, folds)) || "null";
+  const parts = text.split(/@@FOLD:(\d+)@@/);
+  return (
+    <pre>
+      {parts.map((part, index) => {
+        if (index % 2 === 0) return part;
+        const fold = folds[Number(part)];
+        if (!fold) return null;
+        return (
+          <button
+            type="button"
+            class="json-fold"
+            key={fold.key}
+            title={fold.expanded ? "Collapse this value" : "Show the full value"}
+            onClick={() => onToggleValue(fold.key)}
+          >
+            {fold.expanded ? "collapse" : "…"}
+          </button>
+        );
+      })}
+    </pre>
+  );
+}
+
 export default function FlowWorkbench(
   { flow, initialBootstrap, initialIntegration }: {
     flow: Flow;
@@ -238,18 +450,18 @@ export default function FlowWorkbench(
   // manual preference — always derived from country rather than a toggle.
   const installments = INSTALLMENT_COUNTRIES.includes(country.toUpperCase());
   const [correlationId, setCorrelationId] = useState<string | null>(null);
+  // The advanced flow mints a new correlation id at /payments, so keeping only
+  // the current one made the /paymentMethods call vanish from the API tab the
+  // moment a payment was submitted. Every id of the run is polled and merged.
+  const [correlationIds, setCorrelationIds] = useState<string[]>([]);
   const [callbacks, setCallbacks] = useState<TimelineEntry[]>([]);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [panelTab, setPanelTab] = useState<"callbacks" | "api">("callbacks");
-  const [expandedTabs, setExpandedTabs] = useState<{ callbacks: boolean; api: boolean }>({
-    callbacks: false,
-    api: false,
-  });
+  const [panelSize, setPanelSize] = useState<PanelSize>("normal");
+  const [panelTab, setPanelTab] = useState<PanelTab>("callbacks");
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
-  const [showOptionalCallbacks, setShowOptionalCallbacks] = useState(false);
-  const [showAdditionalData, setShowAdditionalData] = useState(false);
-  const [webhooksOpen, setWebhooksOpen] = useState(false);
+  const [expandedValues, setExpandedValues] = useState<Set<string>>(new Set());
+  const [additionalDataOpen, setAdditionalDataOpen] = useState<Set<string>>(new Set());
   const [webhookWaiting, setWebhookWaiting] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -273,6 +485,19 @@ export default function FlowWorkbench(
   function updateCorrelation(value: string) {
     correlationRef.current = value;
     setCorrelationId(value);
+    setCorrelationIds((current) => current.includes(value) ? current : [...current, value]);
+  }
+
+  function toggleEntry(id: string) {
+    setExpandedEntries((current) => toggledSet(current, id));
+  }
+
+  function toggleValue(key: string) {
+    setExpandedValues((current) => toggledSet(current, key));
+  }
+
+  function toggleAdditionalData(id: string) {
+    setAdditionalDataOpen((current) => toggledSet(current, id));
   }
 
   useEffect(() => {
@@ -302,21 +527,32 @@ export default function FlowWorkbench(
       skipFirstAutoRestart.current = false;
       return;
     }
-    const timeout = setTimeout(() => start({ silent: true }), 500);
+    const timeout = setTimeout(() => start(), 500);
     return () => clearTimeout(timeout);
   }, [amount, currency, country, locale, integration, profileId]);
 
+  const polledCorrelations = correlationIds.join("|");
   useEffect(() => {
-    if (!correlationId || (!panelOpen && !webhooksOpen)) return;
+    if (!polledCorrelations || !panelOpen) return;
     let active = true;
     const refresh = async () => {
       try {
-        const data = await apiFetch<{ entries: TimelineEntry[] }>(
-          `/api/timeline/${correlationId}`,
+        const responses = await Promise.all(
+          polledCorrelations.split("|").map((id) =>
+            apiFetch<{ entries: TimelineEntry[] }>(`/api/timeline/${id}`)
+              .catch(() => ({ entries: [] as TimelineEntry[] }))
+          ),
         );
         if (!active) return;
-        setTimeline(data.entries);
-        setWebhookWaiting(!data.entries.some((entry) => entry.kind === "webhook"));
+        const merged = new Map<string, TimelineEntry>();
+        for (const response of responses) {
+          for (const entry of response.entries) merged.set(entry.id, entry);
+        }
+        const entries = [...merged.values()].sort((left, right) =>
+          left.occurredAt.localeCompare(right.occurredAt)
+        );
+        setTimeline(entries);
+        setWebhookWaiting(!entries.some((entry) => entry.kind === "webhook"));
       } catch {
         // Inspector polling is best-effort and must not interrupt checkout.
       }
@@ -327,7 +563,7 @@ export default function FlowWorkbench(
       active = false;
       globalThis.clearInterval(interval);
     };
-  }, [correlationId, panelOpen, webhooksOpen]);
+  }, [polledCorrelations, panelOpen]);
 
   async function switchProfile(nextId: string) {
     setError(null);
@@ -366,7 +602,7 @@ export default function FlowWorkbench(
       status: "received",
       occurredAt: timestamp(),
       payload: safePayload,
-      optional: !MANDATORY_CALLBACKS.has(name),
+      optional: callbackMeta(name).rank !== "required",
     };
     setCallbacks((current) => [...current, entry]);
     const id = explicitCorrelation ?? correlationId;
@@ -381,15 +617,6 @@ export default function FlowWorkbench(
         }),
       }, profileId).catch(() => undefined);
     }
-  }
-
-  function toggleEntryExpanded(id: string) {
-    setExpandedEntries((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
   }
 
   function commonConfiguration(extra: Record<string, unknown>) {
@@ -663,13 +890,17 @@ export default function FlowWorkbench(
     addCallback("mitResponse", response.result, response.correlationId);
   }
 
-  async function start(options: { silent?: boolean } = {}) {
+  // The inspector never opens itself: it is a debugging surface, and popping
+  // it over the checkout on every (re)start is the opposite of a demo.
+  async function start() {
     setError(null);
     setOutcome(null);
     setCallbacks([]);
     setTimeline([]);
-    setExpandedTabs({ callbacks: false, api: false });
+    setCorrelationIds([]);
     setExpandedEntries(new Set());
+    setExpandedValues(new Set());
+    setAdditionalDataOpen(new Set());
     // A conversion id belongs to one checkout; the next one mints its own.
     shopperConversionRef.current = null;
     setLoading(true);
@@ -678,7 +909,6 @@ export default function FlowWorkbench(
       else if (flow === "advanced" || flow === "api-only") await startAdvanced();
       else if (flow === "pay-by-link") await createPaymentLink();
       else await runMit();
-      if (!options.silent) setPanelOpen(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The flow could not start.");
     } finally {
@@ -686,14 +916,133 @@ export default function FlowWorkbench(
     }
   }
 
-  const EVENT_PREVIEW_COUNT = 5;
-  const allEvents = panelTab === "callbacks"
-    ? (showOptionalCallbacks ? callbacks : callbacks.filter((entry) => !entry.optional))
-    : timeline.filter((entry) => entry.kind === "api_call");
-  const isExpanded = expandedTabs[panelTab];
-  const visibleEvents = isExpanded ? allEvents : allEvents.slice(-EVENT_PREVIEW_COUNT);
-  const hiddenEventCount = allEvents.length - visibleEvents.length;
+  function renderEvent(entry: TimelineEntry) {
+    const entryOpen = expandedEntries.has(entry.id);
+    const extraOpen = additionalDataOpen.has(entry.id);
+    const meta = entry.kind === "frontend_callback" ? callbackMeta(entry.name) : null;
+    const api = entry.kind === "api_call"
+      ? entry.payload as { request?: unknown; response?: unknown; error?: string }
+      : null;
+    const failed = Boolean(api?.error) || Number(entry.status) >= 400;
+    const source = api ? (api.error ? { error: api.error } : api.response) : entry.payload;
+    const { rest: body, additionalData } = extractAdditionalData(source);
+
+    return (
+      <article class="event-row" key={entry.id}>
+        <button
+          type="button"
+          class="event-row__header"
+          aria-expanded={entryOpen}
+          onClick={() => toggleEntry(entry.id)}
+        >
+          <span class="event-row__meta">
+            <strong>{entry.name}</strong>
+            {meta
+              ? (
+                <span class={`event-row__badge event-row__badge--${meta.rank}`}>
+                  {RANK_LABEL[meta.rank]}
+                </span>
+              )
+              : null}
+            {api
+              ? (
+                <span class={`event-row__badge event-row__badge--${failed ? "error" : "ok"}`}>
+                  {api.error ? "failed" : entry.status}
+                </span>
+              )
+              : null}
+            {entry.kind === "webhook"
+              ? (
+                <span
+                  class={`event-row__badge event-row__badge--${entry.hmacValid ? "ok" : "error"}`}
+                >
+                  {entry.hmacValid ? "HMAC valid" : "HMAC invalid"}
+                </span>
+              )
+              : null}
+            <time datetime={entry.occurredAt}>
+              {new Date(entry.occurredAt).toLocaleTimeString()}
+              {entry.durationMs ? ` · ${entry.durationMs} ms` : ""}
+            </time>
+          </span>
+          <span class="event-row__caret" aria-hidden="true">{entryOpen ? "−" : "+"}</span>
+        </button>
+        {entryOpen
+          ? (
+            <div class="event-row__detail">
+              <p class="event-row__hint">
+                {meta
+                  ? meta.hint
+                  : api
+                  ? apiHint(entry.name)
+                  : "Server-to-server notification, HMAC checked when the backend received it."}
+              </p>
+              {api
+                ? (
+                  <div class="event-row__section">
+                    <span class="event-row__label">Request</span>
+                    <JsonBlock
+                      value={api.request}
+                      entryKey={`${entry.id}:request`}
+                      expandedValues={expandedValues}
+                      onToggleValue={toggleValue}
+                    />
+                  </div>
+                )
+                : null}
+              <div class="event-row__section">
+                <span class="event-row__label">
+                  {api ? "Response" : entry.kind === "webhook" ? "Notification" : "Payload"}
+                </span>
+                <JsonBlock
+                  value={body}
+                  entryKey={`${entry.id}:body`}
+                  expandedValues={expandedValues}
+                  onToggleValue={toggleValue}
+                />
+              </div>
+              {additionalData
+                ? (
+                  <div class="event-row__section">
+                    <button
+                      type="button"
+                      class="data-toggle"
+                      aria-pressed={extraOpen}
+                      onClick={() => toggleAdditionalData(entry.id)}
+                    >
+                      <span class="data-toggle__track" aria-hidden="true"></span>
+                      <span class="data-toggle__label">Show additionalData</span>
+                      <span class="data-toggle__state">{extraOpen ? "ON" : "OFF"}</span>
+                    </button>
+                    {extraOpen
+                      ? (
+                        <JsonBlock
+                          value={additionalData}
+                          entryKey={`${entry.id}:additionalData`}
+                          expandedValues={expandedValues}
+                          onToggleValue={toggleValue}
+                        />
+                      )
+                      : null}
+                  </div>
+                )
+                : null}
+            </div>
+          )
+          : null}
+      </article>
+    );
+  }
+
+  const apiEntries = timeline.filter((entry) => entry.kind === "api_call");
   const webhookEntries = timeline.filter((entry) => entry.kind === "webhook");
+  // Nothing is filtered out and nothing is hidden behind an "expand all":
+  // a callback you never see is a callback you never learn.
+  const visibleEvents = panelTab === "callbacks"
+    ? callbacks
+    : panelTab === "api"
+    ? apiEntries
+    : webhookEntries;
   const selectedProfile = bootstrap?.profiles.find((profile) => profile.id === profileId);
 
   return (
@@ -1050,7 +1399,11 @@ export default function FlowWorkbench(
           </div>
         </section>
 
-        <aside class="inspector" hidden={!panelOpen} aria-label="Payment observability panel">
+        <aside
+          class={`inspector inspector--${panelSize}`}
+          hidden={!panelOpen}
+          aria-label="Payment observability panel"
+        >
           <header class="inspector__header">
             <div class="inspector__tabs" role="tablist" aria-label="Inspector views">
               <button
@@ -1059,7 +1412,7 @@ export default function FlowWorkbench(
                 aria-selected={panelTab === "callbacks"}
                 onClick={() => setPanelTab("callbacks")}
               >
-                Frontend callbacks
+                Callbacks <span class="inspector__count">{callbacks.length}</span>
               </button>
               <button
                 type="button"
@@ -1067,151 +1420,64 @@ export default function FlowWorkbench(
                 aria-selected={panelTab === "api"}
                 onClick={() => setPanelTab("api")}
               >
-                API calls
+                API calls <span class="inspector__count">{apiEntries.length}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={panelTab === "webhooks"}
+                onClick={() => setPanelTab("webhooks")}
+              >
+                Webhooks <span class="inspector__count">{webhookEntries.length}</span>
               </button>
             </div>
-            {panelTab === "callbacks"
-              ? (
-                <label class="switch-row switch-row--inline">
-                  <span>Show optional callbacks</span>
-                  <input
-                    type="checkbox"
-                    checked={showOptionalCallbacks}
-                    onChange={(event) => setShowOptionalCallbacks(event.currentTarget.checked)}
-                  />
-                </label>
-              )
-              : (
-                <label class="switch-row switch-row--inline">
-                  <span>Show additionalData</span>
-                  <input
-                    type="checkbox"
-                    checked={showAdditionalData}
-                    onChange={(event) => setShowAdditionalData(event.currentTarget.checked)}
-                  />
-                </label>
-              )}
-            <button
-              class="button button--small button--secondary"
-              type="button"
-              onClick={() => setPanelOpen(false)}
-              aria-label="Hide inspector"
-            >
-              Hide
-            </button>
+            <div class="inspector__actions">
+              <button
+                class="inspector__icon"
+                type="button"
+                title={PANEL_SIZE_HINT[panelSize]}
+                aria-label={PANEL_SIZE_HINT[panelSize]}
+                onClick={() => setPanelSize(NEXT_PANEL_SIZE[panelSize])}
+              >
+                {panelSize === "full" ? "⤡" : "⤢"}
+              </button>
+              <button
+                class="inspector__icon inspector__icon--close"
+                type="button"
+                title="Hide the inspector"
+                aria-label="Hide the inspector"
+                onClick={() => setPanelOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
           </header>
           <div class="inspector__body" role="tabpanel">
-            {allEvents.length > EVENT_PREVIEW_COUNT
-              ? (
-                <div class="event-list__toggle">
-                  <span class="mono">
-                    {isExpanded
-                      ? `${allEvents.length} events`
-                      : `Showing last ${visibleEvents.length} of ${allEvents.length}`}
-                  </span>
-                  <button
-                    class="button button--quiet button--small"
-                    type="button"
-                    onClick={() =>
-                      setExpandedTabs((current) => ({
-                        ...current,
-                        [panelTab]: !current[panelTab],
-                      }))}
-                  >
-                    {isExpanded ? "Collapse" : `Expand all (${hiddenEventCount} more)`}
-                  </button>
-                </div>
-              )
-              : null}
             {visibleEvents.length
-              ? (
-                <div class="event-list">
-                  {visibleEvents.map((entry) => {
-                    const apiPayload = panelTab === "api"
-                      ? entry.payload as { request?: unknown; response?: unknown; error?: string }
-                      : null;
-                    const { rest: responseRest, additionalData } = apiPayload && !apiPayload.error
-                      ? extractAdditionalData(apiPayload.response)
-                      : { rest: null, additionalData: null };
-                    const entryOpen = expandedEntries.has(entry.id);
-                    return (
-                      <article class="event-row" key={entry.id}>
-                        <button
-                          type="button"
-                          class="event-row__header"
-                          aria-expanded={entryOpen}
-                          onClick={() => toggleEntryExpanded(entry.id)}
-                        >
-                          <span class="event-row__meta">
-                            <strong>{entry.name}</strong>
-                            {entry.optional ? <span class="event-row__badge">optional</span> : null}
-                            <time datetime={entry.occurredAt}>
-                              {new Date(entry.occurredAt).toLocaleTimeString()}
-                              {entry.durationMs ? ` · ${entry.durationMs} ms` : ""}
-                            </time>
-                          </span>
-                          <span class="event-row__caret" aria-hidden="true">
-                            {entryOpen ? "−" : "+"}
-                          </span>
-                        </button>
-                        {entryOpen
-                          ? apiPayload
-                            ? (
-                              <>
-                                <div class="event-row__section">
-                                  <span class="event-row__label">Request</span>
-                                  <pre>{prettyJson(apiPayload.request)}</pre>
-                                </div>
-                                <div class="event-row__section">
-                                  <span class="event-row__label">Response</span>
-                                  <pre>
-                                    {prettyJson(
-                                      apiPayload.error
-                                        ? { error: apiPayload.error }
-                                        : responseRest,
-                                    )}
-                                  </pre>
-                                  {showAdditionalData
-                                    ? (
-                                      <>
-                                        <span class="event-row__label">additionalData</span>
-                                        <pre>
-                                          {additionalData
-                                            ? prettyJson(additionalData)
-                                            : "No additionalData in this response."}
-                                        </pre>
-                                      </>
-                                    )
-                                    : null}
-                                </div>
-                              </>
-                            )
-                            : <pre>{prettyJson(entry.payload)}</pre>
-                          : null}
-                      </article>
-                    );
-                  })}
-                </div>
-              )
-              : (
-                <p>
-                  {panelTab === "callbacks"
-                    ? "Callbacks will appear here in chronological order."
-                    : "Backend calls will appear after the flow starts."}
-                </p>
-              )}
+              ? <div class="event-list">{visibleEvents.map(renderEvent)}</div>
+              : <p class="inspector__empty">{EMPTY_TAB_COPY[panelTab]}</p>}
           </div>
           <footer class="inspector__footer">
             <span class="mono">
-              {webhookWaiting ? "Waiting for webhook" : `${webhookEntries.length} webhook(s)`}
+              {webhookWaiting
+                ? (
+                  <>
+                    <span class="waiting-dot" aria-hidden="true" /> Waiting for a webhook
+                  </>
+                )
+                : `${webhookEntries.length} webhook(s) received`}
             </span>
-            <button
-              class="button button--small button--primary"
-              type="button"
-              onClick={() => setWebhooksOpen(true)}
-            >
-              Check received webhooks
-            </button>
+            {panelTab === "webhooks"
+              ? <span class="inspector__note">Asynchronous methods can take a while.</span>
+              : (
+                <button
+                  class="button button--small button--primary"
+                  type="button"
+                  onClick={() => setPanelTab("webhooks")}
+                >
+                  Open webhooks
+                </button>
+              )}
           </footer>
         </aside>
       </div>
@@ -1222,53 +1488,19 @@ export default function FlowWorkbench(
             class="inspector-trigger"
             type="button"
             onClick={() => setPanelOpen(true)}
-            aria-label="Open payment inspector"
+            aria-label="Open the payment inspector"
           >
-            Open inspector
+            <span class="inspector-trigger__label">Inspector</span>
+            {callbacks.length
+              ? (
+                <span class="inspector-trigger__count" title="Callbacks captured so far">
+                  {callbacks.length}
+                </span>
+              )
+              : null}
           </button>
         )
         : null}
-
-      <aside class="webhook-drawer" hidden={!webhooksOpen} aria-label="Received webhooks">
-        <div class="panel__header">
-          <div>
-            <span class="eyebrow">Server-to-server events</span>
-            <h2>Received webhooks</h2>
-            <p>HMAC status, correlation and sanitized payload are persisted for audit.</p>
-          </div>
-          <button
-            class="button button--secondary"
-            type="button"
-            onClick={() => setWebhooksOpen(false)}
-          >
-            Close
-          </button>
-        </div>
-        {webhookWaiting
-          ? (
-            <Callout title="Awaiting event">
-              <span class="waiting-dot" aria-hidden="true" />{" "}
-              The application is polling its local audit store. Asynchronous payment methods can
-              take longer.
-            </Callout>
-          )
-          : (
-            <div class="timeline">
-              {webhookEntries.map((entry) => (
-                <article class="timeline-entry">
-                  <header>
-                    <strong>{entry.name}</strong>
-                    <StatusPill tone={entry.hmacValid ? "positive" : "danger"}>
-                      {entry.hmacValid ? "HMAC valid" : "HMAC invalid"}
-                    </StatusPill>
-                  </header>
-                  <p>{new Date(entry.occurredAt).toLocaleString()}</p>
-                  <pre class="code-block">{prettyJson(entry.payload)}</pre>
-                </article>
-              ))}
-            </div>
-          )}
-      </aside>
     </>
   );
 }

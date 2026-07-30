@@ -1,7 +1,7 @@
 import { AdyenCheckout, Dropin } from "@adyen/adyen-web";
 import type { Core } from "@adyen/adyen-web";
 import { apiFetch } from "@suite/ui/client.ts";
-import { AdyenWordmark, ColorField, Field, TestDataAndTools } from "@suite/ui/components.tsx";
+import { AdyenWordmark, Field, TestDataAndTools } from "@suite/ui/components.tsx";
 import {
   detectCountryFromLanguages,
   FALLBACK_COUNTRY,
@@ -14,12 +14,57 @@ import {
 } from "@suite/ui/paymentMethods.ts";
 import "@suite/ui/registerPaymentMethods.ts";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-
-// Single source of truth for the loaded @adyen/adyen-web version — update
-// this on every SDK bump, everything that needs the version reads it here.
-const ADYEN_WEB_VERSION = "6.41.0";
-const ADYEN_CSS_URL =
-  `https://checkoutshopper-live.cdn.adyen.com/checkoutshopper/sdk/${ADYEN_WEB_VERSION}/adyen.css`;
+import { TestCards } from "../components/TestCards.tsx";
+import {
+  CheckboxCloud,
+  OptionGroup,
+  OptionRow,
+  SwitchRow,
+} from "../components/OptionFields.tsx";
+import {
+  ADDRESS_FIELDS,
+  ADYEN_CSS_URL,
+  ADYEN_WEB_VERSION,
+  CARD_BRANDS,
+  cardConfigObject,
+  CHALLENGE_WINDOW_SIZES,
+  CSS_RULE_SPECS,
+  CSS_TOKEN_GROUPS,
+  CSS_TOKEN_SPECS,
+  cssPreviewVariables,
+  cssRuleSetCount,
+  cssText,
+  cssTokenSetCount,
+  cssTokenSpec,
+  DEFAULT_BRANDS,
+  DEFAULT_CARD,
+  DEFAULT_CSS_RULES,
+  DEFAULT_NATIVE,
+  DEFAULT_SECURE,
+  dropinProps,
+  isValidExpiryDate,
+  isValidHttpUrl,
+  PLACEHOLDER_FIELDS,
+  SECURE_GROUPS,
+  SECURE_PROPERTY_SPECS,
+  SECURE_STATE_META,
+  SECURE_STATES,
+  secureSetCount,
+  storedCardConfigObject,
+} from "../components/adyenOptions.ts";
+import type {
+  BillingAddressMode,
+  CardOptions,
+  ChallengeWindowSize,
+  CssRules,
+  CssTokens,
+  InstantPaymentType,
+  NativeOptions,
+  PlaceholderKey,
+  SecureProperty,
+  SecureState,
+  SocialSecurityNumberMode,
+} from "../components/adyenOptions.ts";
 
 // Roughly most-used first (FR, NL, US fixed as requested), then the rest of
 // the countries the platform addresses elsewhere (packages/platform/addresses.ts).
@@ -101,6 +146,8 @@ const LOCALES = [
   ["ar-AE", "العربية"],
 ] as const;
 
+const COUNTRY_ITEMS = COUNTRIES.map(([code, name]): [string, string] => [code, name]);
+
 function flagEmoji(countryCode: string): string {
   return String.fromCodePoint(
     ...countryCode.toUpperCase().split("").map((letter) => 127397 + letter.charCodeAt(0)),
@@ -137,269 +184,34 @@ interface AvailableMethod {
   name: string;
 }
 
-interface SecureStyles {
-  baseColor: string;
-  baseFontSize: number;
-  baseFontWeight: string;
-  baseFontFamily: string;
-  lineHeight: number;
-  letterSpacing: number;
-  background: string;
-  caretColor: string;
-  textAlign: "left" | "center" | "right";
-  errorColor: string;
-  placeholderColor: string;
-  validatedColor: string;
-}
-
-interface CssStyles {
-  labelPrimary: string;
-  labelSecondary: string;
-  backgroundPrimary: string;
-  backgroundSecondary: string;
-  outlinePrimary: string;
-  outlineSecondary: string;
-  radiusSmall: number;
-  radiusMedium: number;
-  borderWidth: number;
-  buttonBackground: string;
-  buttonText: string;
-  methodSpacing: number;
-  uppercaseButton: boolean;
-  compactMethods: boolean;
-}
-
-const DEFAULT_SECURE: SecureStyles = {
-  baseColor: "#00112c",
-  baseFontSize: 16,
-  baseFontWeight: "400",
-  baseFontFamily: "Arial, sans-serif",
-  lineHeight: 24,
-  letterSpacing: 0,
-  background: "#ffffff",
-  caretColor: "#00112c",
-  textAlign: "left",
-  errorColor: "#c12435",
-  placeholderColor: "#8d95a3",
-  validatedColor: "#07883b",
-};
-
-const DEFAULT_CSS: CssStyles = {
-  labelPrimary: "#00112c",
-  labelSecondary: "#5c687c",
-  backgroundPrimary: "#ffffff",
-  backgroundSecondary: "#f7f8f9",
-  outlinePrimary: "#b9c0ca",
-  outlineSecondary: "#d9dde3",
-  radiusSmall: 4,
-  radiusMedium: 8,
-  borderWidth: 1,
-  buttonBackground: "#00112c",
-  buttonText: "#ffffff",
-  methodSpacing: 12,
-  uppercaseButton: false,
-  compactMethods: false,
-};
-
-type InstantPaymentType = "applepay" | "googlepay";
-
-interface NativeOptions {
-  openFirstPaymentMethod: boolean;
-  openFirstStoredPaymentMethod: boolean;
-  openPaymentMethodType: string;
-  instantPaymentTypes: InstantPaymentType[];
-  disableFinalAnimation: boolean;
-  showRadioButton: boolean;
-}
-
-const DEFAULT_NATIVE: NativeOptions = {
-  openFirstPaymentMethod: false,
-  openFirstStoredPaymentMethod: false,
-  openPaymentMethodType: "",
-  instantPaymentTypes: ["applepay", "googlepay"],
-  disableFinalAnimation: false,
-  showRadioButton: false,
-};
-
-type SocialSecurityNumberMode = "auto" | "show" | "hide";
-
-interface CardOptions {
-  hasHolderName: boolean;
-  holderNameRequired: boolean;
-  billingAddressRequired: boolean;
-  hideCVC: boolean;
-  maskSecurityCode: boolean;
-  socialSecurityNumberMode: SocialSecurityNumberMode;
-  showInstallmentAmounts: boolean;
-  disclaimerEnabled: boolean;
-  disclaimerMessage: string;
-  disclaimerLinkText: string;
-  disclaimerLink: string;
-}
-
-const DEFAULT_CARD: CardOptions = {
-  hasHolderName: true,
-  holderNameRequired: true,
-  billingAddressRequired: false,
-  hideCVC: false,
-  maskSecurityCode: false,
-  socialSecurityNumberMode: "auto",
-  showInstallmentAmounts: false,
-  disclaimerEnabled: false,
-  disclaimerMessage: "",
-  disclaimerLinkText: "",
-  disclaimerLink: "",
-};
-
-// Adyen's own DisclaimerMessage component silently renders nothing at all
-// (not even the message text) unless every url passed to it is a valid
-// http(s) URL — an empty or missing link string means the whole disclaimer
-// disappears, message included. Guard against sending a config that would
-// silently vanish.
-function isValidHttpUrl(value: string): boolean {
-  try {
-    return ["http:", "https:"].includes(new URL(value).protocol);
-  } catch {
-    return false;
-  }
-}
-
-function disclaimerMessageField(card: CardOptions) {
-  if (!card.disclaimerEnabled || !card.disclaimerMessage || !isValidHttpUrl(card.disclaimerLink)) {
-    return {};
-  }
-  return {
-    disclaimerMessage: {
-      message: card.disclaimerMessage,
-      linkText: card.disclaimerLinkText,
-      link: card.disclaimerLink,
-    },
-  };
-}
-
-function cardConfigObject(styles: SecureStyles, card: CardOptions, country: string) {
-  const upperCountry = country.toUpperCase();
-  return {
-    styles: secureStyleObject(styles),
-    hasHolderName: card.hasHolderName,
-    holderNameRequired: card.hasHolderName && card.holderNameRequired,
-    billingAddressRequired: card.billingAddressRequired,
-    hideCVC: card.hideCVC,
-    maskSecurityCode: card.maskSecurityCode,
-    ...(SOCIAL_SECURITY_NUMBER_COUNTRIES.includes(upperCountry)
-      ? { configuration: { socialSecurityNumberMode: card.socialSecurityNumberMode } }
-      : {}),
-    // installmentOptions itself is NOT set here: for the Sessions flow, Adyen
-    // only honors the installment plan baked into the session token at
-    // creation time (sent server-side in /api/styling/session, automatically
-    // for BR/MX/JP) — a client-side override here is silently ignored.
-    // showInstallmentAmounts is a pure Component display toggle, so it's
-    // still set client-side.
-    ...(INSTALLMENT_COUNTRIES.includes(upperCountry)
-      ? { showInstallmentAmounts: card.showInstallmentAmounts }
-      : {}),
-    ...disclaimerMessageField(card),
-  };
-}
-
-// storedCard only ever re-collects a CVC — it never renders a holder name,
-// billing address or social security number field. Applying
-// holderNameRequired/billingAddressRequired to it anyway makes the
-// Component report isValid: false with no visible field to fix, so
-// clicking "Pay" on a saved card silently does nothing. hideCVC,
-// maskSecurityCode and disclaimerMessage all still apply to the CVC field
-// it does render, so those are forwarded same as the regular card.
-function storedCardConfigObject(styles: SecureStyles, card: CardOptions) {
-  return {
-    styles: secureStyleObject(styles),
-    hideCVC: card.hideCVC,
-    maskSecurityCode: card.maskSecurityCode,
-    ...disclaimerMessageField(card),
-  };
-}
-
-function dropinProps(
-  native: NativeOptions,
-  styles: SecureStyles,
-  card: CardOptions,
-  country: string,
-) {
-  return {
-    openFirstPaymentMethod: native.openFirstPaymentMethod,
-    openFirstStoredPaymentMethod: native.openFirstStoredPaymentMethod,
-    ...(native.openPaymentMethodType
-      ? { openPaymentMethod: { type: native.openPaymentMethodType } }
-      : {}),
-    instantPaymentTypes: native.instantPaymentTypes,
-    disableFinalAnimation: native.disableFinalAnimation,
-    showRadioButton: native.showRadioButton,
-    paymentMethodsConfiguration: {
-      card: cardConfigObject(styles, card, country),
-      storedCard: storedCardConfigObject(styles, card),
-    },
-  };
-}
-
 interface Mounted {
   unmount(): void;
 }
 
-function secureStyleObject(styles: SecureStyles) {
-  return {
-    base: {
-      color: styles.baseColor,
-      fontSize: `${styles.baseFontSize}px`,
-      fontWeight: styles.baseFontWeight,
-      fontFamily: styles.baseFontFamily,
-      lineHeight: `${styles.lineHeight}px`,
-      letterSpacing: `${styles.letterSpacing}px`,
-      background: styles.background,
-      caretColor: styles.caretColor,
-      textAlign: styles.textAlign,
-      fontSmoothing: "antialiased",
-    },
-    error: { color: styles.errorColor },
-    placeholder: { color: styles.placeholderColor },
-    validated: { color: styles.validatedColor },
-  };
+const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {
+  "secure:Color": true,
+  "css:Labels": true,
+  "config:Drop-in": true,
+  "config:Card fields": true,
+};
+
+const BRANDS_HINT = "brands — which card types the component recognises. Adyen defaults " +
+  "to Mastercard, Visa and Amex; what you can actually charge still depends on your account.";
+
+const PLACEHOLDERS_HINT = "placeholders — Adyen ships localised placeholders; anything " +
+  "set here replaces them.";
+
+const RULES_HINT = "No design token covers these, so they are written against Adyen's own " +
+  "class names — review them after every SDK upgrade.";
+
+function matchesFilter(filter: string, ...values: string[]): boolean {
+  if (!filter) return true;
+  const needle = filter.trim().toLowerCase();
+  return values.some((value) => value.toLowerCase().includes(needle));
 }
 
-function cssText(styles: CssStyles): string {
-  return `/* Adyen Web 6.41.0 — targeted TEST playground overrides.
- * Import after @adyen/adyen-web/styles/adyen.css.
- * Review selectors after every Adyen Web upgrade.
- */
-.adyen-checkout {
-  --adyen-sdk-color-label-primary: ${styles.labelPrimary};
-  --adyen-sdk-color-label-secondary: ${styles.labelSecondary};
-  --adyen-sdk-color-background-primary: ${styles.backgroundPrimary};
-  --adyen-sdk-color-background-secondary: ${styles.backgroundSecondary};
-  --adyen-sdk-color-outline-primary: ${styles.outlinePrimary};
-  --adyen-sdk-color-outline-secondary: ${styles.outlineSecondary};
-  --adyen-sdk-border-radius-s: ${styles.radiusSmall}px;
-  --adyen-sdk-border-radius-m: ${styles.radiusMedium}px;
-  --adyen-sdk-border-width-s: ${styles.borderWidth}px;
-}
-
-/* CSS overrides: outside secured-field iframes only. */
-.adyen-checkout__button--pay {
-  background: ${styles.buttonBackground};
-  color: ${styles.buttonText};
-  ${styles.uppercaseButton ? "text-transform: uppercase;" : ""}
-}
-
-.adyen-checkout__payment-method {
-  margin-bottom: ${styles.methodSpacing}px;
-}
-
-${
-    styles.compactMethods
-      ? `.adyen-checkout__payment-method__header {
-  padding-block: 8px;
-}`
-      : ""
-  }
-`;
+function withValue(list: string[], value: string, checked: boolean): string[] {
+  return checked ? [...list, value] : list.filter((entry) => entry !== value);
 }
 
 function download(name: string, content: string, type: string) {
@@ -479,9 +291,11 @@ export default function StylingPlayground() {
   const [bootstrap, setBootstrap] = useState<Bootstrap | null>(null);
   const [session, setSession] = useState<SessionResponse | null>(null);
   const [secureStyles, setSecureStyles] = useState(DEFAULT_SECURE);
-  const [cssStyles, setCssStyles] = useState(DEFAULT_CSS);
-  const [nativeOptions, setNativeOptions] = useState(DEFAULT_NATIVE);
-  const [cardOptions, setCardOptions] = useState(() => ({
+  const [secureState, setSecureState] = useState<SecureState>("base");
+  const [cssTokens, setCssTokens] = useState<CssTokens>({});
+  const [cssRules, setCssRules] = useState<CssRules>(DEFAULT_CSS_RULES);
+  const [nativeOptions, setNativeOptions] = useState<NativeOptions>(DEFAULT_NATIVE);
+  const [cardOptions, setCardOptions] = useState<CardOptions>(() => ({
     ...DEFAULT_CARD,
     showInstallmentAmounts: INSTALLMENT_COUNTRIES.includes(detectInitialCountry()),
   }));
@@ -494,6 +308,8 @@ export default function StylingPlayground() {
   const [localeManual, setLocaleManual] = useState(false);
   const [availableMethods, setAvailableMethods] = useState<AvailableMethod[]>([]);
   const [section, setSection] = useState<"styling" | "configuration" | "css">("configuration");
+  const [openGroups, setOpenGroups] = useState(DEFAULT_OPEN_GROUPS);
+  const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successFlash, setSuccessFlash] = useState(false);
@@ -512,7 +328,9 @@ export default function StylingPlayground() {
   // Adyen sessions are single-use: once a payment completes on one, mounting
   // it again fails with "The provided session identifier or data is invalid".
   const sessionSpent = useRef(false);
-  const generatedCss = useMemo(() => cssText(cssStyles), [cssStyles]);
+  const generatedCss = useMemo(() => cssText(cssTokens, cssRules), [cssTokens, cssRules]);
+  const previewVariables = useMemo(() => cssPreviewVariables(cssTokens), [cssTokens]);
+  const tokenOverrides = cssTokenSetCount(cssTokens);
 
   useEffect(() => {
     initialize().catch((cause) => {
@@ -672,12 +490,19 @@ export default function StylingPlayground() {
     mountDropinElement(checkoutRef.current);
   }
 
-  function updateSecure<K extends keyof SecureStyles>(key: K, value: SecureStyles[K]) {
-    setSecureStyles((current) => ({ ...current, [key]: value }));
+  function updateSecure(property: SecureProperty, value: string) {
+    setSecureStyles((current) => ({
+      ...current,
+      [secureState]: { ...current[secureState], [property]: value },
+    }));
   }
 
-  function updateCss<K extends keyof CssStyles>(key: K, value: CssStyles[K]) {
-    setCssStyles((current) => ({ ...current, [key]: value }));
+  function updateToken(token: string, value: string) {
+    setCssTokens((current) => ({ ...current, [token]: value }));
+  }
+
+  function updateRule<K extends keyof CssRules>(key: K, value: CssRules[K]) {
+    setCssRules((current) => ({ ...current, [key]: value }));
   }
 
   function updateNative<K extends keyof NativeOptions>(key: K, value: NativeOptions[K]) {
@@ -686,6 +511,13 @@ export default function StylingPlayground() {
 
   function updateCard<K extends keyof CardOptions>(key: K, value: CardOptions[K]) {
     setCardOptions((current) => ({ ...current, [key]: value }));
+  }
+
+  function updatePlaceholder(key: PlaceholderKey, value: string) {
+    setCardOptions((current) => ({
+      ...current,
+      placeholders: { ...current.placeholders, [key]: value },
+    }));
   }
 
   function toggleInstantPaymentType(type: InstantPaymentType, enabled: boolean) {
@@ -719,7 +551,8 @@ export default function StylingPlayground() {
 
   function reset() {
     setSecureStyles(DEFAULT_SECURE);
-    setCssStyles(DEFAULT_CSS);
+    setCssTokens({});
+    setCssRules(DEFAULT_CSS_RULES);
     setNativeOptions(DEFAULT_NATIVE);
     setCardOptions({
       ...DEFAULT_CARD,
@@ -735,17 +568,21 @@ export default function StylingPlayground() {
     );
   }
 
-  const previewVariables = {
-    "--adyen-sdk-color-label-primary": cssStyles.labelPrimary,
-    "--adyen-sdk-color-label-secondary": cssStyles.labelSecondary,
-    "--adyen-sdk-color-background-primary": cssStyles.backgroundPrimary,
-    "--adyen-sdk-color-background-secondary": cssStyles.backgroundSecondary,
-    "--adyen-sdk-color-outline-primary": cssStyles.outlinePrimary,
-    "--adyen-sdk-color-outline-secondary": cssStyles.outlineSecondary,
-    "--adyen-sdk-border-radius-s": `${cssStyles.radiusSmall}px`,
-    "--adyen-sdk-border-radius-m": `${cssStyles.radiusMedium}px`,
-    "--adyen-sdk-border-width-s": `${cssStyles.borderWidth}px`,
-  };
+  function selectSection(next: "styling" | "configuration" | "css") {
+    setSection(next);
+    setFilter("");
+  }
+
+  function groupOpen(key: string): boolean {
+    return filter ? true : openGroups[key] === true;
+  }
+
+  function setGroupOpen(key: string, open: boolean) {
+    setOpenGroups((current) => ({ ...current, [key]: open }));
+  }
+
+  const installmentMarket = INSTALLMENT_COUNTRIES.includes(country);
+  const socialSecurityMarket = SOCIAL_SECURITY_NUMBER_COUNTRIES.includes(country);
 
   return (
     <>
@@ -799,6 +636,7 @@ export default function StylingPlayground() {
           <div class="dropin-host" ref={host} aria-busy={loading}>
             {loading ? <div class="dropin-placeholder">Loading Adyen TEST Drop-in…</div> : null}
           </div>
+          <TestCards />
         </section>
         <aside id="styling-panel" class="styling-panel">
           <button
@@ -816,15 +654,15 @@ export default function StylingPlayground() {
               type="button"
               role="tab"
               aria-selected={section === "styling"}
-              onClick={() => setSection("styling")}
+              onClick={() => selectSection("styling")}
             >
-              Styling
+              Secured fields
             </button>
             <button
               type="button"
               role="tab"
               aria-selected={section === "configuration"}
-              onClick={() => setSection("configuration")}
+              onClick={() => selectSection("configuration")}
             >
               Configuration
             </button>
@@ -832,131 +670,93 @@ export default function StylingPlayground() {
               type="button"
               role="tab"
               aria-selected={section === "css"}
-              onClick={() => setSection("css")}
+              onClick={() => selectSection("css")}
             >
-              CSS
+              CSS{tokenOverrides ? ` (${tokenOverrides})` : ""}
             </button>
           </div>
           <div class="styling-controls styling-controls--shape">
-            <Field label="Small radius" htmlFor="css-radius-s">
-              <input
-                id="css-radius-s"
-                type="range"
-                min="0"
-                max="24"
-                value={cssStyles.radiusSmall}
-                onInput={(event) => updateCss("radiusSmall", event.currentTarget.valueAsNumber)}
-              />
-              <small>{cssStyles.radiusSmall}px</small>
-            </Field>
-            <Field label="Medium radius" htmlFor="css-radius-m">
-              <input
-                id="css-radius-m"
-                type="range"
-                min="0"
-                max="32"
-                value={cssStyles.radiusMedium}
-                onInput={(event) => updateCss("radiusMedium", event.currentTarget.valueAsNumber)}
-              />
-              <small>{cssStyles.radiusMedium}px</small>
-            </Field>
+            <OptionRow
+              id="shape-radius-s"
+              label="Small radius"
+              spec={cssTokenSpec("border-radius-s")}
+              value={cssTokens["border-radius-s"] ?? ""}
+              onChange={(value) => updateToken("border-radius-s", value)}
+            />
+            <OptionRow
+              id="shape-radius-m"
+              label="Medium radius"
+              spec={cssTokenSpec("border-radius-m")}
+              value={cssTokens["border-radius-m"] ?? ""}
+              onChange={(value) => updateToken("border-radius-m", value)}
+            />
           </div>
           <div class="styling-controls">
             {section === "styling"
               ? (
                 <>
-                  <div class="form-grid">
-                    {([
-                      ["baseColor", "Input text"],
-                      ["background", "Input background"],
-                      ["caretColor", "Caret"],
-                      ["errorColor", "Invalid state"],
-                      ["placeholderColor", "Placeholder"],
-                      ["validatedColor", "Validated state"],
-                    ] as const).map(([key, label]) => (
-                      <ColorField
-                        label={label}
-                        htmlFor={`secure-${key}`}
-                        value={secureStyles[key]}
-                        onChange={(value) => updateSecure(key, value)}
-                      />
-                    ))}
-                    <Field label="Font size" htmlFor="secure-font-size">
-                      <input
-                        id="secure-font-size"
-                        type="range"
-                        min="12"
-                        max="24"
-                        value={secureStyles.baseFontSize}
-                        onInput={(event) =>
-                          updateSecure("baseFontSize", event.currentTarget.valueAsNumber)}
-                      />
-                      <small>{secureStyles.baseFontSize}px</small>
-                    </Field>
-                    <Field label="Font weight" htmlFor="secure-weight">
-                      <select
-                        id="secure-weight"
-                        value={secureStyles.baseFontWeight}
-                        onChange={(event) =>
-                          updateSecure("baseFontWeight", event.currentTarget.value)}
-                      >
-                        {["200", "300", "400", "500", "600", "700"].map((value) => (
-                          <option value={value}>{value}</option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field label="Font family" htmlFor="secure-family">
-                      <select
-                        id="secure-family"
-                        value={secureStyles.baseFontFamily}
-                        onChange={(event) =>
-                          updateSecure("baseFontFamily", event.currentTarget.value)}
-                      >
-                        <option value="Arial, sans-serif">Arial</option>
-                        <option value="Georgia, serif">Georgia</option>
-                        <option value="Courier New, monospace">Courier New</option>
-                        <option value="system-ui, sans-serif">System UI</option>
-                      </select>
-                    </Field>
-                    <Field label="Line height" htmlFor="secure-line-height">
-                      <input
-                        id="secure-line-height"
-                        type="number"
-                        min="16"
-                        max="40"
-                        value={secureStyles.lineHeight}
-                        onInput={(event) =>
-                          updateSecure("lineHeight", event.currentTarget.valueAsNumber)}
-                      />
-                    </Field>
-                    <Field label="Letter spacing" htmlFor="secure-letter-spacing">
-                      <input
-                        id="secure-letter-spacing"
-                        type="number"
-                        min="-2"
-                        max="5"
-                        step="0.1"
-                        value={secureStyles.letterSpacing}
-                        onInput={(event) =>
-                          updateSecure("letterSpacing", event.currentTarget.valueAsNumber)}
-                      />
-                    </Field>
-                    <Field label="Text align" htmlFor="secure-align">
-                      <select
-                        id="secure-align"
-                        value={secureStyles.textAlign}
-                        onChange={(event) =>
-                          updateSecure(
-                            "textAlign",
-                            event.currentTarget.value as "left" | "center" | "right",
-                          )}
-                      >
-                        <option value="left">Left</option>
-                        <option value="center">Center</option>
-                        <option value="right">Right</option>
-                      </select>
-                    </Field>
+                  <p class="css-note">
+                    The card number, expiry date and security code are rendered inside
+                    Adyen-hosted iframes, so no page CSS can reach them: they are styled only
+                    through this object. All {SECURE_PROPERTY_SPECS.length}{" "}
+                    properties Adyen accepts are below, for each of its four states.
+                  </p>
+                  <div class="styling-segmented" role="tablist" aria-label="Field state">
+                    {SECURE_STATES.map((state) => {
+                      const count = secureSetCount(secureStyles, state);
+                      return (
+                        <button
+                          key={state}
+                          type="button"
+                          role="tab"
+                          aria-selected={secureState === state}
+                          onClick={() => setSecureState(state)}
+                        >
+                          {SECURE_STATE_META[state].label}
+                          {count
+                            ? <span class="styling-segmented__count">{count}</span>
+                            : null}
+                        </button>
+                      );
+                    })}
                   </div>
+                  <p class="option-group__hint">{SECURE_STATE_META[secureState].hint}</p>
+                  <input
+                    class="styling-filter"
+                    type="search"
+                    value={filter}
+                    placeholder="Filter properties…"
+                    aria-label="Filter properties"
+                    onInput={(event) => setFilter(event.currentTarget.value)}
+                  />
+                  {SECURE_GROUPS.map((group) => {
+                    const specs = SECURE_PROPERTY_SPECS
+                      .filter((spec) => spec.group === group)
+                      .filter((spec) => matchesFilter(filter, spec.property, group));
+                    if (specs.length === 0) return null;
+                    const key = `secure:${group}`;
+                    return (
+                      <OptionGroup
+                        key={key}
+                        title={group}
+                        count={secureSetCount(secureStyles, secureState, group)}
+                        open={groupOpen(key)}
+                        onToggle={(open) => setGroupOpen(key, open)}
+                      >
+                        {specs.map((spec) => (
+                          <OptionRow
+                            key={spec.property}
+                            id={`secure-${secureState}-${spec.property}`}
+                            label={spec.label}
+                            hint={spec.hint}
+                            spec={spec}
+                            value={secureStyles[secureState][spec.property] ?? ""}
+                            onChange={(value) => updateSecure(spec.property, value)}
+                          />
+                        ))}
+                      </OptionGroup>
+                    );
+                  })}
                   <RawOutput
                     content={JSON.stringify(
                       {
@@ -974,28 +774,60 @@ export default function StylingPlayground() {
               : section === "configuration"
               ? (
                 <>
-                  <div class="form-grid">
-                    <label class="switch-row">
-                      <span>Open first payment method</span>
-                      <input
-                        type="checkbox"
-                        checked={nativeOptions.openFirstPaymentMethod}
-                        onChange={(event) =>
-                          updateNative("openFirstPaymentMethod", event.currentTarget.checked)}
-                      />
-                    </label>
-                    <label class="switch-row">
-                      <span>Open first stored method</span>
-                      <input
-                        type="checkbox"
-                        checked={nativeOptions.openFirstStoredPaymentMethod}
-                        onChange={(event) =>
-                          updateNative(
-                            "openFirstStoredPaymentMethod",
-                            event.currentTarget.checked,
-                          )}
-                      />
-                    </label>
+                  <OptionGroup
+                    title="Drop-in"
+                    hint="DropinConfiguration: how the payment method list itself behaves."
+                    open={groupOpen("config:Drop-in")}
+                    onToggle={(open) => setGroupOpen("config:Drop-in", open)}
+                  >
+                    <SwitchRow
+                      label="Show payment methods"
+                      hint="showPaymentMethods"
+                      checked={nativeOptions.showPaymentMethods}
+                      onChange={(value) => updateNative("showPaymentMethods", value)}
+                    />
+                    <SwitchRow
+                      label="Show stored payment methods"
+                      hint="showStoredPaymentMethods"
+                      checked={nativeOptions.showStoredPaymentMethods}
+                      onChange={(value) => updateNative("showStoredPaymentMethods", value)}
+                    />
+                    <SwitchRow
+                      label="Open first payment method"
+                      hint="openFirstPaymentMethod"
+                      checked={nativeOptions.openFirstPaymentMethod}
+                      onChange={(value) => updateNative("openFirstPaymentMethod", value)}
+                    />
+                    <SwitchRow
+                      label="Open first stored method"
+                      hint="openFirstStoredPaymentMethod — takes priority over the toggle above"
+                      checked={nativeOptions.openFirstStoredPaymentMethod}
+                      onChange={(value) => updateNative("openFirstStoredPaymentMethod", value)}
+                    />
+                    <SwitchRow
+                      label="Show radio buttons"
+                      hint="showRadioButton"
+                      checked={nativeOptions.showRadioButton}
+                      onChange={(value) => updateNative("showRadioButton", value)}
+                    />
+                    <SwitchRow
+                      label="Skip final animation"
+                      hint="disableFinalAnimation"
+                      checked={nativeOptions.disableFinalAnimation}
+                      onChange={(value) => updateNative("disableFinalAnimation", value)}
+                    />
+                    <SwitchRow
+                      label="Apple Pay on top"
+                      hint="instantPaymentTypes"
+                      checked={nativeOptions.instantPaymentTypes.includes("applepay")}
+                      onChange={(value) => toggleInstantPaymentType("applepay", value)}
+                    />
+                    <SwitchRow
+                      label="Google Pay on top"
+                      hint="instantPaymentTypes"
+                      checked={nativeOptions.instantPaymentTypes.includes("googlepay")}
+                      onChange={(value) => toggleInstantPaymentType("googlepay", value)}
+                    />
                     <Field label="Pre-select method" htmlFor="native-open-type">
                       <select
                         id="native-open-type"
@@ -1008,154 +840,345 @@ export default function StylingPlayground() {
                           <option value={type}>{name}</option>
                         ))}
                       </select>
-                      <small>Takes priority over the two toggles above.</small>
+                      <small>openPaymentMethod — takes priority over the two toggles above.</small>
                     </Field>
-                    <label class="switch-row">
-                      <span>Apple Pay on top</span>
+                  </OptionGroup>
+                  <OptionGroup
+                    title="Card fields"
+                    hint="Which fields the card form renders, and how."
+                    open={groupOpen("config:Card fields")}
+                    onToggle={(open) => setGroupOpen("config:Card fields", open)}
+                  >
+                    <SwitchRow
+                      label="Show holder name"
+                      hint="hasHolderName"
+                      checked={cardOptions.hasHolderName}
+                      onChange={(value) => updateCard("hasHolderName", value)}
+                    />
+                    <SwitchRow
+                      label="Holder name required"
+                      hint="holderNameRequired"
+                      checked={cardOptions.holderNameRequired}
+                      disabled={!cardOptions.hasHolderName}
+                      onChange={(value) => updateCard("holderNameRequired", value)}
+                    />
+                    <SwitchRow
+                      label="Holder name on top"
+                      hint="positionHolderNameOnTop"
+                      checked={cardOptions.positionHolderNameOnTop}
+                      disabled={!cardOptions.hasHolderName}
+                      onChange={(value) => updateCard("positionHolderNameOnTop", value)}
+                    />
+                    <Field label="Prefill holder name" htmlFor="card-holder-prefill">
                       <input
-                        type="checkbox"
-                        checked={nativeOptions.instantPaymentTypes.includes("applepay")}
-                        onChange={(event) =>
-                          toggleInstantPaymentType("applepay", event.currentTarget.checked)}
-                      />
-                    </label>
-                    <label class="switch-row">
-                      <span>Google Pay on top</span>
-                      <input
-                        type="checkbox"
-                        checked={nativeOptions.instantPaymentTypes.includes("googlepay")}
-                        onChange={(event) =>
-                          toggleInstantPaymentType("googlepay", event.currentTarget.checked)}
-                      />
-                    </label>
-                    <label class="switch-row">
-                      <span>Skip final animation</span>
-                      <input
-                        type="checkbox"
-                        checked={nativeOptions.disableFinalAnimation}
-                        onChange={(event) =>
-                          updateNative("disableFinalAnimation", event.currentTarget.checked)}
-                      />
-                    </label>
-                    <label class="switch-row">
-                      <span>Show radio buttons</span>
-                      <input
-                        type="checkbox"
-                        checked={nativeOptions.showRadioButton}
-                        onChange={(event) =>
-                          updateNative("showRadioButton", event.currentTarget.checked)}
-                      />
-                    </label>
-                  </div>
-                  <h3 class="styling-subheading">Card component</h3>
-                  <div class="form-grid">
-                    <label class="switch-row">
-                      <span>Show holder name</span>
-                      <input
-                        type="checkbox"
-                        checked={cardOptions.hasHolderName}
-                        onChange={(event) =>
-                          updateCard("hasHolderName", event.currentTarget.checked)}
-                      />
-                    </label>
-                    <label class="switch-row">
-                      <span>Holder name required</span>
-                      <input
-                        type="checkbox"
-                        checked={cardOptions.holderNameRequired}
+                        id="card-holder-prefill"
+                        type="text"
+                        value={cardOptions.holderNamePrefill}
+                        placeholder="J. Smith"
                         disabled={!cardOptions.hasHolderName}
-                        onChange={(event) =>
-                          updateCard("holderNameRequired", event.currentTarget.checked)}
+                        onInput={(event) =>
+                          updateCard("holderNamePrefill", event.currentTarget.value)}
                       />
-                    </label>
-                    <label class="switch-row">
-                      <span>Billing address required</span>
-                      <input
-                        type="checkbox"
-                        checked={cardOptions.billingAddressRequired}
-                        onChange={(event) =>
-                          updateCard("billingAddressRequired", event.currentTarget.checked)}
+                      <small>data.holderName</small>
+                    </Field>
+                    <SwitchRow
+                      label="Hide CVC field"
+                      hint="hideCVC"
+                      checked={cardOptions.hideCVC}
+                      onChange={(value) => updateCard("hideCVC", value)}
+                    />
+                    <SwitchRow
+                      label="Mask security code"
+                      hint="maskSecurityCode"
+                      checked={cardOptions.maskSecurityCode}
+                      onChange={(value) => updateCard("maskSecurityCode", value)}
+                    />
+                    <SwitchRow
+                      label="Show brand icon"
+                      hint="showBrandIcon"
+                      checked={cardOptions.showBrandIcon}
+                      onChange={(value) => updateCard("showBrandIcon", value)}
+                    />
+                    <SwitchRow
+                      label="Show contextual element"
+                      hint="showContextualElement — the hint shown next to the logo"
+                      checked={cardOptions.showContextualElement}
+                      onChange={(value) => updateCard("showContextualElement", value)}
+                    />
+                  </OptionGroup>
+                  <OptionGroup
+                    title="Accepted brands"
+                    hint={BRANDS_HINT}
+                    count={cardOptions.brands.length}
+                    open={groupOpen("config:Brands")}
+                    onToggle={(open) => setGroupOpen("config:Brands", open)}
+                  >
+                    <div class="option-group__actions">
+                      <button
+                        type="button"
+                        class="button button--quiet button--small"
+                        onClick={() => updateCard("brands", CARD_BRANDS.map(([value]) => value))}
+                      >
+                        Select all
+                      </button>
+                      <button
+                        type="button"
+                        class="button button--quiet button--small"
+                        onClick={() => updateCard("brands", DEFAULT_BRANDS)}
+                      >
+                        Adyen default
+                      </button>
+                    </div>
+                    <CheckboxCloud
+                      items={CARD_BRANDS}
+                      selected={cardOptions.brands}
+                      onToggle={(value, checked) =>
+                        updateCard("brands", withValue(cardOptions.brands, value, checked))}
+                    />
+                  </OptionGroup>
+                  <OptionGroup
+                    title="Placeholders"
+                    hint={PLACEHOLDERS_HINT}
+                    count={Object.values(cardOptions.placeholders).filter(Boolean).length}
+                    open={groupOpen("config:Placeholders")}
+                    onToggle={(open) => setGroupOpen("config:Placeholders", open)}
+                  >
+                    {PLACEHOLDER_FIELDS.map(([key, label, example]) => (
+                      <OptionRow
+                        key={key}
+                        id={`placeholder-${key}`}
+                        label={label}
+                        spec={{ kind: "text", fallback: example }}
+                        value={cardOptions.placeholders[key] ?? ""}
+                        onChange={(value) => updatePlaceholder(key, value)}
                       />
-                    </label>
-                    <label class="switch-row">
-                      <span>Hide CVC field</span>
-                      <input
-                        type="checkbox"
-                        checked={cardOptions.hideCVC}
-                        onChange={(event) => updateCard("hideCVC", event.currentTarget.checked)}
-                      />
-                    </label>
-                    <label class="switch-row">
-                      <span>Mask security code</span>
-                      <input
-                        type="checkbox"
-                        checked={cardOptions.maskSecurityCode}
-                        onChange={(event) =>
-                          updateCard("maskSecurityCode", event.currentTarget.checked)}
-                      />
-                    </label>
-                    {SOCIAL_SECURITY_NUMBER_COUNTRIES.includes(country)
-                      ? (
-                        <Field label="Social security number" htmlFor="card-ssn-mode">
-                          <select
-                            id="card-ssn-mode"
-                            value={cardOptions.socialSecurityNumberMode}
-                            onChange={(event) =>
-                              updateCard(
-                                "socialSecurityNumberMode",
-                                event.currentTarget.value as SocialSecurityNumberMode,
-                              )}
-                          >
-                            <option value="auto">Auto (by card BIN)</option>
-                            <option value="show">Always show</option>
-                            <option value="hide">Never show</option>
-                          </select>
-                          <small>Brazil only.</small>
-                        </Field>
-                      )
-                      : null}
-                    {INSTALLMENT_COUNTRIES.includes(country)
+                    ))}
+                  </OptionGroup>
+                  <OptionGroup
+                    title="Billing address"
+                    hint="Collected inside the card form and sent with the payment."
+                    open={groupOpen("config:Billing address")}
+                    onToggle={(open) => setGroupOpen("config:Billing address", open)}
+                  >
+                    <SwitchRow
+                      label="Billing address required"
+                      hint="billingAddressRequired"
+                      checked={cardOptions.billingAddressRequired}
+                      onChange={(value) => updateCard("billingAddressRequired", value)}
+                    />
+                    {cardOptions.billingAddressRequired
                       ? (
                         <>
-                          <small class="field--full">
-                            installmentOptions is automatically sent in the /sessions request for
-                            this market (Brazil, Mexico, Japan) — no toggle needed. This only
-                            controls whether the per-installment amount is displayed.
-                          </small>
-                          <label class="switch-row">
-                            <span>Show installment amounts</span>
-                            <input
-                              type="checkbox"
-                              checked={cardOptions.showInstallmentAmounts}
+                          <Field label="Address mode" htmlFor="card-billing-mode">
+                            <select
+                              id="card-billing-mode"
+                              value={cardOptions.billingAddressMode}
                               onChange={(event) =>
                                 updateCard(
-                                  "showInstallmentAmounts",
-                                  event.currentTarget.checked,
+                                  "billingAddressMode",
+                                  event.currentTarget.value as BillingAddressMode,
+                                )}
+                            >
+                              <option value="full">full — every field</option>
+                              <option value="partial">partial — postal code only</option>
+                              <option value="none">none — no fields</option>
+                            </select>
+                            <small>billingAddressMode</small>
+                          </Field>
+                          <div class="field">
+                            <span>Required fields</span>
+                            <CheckboxCloud
+                              items={ADDRESS_FIELDS}
+                              selected={cardOptions.billingAddressRequiredFields}
+                              onToggle={(value, checked) =>
+                                updateCard(
+                                  "billingAddressRequiredFields",
+                                  withValue(
+                                    cardOptions.billingAddressRequiredFields,
+                                    value,
+                                    checked,
+                                  ),
                                 )}
                             />
-                          </label>
+                            <small>
+                              billingAddressRequiredFields — leave empty for Adyen's own
+                              per-country schema.
+                            </small>
+                          </div>
+                          <div class="field">
+                            <span>Allowed countries</span>
+                            <CheckboxCloud
+                              items={COUNTRY_ITEMS}
+                              selected={cardOptions.billingAddressAllowedCountries}
+                              onToggle={(value, checked) =>
+                                updateCard(
+                                  "billingAddressAllowedCountries",
+                                  withValue(
+                                    cardOptions.billingAddressAllowedCountries,
+                                    value,
+                                    checked,
+                                  ),
+                                )}
+                            />
+                            <small>
+                              billingAddressAllowedCountries — leave empty for the full list.
+                            </small>
+                          </div>
                         </>
                       )
                       : null}
-                  </div>
-                  <h3 class="styling-subheading">Disclaimer message</h3>
-                  <div class="form-grid">
-                    <label class="switch-row">
-                      <span>Enable disclaimer</span>
+                  </OptionGroup>
+                  <OptionGroup
+                    title="Input behaviour"
+                    hint="Focus, formatting and validation of the secured fields."
+                    open={groupOpen("config:Input behaviour")}
+                    onToggle={(open) => setGroupOpen("config:Input behaviour", open)}
+                  >
+                    <SwitchRow
+                      label="Auto-focus next field"
+                      hint="autoFocus"
+                      checked={cardOptions.autoFocus}
+                      onChange={(value) => updateCard("autoFocus", value)}
+                    />
+                    <SwitchRow
+                      label="BIN lookup"
+                      hint="doBinLookup — brand detection while the PAN is typed"
+                      checked={cardOptions.doBinLookup}
+                      onChange={(value) => updateCard("doBinLookup", value)}
+                    />
+                    <SwitchRow
+                      label="Trim trailing separator"
+                      hint="trimTrailingSeparator"
+                      checked={cardOptions.trimTrailingSeparator}
+                      onChange={(value) => updateCard("trimTrailingSeparator", value)}
+                    />
+                    <SwitchRow
+                      label="iOS keypad fix"
+                      hint="keypadFix"
+                      checked={cardOptions.keypadFix}
+                      onChange={(value) => updateCard("keypadFix", value)}
+                    />
+                    <SwitchRow
+                      label="Legacy input mode"
+                      hint="legacyInputMode — type=tel instead of numeric text"
+                      checked={cardOptions.legacyInputMode}
+                      onChange={(value) => updateCard("legacyInputMode", value)}
+                    />
+                    <SwitchRow
+                      label="Disable iOS arrow keys"
+                      hint="disableIOSArrowKeys"
+                      checked={cardOptions.disableIOSArrowKeys}
+                      onChange={(value) => updateCard("disableIOSArrowKeys", value)}
+                    />
+                    <SwitchRow
+                      label="Expose expiry date"
+                      hint="exposeExpiryDate — returns it unencrypted in the state"
+                      checked={cardOptions.exposeExpiryDate}
+                      onChange={(value) => updateCard("exposeExpiryDate", value)}
+                    />
+                    <SwitchRow
+                      label="Store details checkbox"
+                      hint="enableStoreDetails — also needs the session to allow storing"
+                      checked={cardOptions.enableStoreDetails}
+                      onChange={(value) => updateCard("enableStoreDetails", value)}
+                    />
+                    <Field label="Minimum expiry date" htmlFor="card-min-expiry">
                       <input
-                        type="checkbox"
-                        checked={cardOptions.disclaimerEnabled}
-                        onChange={(event) =>
-                          updateCard("disclaimerEnabled", event.currentTarget.checked)}
+                        id="card-min-expiry"
+                        type="text"
+                        value={cardOptions.minimumExpiryDate}
+                        placeholder="mm/yy"
+                        onInput={(event) =>
+                          updateCard("minimumExpiryDate", event.currentTarget.value)}
                       />
-                    </label>
+                      {cardOptions.minimumExpiryDate &&
+                          !isValidExpiryDate(cardOptions.minimumExpiryDate)
+                        ? <small class="field-warning">Use the mm/yy format.</small>
+                        : <small>minimumExpiryDate — rejects cards expiring before this.</small>}
+                    </Field>
+                    <Field label="3-D Secure challenge size" htmlFor="card-challenge-size">
+                      <select
+                        id="card-challenge-size"
+                        value={cardOptions.challengeWindowSize}
+                        onChange={(event) =>
+                          updateCard(
+                            "challengeWindowSize",
+                            event.currentTarget.value as ChallengeWindowSize,
+                          )}
+                      >
+                        {CHALLENGE_WINDOW_SIZES.map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
+                      <small>challengeWindowSize</small>
+                    </Field>
+                  </OptionGroup>
+                  {socialSecurityMarket || installmentMarket
+                    ? (
+                      <OptionGroup
+                        title="This market only"
+                        hint={`Options Adyen only applies in ${country}.`}
+                        open={groupOpen("config:Market")}
+                        onToggle={(open) => setGroupOpen("config:Market", open)}
+                      >
+                        {socialSecurityMarket
+                          ? (
+                            <Field label="Social security number" htmlFor="card-ssn-mode">
+                              <select
+                                id="card-ssn-mode"
+                                value={cardOptions.socialSecurityNumberMode}
+                                onChange={(event) =>
+                                  updateCard(
+                                    "socialSecurityNumberMode",
+                                    event.currentTarget.value as SocialSecurityNumberMode,
+                                  )}
+                              >
+                                <option value="auto">Auto (by card BIN)</option>
+                                <option value="show">Always show</option>
+                                <option value="hide">Never show</option>
+                              </select>
+                              <small>configuration.socialSecurityNumberMode — Brazil only.</small>
+                            </Field>
+                          )
+                          : null}
+                        {installmentMarket
+                          ? (
+                            <>
+                              <p class="option-note">
+                                installmentOptions is automatically sent in the /sessions request
+                                for this market (Brazil, Mexico, Japan) — no toggle needed. This
+                                only controls whether the per-installment amount is displayed.
+                              </p>
+                              <SwitchRow
+                                label="Show installment amounts"
+                                hint="showInstallmentAmounts"
+                                checked={cardOptions.showInstallmentAmounts}
+                                onChange={(value) => updateCard("showInstallmentAmounts", value)}
+                              />
+                            </>
+                          )
+                          : null}
+                      </OptionGroup>
+                    )
+                    : null}
+                  <OptionGroup
+                    title="Disclaimer message"
+                    hint="disclaimerMessage — rendered under the card fields."
+                    open={groupOpen("config:Disclaimer")}
+                    onToggle={(open) => setGroupOpen("config:Disclaimer", open)}
+                  >
+                    <SwitchRow
+                      label="Enable disclaimer"
+                      checked={cardOptions.disclaimerEnabled}
+                      onChange={(value) => updateCard("disclaimerEnabled", value)}
+                    />
                     {cardOptions.disclaimerEnabled
                       ? (
                         <>
-                          <small class="field--full">
+                          <p class="option-note">
                             A valid http(s):// Link URL is required to render the message — add one
                             below even if you don't need clickable link text.
-                          </small>
+                          </p>
                           <Field label="Message" htmlFor="disclaimer-message">
                             <input
                               id="disclaimer-message"
@@ -1197,7 +1220,7 @@ export default function StylingPlayground() {
                         </>
                       )
                       : null}
-                  </div>
+                  </OptionGroup>
                   <RawOutput
                     content={JSON.stringify(
                       { card: cardConfigObject(secureStyles, cardOptions, country) },
@@ -1211,73 +1234,96 @@ export default function StylingPlayground() {
               )
               : (
                 <>
-                  <p class="css-note">CSS selectors may change between versions.</p>
+                  <p class="css-note">
+                    The {CSS_TOKEN_SPECS.length}{" "}
+                    custom properties below are the ones Adyen Web actually reads, taken from the
+                    stylesheet it ships. They are the supported way to theme the Drop-in; the
+                    class-name rules at the end are not, and can break on any upgrade.
+                  </p>
                   <p class="css-cdn-link">
                     Base stylesheet:{" "}
                     <a href={ADYEN_CSS_URL} target="_blank" rel="noopener noreferrer">
                       adyen.css ({ADYEN_WEB_VERSION})
                     </a>
                   </p>
-                  <div class="form-grid">
-                    {([
-                      ["labelPrimary", "Primary label"],
-                      ["labelSecondary", "Secondary label"],
-                      ["backgroundPrimary", "Primary surface"],
-                      ["backgroundSecondary", "Secondary surface"],
-                      ["outlinePrimary", "Primary outline"],
-                      ["outlineSecondary", "Secondary outline"],
-                      ["buttonBackground", "Pay button"],
-                      ["buttonText", "Pay button text"],
-                    ] as const).map(([key, label]) => (
-                      <ColorField
+                  <div class="styling-filter-row">
+                    <input
+                      class="styling-filter"
+                      type="search"
+                      value={filter}
+                      placeholder="Filter custom properties…"
+                      aria-label="Filter custom properties"
+                      onInput={(event) => setFilter(event.currentTarget.value)}
+                    />
+                    {tokenOverrides
+                      ? (
+                        <button
+                          type="button"
+                          class="button button--quiet button--small"
+                          onClick={() => setCssTokens({})}
+                        >
+                          Clear {tokenOverrides}
+                        </button>
+                      )
+                      : null}
+                  </div>
+                  {CSS_TOKEN_GROUPS.map((group) => {
+                    const specs = CSS_TOKEN_SPECS
+                      .filter((spec) => spec.group === group)
+                      .filter((spec) => matchesFilter(filter, spec.token, spec.label, group));
+                    if (specs.length === 0) return null;
+                    const key = `css:${group}`;
+                    return (
+                      <OptionGroup
+                        key={key}
+                        title={group}
+                        count={cssTokenSetCount(cssTokens, group)}
+                        open={groupOpen(key)}
+                        onToggle={(open) => setGroupOpen(key, open)}
+                      >
+                        {specs.map((spec) => (
+                          <OptionRow
+                            key={spec.token}
+                            id={`token-${spec.token}`}
+                            label={spec.label}
+                            hint={`--adyen-sdk-${spec.token}`}
+                            spec={spec}
+                            value={cssTokens[spec.token] ?? ""}
+                            onChange={(value) => updateToken(spec.token, value)}
+                          />
+                        ))}
+                      </OptionGroup>
+                    );
+                  })}
+                  <OptionGroup
+                    title="Class-name rules"
+                    hint={RULES_HINT}
+                    count={cssRuleSetCount(cssRules)}
+                    open={groupOpen("css:Rules")}
+                    onToggle={(open) => setGroupOpen("css:Rules", open)}
+                  >
+                    {CSS_RULE_SPECS.map(({ key, label, spec, hint }) => (
+                      <OptionRow
+                        key={key}
+                        id={`rule-${key}`}
                         label={label}
-                        htmlFor={`css-${key}`}
-                        value={cssStyles[key]}
-                        onChange={(value) => updateCss(key, value)}
+                        hint={hint}
+                        spec={spec}
+                        value={cssRules[key]}
+                        onChange={(value) => updateRule(key, value)}
                       />
                     ))}
-                    <Field label="Border width" htmlFor="css-border">
-                      <input
-                        id="css-border"
-                        type="number"
-                        min="0"
-                        max="4"
-                        value={cssStyles.borderWidth}
-                        onInput={(event) =>
-                          updateCss("borderWidth", event.currentTarget.valueAsNumber)}
-                      />
-                    </Field>
-                    <Field label="Method spacing" htmlFor="css-spacing">
-                      <input
-                        id="css-spacing"
-                        type="range"
-                        min="0"
-                        max="32"
-                        value={cssStyles.methodSpacing}
-                        onInput={(event) =>
-                          updateCss("methodSpacing", event.currentTarget.valueAsNumber)}
-                      />
-                      <small>{cssStyles.methodSpacing}px</small>
-                    </Field>
-                    <label class="switch-row">
-                      <span>Uppercase pay button</span>
-                      <input
-                        type="checkbox"
-                        checked={cssStyles.uppercaseButton}
-                        onChange={(event) =>
-                          updateCss("uppercaseButton", event.currentTarget.checked)}
-                      />
-                    </label>
-                    <label class="switch-row">
-                      <span>Compact method headers</span>
-                      <input
-                        type="checkbox"
-                        checked={cssStyles.compactMethods}
-                        onChange={(event) =>
-                          updateCss("compactMethods", event.currentTarget.checked)}
-                      />
-                    </label>
-                  </div>
+                    <SwitchRow
+                      label="Uppercase pay button"
+                      checked={cssRules.uppercaseButton}
+                      onChange={(value) => updateRule("uppercaseButton", value)}
+                    />
+                    <SwitchRow
+                      label="Compact method headers"
+                      checked={cssRules.compactMethods}
+                      onChange={(value) => updateRule("compactMethods", value)}
+                    />
+                  </OptionGroup>
                   <RawOutput
                     content={generatedCss}
                     filename="adyen-overrides.css"
