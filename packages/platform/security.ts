@@ -95,11 +95,14 @@ function normalizeHost(host: string): string {
 }
 
 export function csrfProtection(signingSecret: string, publicOrigin: string): MiddlewareHandler {
-  const expectedHost = normalizeHost(new URL(publicOrigin).host);
+  const configuredHost = normalizeHost(new URL(publicOrigin).host);
   return async (c, next) => {
     const session = await ensureSession(c, signingSecret);
     c.set("session", session);
     if (["POST", "PUT", "PATCH", "DELETE"].includes(c.req.method)) {
+      // The real protection: a double-submit token the browser only ever
+      // exposes to same-origin script, backed by SameSite=Strict on the
+      // session cookie. A genuine cross-site attacker can't read either.
       const cookieToken = getCookie(c, "adyen_csrf");
       const headerToken = c.req.header("x-csrf-token");
       if (!cookieToken || !headerToken || cookieToken !== headerToken) {
@@ -107,19 +110,29 @@ export function csrfProtection(signingSecret: string, publicOrigin: string): Mid
       }
       const origin = c.req.header("origin");
       if (origin) {
-        // Only the host:port is compared, not the scheme — behind Render's proxy,
-        // the public https:// origin the browser sends arrives at the container
-        // over an internal http:// hop, and locally "localhost" vs "127.0.0.1" is
-        // the same server under two names. SameSite=Strict on adyen_session
-        // already blocks genuine cross-site requests; this is a same-host sanity
-        // check on top; it doesn't need to also police scheme/loopback spelling.
+        // Host-only comparison (scheme ignored: Render terminates TLS and
+        // forwards over plain http internally). Accepts the host the request
+        // actually arrived on as well as the configured PUBLIC_ORIGIN —
+        // PUBLIC_ORIGIN is a fixed env var, so a renamed service, a custom
+        // domain or a www/non-www visit would otherwise 403 real users even
+        // though the request is genuinely same-origin.
+        const requestHosts = [
+          c.req.header("x-forwarded-host"),
+          c.req.header("host"),
+          new URL(c.req.url).host,
+        ];
+        const allowedHosts = new Set(
+          [configuredHost, ...requestHosts]
+            .filter((host): host is string => Boolean(host))
+            .map((host) => normalizeHost(host.split(",")[0].trim())),
+        );
         let originHost: string;
         try {
           originHost = normalizeHost(new URL(origin).host);
         } catch {
           return c.json({ error: "Cross-origin request rejected." }, 403);
         }
-        if (originHost !== expectedHost) {
+        if (!allowedHosts.has(originHost)) {
           return c.json({ error: "Cross-origin request rejected." }, 403);
         }
       }

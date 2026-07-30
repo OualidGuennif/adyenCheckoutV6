@@ -1,7 +1,12 @@
 import { AdyenCheckout, Dropin } from "@adyen/adyen-web";
 import type { Core } from "@adyen/adyen-web";
 import { apiFetch } from "@suite/ui/client.ts";
-import { AdyenWordmark, Callout, ColorField, Field } from "@suite/ui/components.tsx";
+import { AdyenWordmark, ColorField, Field } from "@suite/ui/components.tsx";
+import {
+  detectCountryFromLanguages,
+  FALLBACK_COUNTRY,
+  localeForCountry,
+} from "@suite/platform/markets.ts";
 import {
   INSTALLMENT_COUNTRIES,
   isNonFatalWalletError,
@@ -96,50 +101,25 @@ const LOCALES = [
   ["ar-AE", "العربية (AE)"],
 ] as const;
 
-// The locale auto-selected for each country until the shopper overrides it.
-const LOCALE_DEFAULTS: Record<string, string> = {
-  FR: "fr-FR",
-  AE: "ar-AE",
-  AT: "de-AT",
-  AU: "en-AU",
-  BE: "nl-BE",
-  BR: "pt-BR",
-  CA: "en-CA",
-  CH: "de-CH",
-  CN: "zh-CN",
-  CZ: "cs-CZ",
-  DE: "de-DE",
-  DK: "da-DK",
-  ES: "es-ES",
-  FI: "fi-FI",
-  GB: "en-GB",
-  HK: "zh-HK",
-  ID: "id-ID",
-  IN: "en-IN",
-  IT: "it-IT",
-  JP: "ja-JP",
-  KE: "en-KE",
-  KR: "ko-KR",
-  MX: "es-MX",
-  MY: "en-MY",
-  NL: "nl-NL",
-  NO: "nb-NO",
-  NZ: "en-NZ",
-  PH: "en-PH",
-  PL: "pl-PL",
-  PT: "pt-PT",
-  SE: "sv-SE",
-  SG: "en-SG",
-  TH: "th-TH",
-  US: "en-US",
-  VN: "vi-VN",
-  ZA: "en-ZA",
-};
-
 function flagEmoji(countryCode: string): string {
   return String.fromCodePoint(
     ...countryCode.toUpperCase().split("").map((letter) => 127397 + letter.charCodeAt(0)),
   );
+}
+
+/**
+ * Market to open on, guessed from the browser's language preferences and
+ * narrowed to the countries this playground actually offers. Returns the
+ * shared European fallback during SSR (no navigator) or when the guess isn't
+ * one of the offered markets.
+ */
+function detectInitialCountry(): string {
+  if (typeof navigator === "undefined") return FALLBACK_COUNTRY;
+  const languages = navigator.languages?.length
+    ? navigator.languages
+    : [navigator.language].filter(Boolean);
+  const guess = detectCountryFromLanguages(languages, FALLBACK_COUNTRY);
+  return COUNTRIES.some(([code]) => code === guess) ? guess : FALLBACK_COUNTRY;
 }
 
 interface Bootstrap {
@@ -488,8 +468,12 @@ export default function StylingPlayground() {
   const [cssStyles, setCssStyles] = useState(DEFAULT_CSS);
   const [nativeOptions, setNativeOptions] = useState(DEFAULT_NATIVE);
   const [cardOptions, setCardOptions] = useState(DEFAULT_CARD);
-  const [country, setCountry] = useState("FR");
-  const [locale, setLocale] = useState(LOCALE_DEFAULTS.FR);
+  // Guessed from the browser's own language preferences on first render, so a
+  // Dutch or Japanese visitor lands on their own market instead of a fixed
+  // one. Server-side there is no navigator, so the shared European fallback
+  // is rendered and the guess is applied on hydration.
+  const [country, setCountry] = useState(detectInitialCountry);
+  const [locale, setLocale] = useState(() => localeForCountry(detectInitialCountry()));
   const [localeManual, setLocaleManual] = useState(false);
   const [availableMethods, setAvailableMethods] = useState<AvailableMethod[]>([]);
   const [section, setSection] = useState<"official" | "native" | "css">("official");
@@ -688,7 +672,7 @@ export default function StylingPlayground() {
 
   function updateCountry(nextCountry: string) {
     setCountry(nextCountry);
-    if (!localeManual) setLocale(LOCALE_DEFAULTS[nextCountry] ?? "en-US");
+    if (!localeManual) setLocale(localeForCountry(nextCountry));
   }
 
   function updateLocale(nextLocale: string) {
@@ -731,12 +715,9 @@ export default function StylingPlayground() {
         <div class="styling-brand">
           <AdyenWordmark />
           <span class="brand-demo">DEMOS</span>
-          <span>
-            <strong>V6 Styling</strong>
-            <small>Adyen Web {ADYEN_WEB_VERSION}</small>
-          </span>
+          <small class="styling-brand__sdk">Adyen Web SDK {ADYEN_WEB_VERSION}</small>
         </div>
-        <div class="form-actions">
+        <div class="toolbar-markets">
           <div class="toolbar-country">
             <label for="preview-country">Country</label>
             <select
@@ -760,17 +741,7 @@ export default function StylingPlayground() {
             >
               {LOCALES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
             </select>
-            {!localeManual ? <small class="toolbar-country__auto">auto-detected</small> : null}
           </div>
-          <button
-            class={`button button--secondary button--wide${
-              successFlash ? " button--success-flash" : ""
-            }`}
-            type="button"
-            onClick={reset}
-          >
-            Reset
-          </button>
         </div>
       </div>
       {error
@@ -788,6 +759,13 @@ export default function StylingPlayground() {
           </div>
         </section>
         <aside id="styling-panel" class="styling-panel">
+          <button
+            class={`styling-reset${successFlash ? " styling-reset--success" : ""}`}
+            type="button"
+            onClick={reset}
+          >
+            Reset
+          </button>
           <div class="styling-tabs" role="tablist">
             <button
               type="button"
@@ -1188,9 +1166,7 @@ export default function StylingPlayground() {
               )
               : (
                 <>
-                  <Callout title="Note" tone="warning" compact>
-                    Can't reach secured iframes; selectors may change between versions.
-                  </Callout>
+                  <p class="css-note">CSS selectors may change between versions.</p>
                   <p class="css-cdn-link">
                     Base stylesheet:{" "}
                     <a href={ADYEN_CSS_URL} target="_blank" rel="noopener noreferrer">

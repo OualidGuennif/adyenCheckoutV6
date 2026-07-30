@@ -32,10 +32,11 @@ export async function apiFetch<T>(
   return payload as T;
 }
 
-// Adyen's "minor units" are currency-exponent-aware — JPY has no fractional
-// unit, so its minor units equal its major units (¥110 is `{value: 110}`,
-// not 11000). Dividing by 100 unconditionally under-displays it 100x.
-const ZERO_DECIMAL_CURRENCIES = new Set(["JPY"]);
+// Adyen's "minor units" are currency-exponent-aware — JPY and friends have no
+// fractional unit, so their minor units equal their major units (¥110 is
+// `{value: 110}`, not 11000). Dividing by 100 unconditionally under-displays
+// them 100x.
+import { ZERO_DECIMAL_CURRENCIES } from "@suite/platform/markets.ts";
 
 export function formatMinorAmount(value: number, currency: string): string {
   const upperCurrency = currency.toUpperCase();

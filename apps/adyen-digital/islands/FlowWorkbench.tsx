@@ -3,6 +3,13 @@ import type { Core } from "@adyen/adyen-web";
 import { apiFetch, formatMinorAmount, prettyJson } from "@suite/ui/client.ts";
 import { Callout, Field, StatusPill } from "@suite/ui/components.tsx";
 import {
+  currencyForCountry,
+  defaultAmountForCurrency,
+  detectCountryFromLanguages,
+  FALLBACK_COUNTRY,
+  localeForCountry,
+} from "@suite/platform/markets.ts";
+import {
   INSTALLMENT_COUNTRIES,
   isNonFatalWalletError,
   paymentMethodsConfiguration,
@@ -103,41 +110,24 @@ const MARKETS = [
   ["ZA", "South Africa"],
 ] as const;
 
-const MARKET_DEFAULTS: Record<string, { locale: string; currency: string }> = {
-  AU: { locale: "en-AU", currency: "AUD" },
-  CA: { locale: "en-CA", currency: "CAD" },
-  DE: { locale: "de-DE", currency: "EUR" },
-  FR: { locale: "fr-FR", currency: "EUR" },
-  GB: { locale: "en-GB", currency: "GBP" },
-  JP: { locale: "ja-JP", currency: "JPY" },
-  NL: { locale: "nl-NL", currency: "EUR" },
-  PT: { locale: "pt-PT", currency: "EUR" },
-  SG: { locale: "en-SG", currency: "SGD" },
-  US: { locale: "en-US", currency: "USD" },
-};
+// Every market's own locale/currency, so both dropdowns cover the same set
+// the per-country defaults are actually drawn from.
+const LOCALE_OPTIONS = [...new Set(MARKETS.map(([code]) => localeForCountry(code)))].sort();
+const CURRENCY_OPTIONS = [...new Set(MARKETS.map(([code]) => currencyForCountry(code)))].sort();
 
-// JPY has no fractional unit — its minor units equal its major units.
-const ZERO_DECIMAL_CURRENCIES = new Set(["JPY"]);
-
-// Not a real conversion — 109.99 reads fine in any 2-decimal currency
-// (USD, GBP, CAD...), so it's reused as-is; zero-decimal currencies just
-// get a clean round number in the same ballpark instead.
-function defaultAmountForCurrency(currency: string): number {
-  return ZERO_DECIMAL_CURRENCIES.has(currency) ? 11000 : 10999;
+/**
+ * Market to open on: pay-by-link keeps its NL default, everything else is
+ * guessed from the browser's languages and falls back to a European market.
+ * Returns the fallback during SSR, where there is no navigator.
+ */
+function detectInitialCountry(flow: Flow): string {
+  if (flow === "pay-by-link" || typeof navigator === "undefined") return FALLBACK_COUNTRY;
+  const languages = navigator.languages?.length
+    ? navigator.languages
+    : [navigator.language].filter(Boolean);
+  const guess = detectCountryFromLanguages(languages, FALLBACK_COUNTRY);
+  return MARKETS.some(([code]) => code === guess) ? guess : FALLBACK_COUNTRY;
 }
-
-const LOCALE_OPTIONS = [
-  "fr-FR",
-  "en-US",
-  "en-GB",
-  "en-CA",
-  "en-AU",
-  "nl-NL",
-  "pt-PT",
-  "de-DE",
-  "ja-JP",
-  "en-SG",
-];
 
 // Reuses Adyen's own shipped CSS classes (imported globally as adyen.css) for
 // field box sizing/focus states, same as the legacy playground's hand-rolled
@@ -230,7 +220,6 @@ export default function FlowWorkbench(
     initialIntegration?: "dropin" | "component";
   },
 ) {
-  const initialMarket = flow === "pay-by-link" ? "NL" : "FR";
   const hasAutoInit = flow === "sessions" || flow === "advanced" || flow === "api-only";
   const [bootstrap, setBootstrap] = useState<Bootstrap | null>(initialBootstrap ?? null);
   const [profileId, setProfileId] = useState(initialBootstrap?.profile.id ?? "default");
@@ -239,10 +228,12 @@ export default function FlowWorkbench(
   );
   const [componentType, setComponentType] = useState("scheme");
   const [availableComponents, setAvailableComponents] = useState<AvailableComponent[]>([]);
-  const [amount, setAmount] = useState(10999);
-  const [currency, setCurrency] = useState(MARKET_DEFAULTS[initialMarket].currency);
-  const [country, setCountry] = useState(initialMarket);
-  const [locale, setLocale] = useState(MARKET_DEFAULTS[initialMarket].locale);
+  const [country, setCountry] = useState(() => detectInitialCountry(flow));
+  const [currency, setCurrency] = useState(() => currencyForCountry(detectInitialCountry(flow)));
+  const [amount, setAmount] = useState(() =>
+    defaultAmountForCurrency(currencyForCountry(detectInitialCountry(flow)))
+  );
+  const [locale, setLocale] = useState(() => localeForCountry(detectInitialCountry(flow)));
   // Whether installments are offered is a property of the market, not a
   // manual preference — always derived from country rather than a toggle.
   const installments = INSTALLMENT_COUNTRIES.includes(country.toUpperCase());
@@ -352,14 +343,10 @@ export default function FlowWorkbench(
 
   function selectMarket(nextCountry: string) {
     setCountry(nextCountry);
-    const defaults = MARKET_DEFAULTS[nextCountry];
-    if (defaults) {
-      setLocale(defaults.locale);
-      if (defaults.currency !== currency) {
-        setAmount(defaultAmountForCurrency(defaults.currency));
-      }
-      setCurrency(defaults.currency);
-    }
+    setLocale(localeForCountry(nextCountry));
+    const nextCurrency = currencyForCountry(nextCountry);
+    if (nextCurrency !== currency) setAmount(defaultAmountForCurrency(nextCurrency));
+    setCurrency(nextCurrency);
   }
 
   function selectCurrency(nextCurrency: string) {
@@ -800,7 +787,7 @@ export default function FlowWorkbench(
                     value={currency}
                     onChange={(event) => selectCurrency(event.currentTarget.value)}
                   >
-                    {["EUR", "USD", "CAD", "GBP", "AUD", "JPY", "SGD"].map((value) => (
+                    {CURRENCY_OPTIONS.map((value) => (
                       <option key={value} value={value}>{value}</option>
                     ))}
                   </select>

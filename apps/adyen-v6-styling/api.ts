@@ -1,6 +1,12 @@
 import { AdyenTestClient } from "@suite/platform/adyen.ts";
-import { buildCheckoutAddresses } from "@suite/platform/addresses.ts";
+import { buildCheckoutAddresses, normalizeCountryCode } from "@suite/platform/addresses.ts";
 import { createPlatformContext, selectedSecrets } from "@suite/platform/base-api.ts";
+import {
+  currencyForCountry,
+  defaultAmountForCountry,
+  FALLBACK_COUNTRY,
+  isSupportedMarket,
+} from "@suite/platform/markets.ts";
 import {
   buildLineItems,
   resolveShopperEmail,
@@ -12,20 +18,32 @@ import { INSTALLMENT_COUNTRIES } from "@suite/ui/paymentMethods.ts";
 const context = createPlatformContext("styling");
 export const api = context.api;
 
+/** Market for a request body, falling back to a supported European default. */
+function marketFrom(value: unknown): string {
+  const country = normalizeCountryCode(value, FALLBACK_COUNTRY);
+  return isSupportedMarket(country) ? country : FALLBACK_COUNTRY;
+}
+
 // Side lookup only, used to populate the "pre-select payment method" dropdown
 // with the merchant's real available methods for a country — unrelated to
 // (and doesn't affect) the /sessions call the Drop-in preview actually uses.
 api.post("/api/styling/payment-methods", async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as { countryCode?: unknown };
-  const countryCode = /^[A-Z]{2}$/.test(String(body.countryCode)) ? String(body.countryCode) : "FR";
+  const countryCode = marketFrom(body.countryCode);
   const selected = await selectedSecrets(context, c.req.raw);
   if (!selected.secrets.merchantAccount) {
     return c.json({ error: "The server needs an Adyen TEST merchant account." }, 409);
   }
+  // Amount/currency have to match the market: Adyen filters the available
+  // methods on both, so a hardcoded EUR amount would return the euro-zone
+  // list for every country.
   const response = await new AdyenTestClient(selected.secrets).paymentMethods({
     merchantAccount: selected.secrets.merchantAccount,
     countryCode,
-    amount: { value: 10999, currency: "EUR" },
+    amount: {
+      value: defaultAmountForCountry(countryCode),
+      currency: currencyForCountry(countryCode),
+    },
     channel: "Web",
   });
   const methods = (response as { paymentMethods?: Array<{ type: string; name: string }> })
@@ -39,7 +57,7 @@ api.post("/api/styling/session", async (c) => {
     shopperLocale?: unknown;
     installments?: unknown;
   };
-  const countryCode = /^[A-Z]{2}$/.test(String(body.countryCode)) ? String(body.countryCode) : "FR";
+  const countryCode = marketFrom(body.countryCode);
   const shopperLocale = /^[a-z]{2}-[A-Z]{2}$/.test(String(body.shopperLocale))
     ? String(body.shopperLocale)
     : "en-US";
@@ -57,7 +75,10 @@ api.post("/api/styling/session", async (c) => {
   const order = context.repository.createOrder({
     appId: "styling",
     flow: "v6-styling-dropin",
-    amount: { value: 10999, currency: "EUR" },
+    amount: {
+      value: defaultAmountForCountry(countryCode),
+      currency: currencyForCountry(countryCode),
+    },
   });
   const addresses = buildCheckoutAddresses({ countryCode });
   const request = {

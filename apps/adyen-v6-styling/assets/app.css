@@ -44,16 +44,20 @@ body {
   color: var(--color-green);
 }
 
-.styling-brand > span:last-child {
-  display: grid;
+.styling-brand__sdk {
   padding-left: 10px;
   border-left: 1px solid var(--color-border);
-  color: var(--color-ink);
+  color: var(--color-ink-subtle);
+  font-size: 0.66rem;
+  font-style: italic;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.styling-brand small {
-  color: var(--color-ink-muted);
-  font-size: 0.65rem;
+.toolbar-markets {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .styling-layout {
@@ -112,10 +116,43 @@ body {
   overflow: auto;
 }
 
+/* Full-width slim bar pinned above the panel tabs. */
+.styling-reset {
+  position: sticky;
+  z-index: 3;
+  top: 0;
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  padding: 9px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.styling-reset:hover {
+  border-bottom-color: var(--color-green);
+  background: var(--color-green-soft);
+  color: var(--color-green-dark);
+}
+
+.styling-reset--success {
+  border-bottom-color: var(--color-green);
+  background: var(--color-green-soft);
+  color: var(--color-green-dark);
+}
+
 .styling-tabs {
   position: sticky;
   z-index: 2;
-  top: 0;
+  top: 38px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   border-bottom: 1px solid var(--color-border);
@@ -177,6 +214,12 @@ body {
 
 .styling-controls .switch-row span {
   overflow-wrap: anywhere;
+}
+
+.css-note {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  color: var(--color-ink-subtle);
 }
 
 .css-cdn-link {
@@ -249,13 +292,45 @@ body {
 
 @media (max-width: 640px) {
   .styling-toolbar {
-    align-items: flex-start;
+    align-items: stretch;
     flex-direction: column;
+    gap: 10px;
+    padding: 10px 14px;
   }
 
-  .styling-toolbar .form-actions {
+  /* The wordmark is fixed-width and the SDK label can't wrap, so on a narrow
+     phone they overflow the row unless the label is allowed to shrink. */
+  .styling-brand {
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .styling-brand__sdk {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Two selects side by side don't fit; give each half the row and let them
+     shrink instead of pushing the toolbar wider than the viewport. */
+  .toolbar-markets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .toolbar-country {
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+  }
+
+  .toolbar-country select {
     width: 100%;
-    margin-top: 0;
+    min-width: 0;
+    /* Safari zooms the page in on focus for any control under 16px. */
+    font-size: 16px;
   }
 
   .styling-preview {
