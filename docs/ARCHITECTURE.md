@@ -33,12 +33,18 @@ conservant Fresh pour l’UI et Hono pour les API.
 et comportements non sensibles. Aucune API key, clé HMAC, Basic Auth ou bearer agentique n’est
 importée dans le bundle client.
 
-La bibliothèque officielle Adyen v32 reste épinglée pour les contrats et la comparaison avec les
-surfaces `CheckoutAPI` et `CloudDeviceAPI`. Son transport Node échoue toutefois sous le runtime Deno
-de la suite avec une erreur de connexion générique. Les appels réels utilisent donc `fetch` natif
-avec les endpoints TEST exacts de Checkout API v72 et Cloud Device API v1, les mêmes en-têtes
-`X-API-Key` et `Idempotency-Key`, des délais explicites et la propagation des statuts Adyen. Ce
-choix a été validé par un appel `/v72/sessions` direct puis par l’API locale, tous deux en HTTP 201.
+Les appels serveur passent par le transport de la bibliothèque officielle Adyen v32,
+`HttpURLConnectionClient`, avec les endpoints TEST exacts de Checkout API v72 et Cloud Device API
+v1. La bibliothèque fournit ainsi ses propres en-têtes (`X-API-Key`, `Idempotency-Key`, User-Agent
+et `adyen-library-*`), sa gestion des redirections 308 et son analyse des erreurs ; `adyen.ts` se
+contente de traduire ses exceptions en `AdyenRequestError` et de garantir la contrainte TEST-only.
+
+Ce transport est écrit pour Node et deux détails lui manquent sous Deno 2.5.6, tous deux corrigés
+dans Deno 2.8.0 : `flushHeaders()` fige la requête sans jamais la poser sur le réseau ni lever
+d’erreur, et `res.complete` n’est jamais mis à `true`, ce qui faisait échouer même les réponses
+valides. `packages/platform/adyen.ts` neutralise les deux, sans effet sur un runtime déjà conforme.
+C’est ce blocage silencieux — et non une question de CORS ou de TLS — qui avait fait abandonner la
+bibliothèque au profit de `fetch`.
 
 ## Modèle de données
 

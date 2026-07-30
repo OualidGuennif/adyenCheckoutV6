@@ -52,6 +52,18 @@ function amountFrom(value: unknown, defaultCurrency = "EUR"): Amount {
   return { value: amount, currency };
 }
 
+/**
+ * Adyen documents shopperConversionId as an opaque unique id, so a UUID is
+ * kept as-is and anything else is replaced rather than trusted — the client
+ * only ever echoes back a value this server minted.
+ */
+function conversionIdFrom(value: unknown): string {
+  return typeof value === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+    ? value
+    : crypto.randomUUID();
+}
+
 function countryFrom(value: unknown): string {
   const country = String(value ?? "FR").toUpperCase();
   if (!/^[A-Z]{2}$/.test(country)) throw new Error("countryCode must be ISO alpha-2.");
@@ -262,6 +274,12 @@ api.post("/api/digital/payment-methods", async (c) => {
   const countryCode = countryFrom(body.countryCode);
   const { client, secrets } = await profileClient(c.req.raw);
   const correlationId = String(body.correlationId ?? crypto.randomUUID());
+  // One id per Advanced-flow checkout, minted here and echoed back so the
+  // /payments call that follows can repeat it — that pairing is the whole
+  // point of the field, and it is what Adyen's checkout conversion insights
+  // key on. Only /paymentMethods and /payments accept it; /sessions and
+  // /paymentLinks reject it as an unknown field.
+  const shopperConversionId = conversionIdFrom(body.shopperConversionId);
   const request = {
     merchantAccount: secrets.merchantAccount,
     amount,
@@ -270,6 +288,7 @@ api.post("/api/digital/payment-methods", async (c) => {
     shopperLocale: String(body.shopperLocale ?? "en-US"),
     shopperEmail: resolveShopperEmail(body.shopperEmail),
     shopperReference: weeklyShopperReference(),
+    shopperConversionId,
     splitCardFundingSources: splitsCardFundingSources(countryCode),
   };
   const result = await recordedCall({
@@ -279,7 +298,7 @@ api.post("/api/digital/payment-methods", async (c) => {
     request,
     execute: () => client.paymentMethods(request),
   });
-  return c.json({ correlationId, paymentMethodsResponse: result });
+  return c.json({ correlationId, shopperConversionId, paymentMethodsResponse: result });
 });
 
 api.post("/api/digital/payments", async (c) => {
@@ -323,6 +342,13 @@ api.post("/api/digital/payments", async (c) => {
     // A stored method is already on file; re-storing it is rejected.
     ...(body.storePaymentMethod && !isStoredPaymentMethod ? { storePaymentMethod: true } : {}),
     ...(body.order && typeof body.order === "object" ? { order: body.order } : {}),
+    // Repeats the id minted by the /paymentMethods call that opened this
+    // checkout, which is what links the two requests into one conversion.
+    // Absent for flows that never listed payment methods (MIT), where a
+    // freshly invented id would link nothing.
+    ...(typeof body.shopperConversionId === "string"
+      ? { shopperConversionId: conversionIdFrom(body.shopperConversionId) }
+      : {}),
   };
   const result = await recordedCall({
     correlationId: order.id,
