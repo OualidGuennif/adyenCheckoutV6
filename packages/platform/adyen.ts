@@ -1,18 +1,45 @@
 // The package is CommonJS and re-exports its classes through getters, which
 // Deno's CJS named-export detection cannot see — the default import is the
-// whole `module.exports`, so destructuring it is the shape that works.
+// whole `module.exports`, so reading the classes off it is the shape that
+// works. See `library()` for why nothing is read at module load.
 import adyenApiLibrary from "@adyen/api-library";
 import type { ProfileSecrets } from "./types.ts";
 import { assertTestOnly, profileIsTestOnly } from "./test-only.ts";
-
-const { Config, EnvironmentEnum, HttpURLConnectionClient } = adyenApiLibrary;
 
 /**
  * The library's `ClientInterface`, taken off its own transport class. That
  * interface is a default export, which the same CJS interop cannot surface
  * as a type, but every implementation of it is structurally this.
  */
-export type AdyenHttpClient = Pick<InstanceType<typeof HttpURLConnectionClient>, "request">;
+export type AdyenHttpClient = Pick<
+  InstanceType<typeof adyenApiLibrary.HttpURLConnectionClient>,
+  "request"
+>;
+
+/**
+ * Resolves the library's exports, on first use rather than at module load.
+ *
+ * `@adyen/api-library` is CommonJS and is kept out of the SSR bundle by
+ * `ssr.external` in each vite.config.ts, so what actually lands in
+ * `adyenApiLibrary` depends on which interop ran: importing under Deno hands
+ * back `module.exports` itself, while an ESM namespace built around the same
+ * module nests it one level deeper under `default`. Both are accepted here.
+ *
+ * Doing this lazily matters: every app's `main.ts` reaches this module, so the
+ * built `_fresh/server.js` evaluates it, and `scripts/assert-built-ssr.ts`
+ * imports that bundle. Anything thrown while this module initialises would
+ * surface there as a bare import failure with no useful message, so importing
+ * this file stays free of side effects and the cost is paid on first request.
+ */
+function library(): typeof adyenApiLibrary {
+  const direct = adyenApiLibrary as unknown as Record<string, unknown> | undefined;
+  if (typeof direct?.HttpURLConnectionClient === "function") return adyenApiLibrary;
+  const nested = direct?.default as typeof adyenApiLibrary | undefined;
+  if (typeof nested?.HttpURLConnectionClient === "function") return nested;
+  throw new Error(
+    "@adyen/api-library did not expose HttpURLConnectionClient — unexpected CommonJS interop shape.",
+  );
+}
 
 type Payload = Record<string, unknown>;
 type HttpMethod = "GET" | "POST";
@@ -72,7 +99,7 @@ type CreateRequest = (
  *    set it.
  */
 function nativeHttpClient(): AdyenHttpClient {
-  const client = new HttpURLConnectionClient();
+  const client = new (library().HttpURLConnectionClient)();
   // `createRequest` is declared private in the shipped typings but is an
   // ordinary prototype method at runtime, and it is the only point where the
   // ClientRequest is reachable before `doRequest()` starts using it.
@@ -100,7 +127,12 @@ function nativeHttpClient(): AdyenHttpClient {
   return client;
 }
 
-const sharedHttpClient = nativeHttpClient();
+let cachedHttpClient: AdyenHttpClient | undefined;
+
+/** Built once, on first request rather than at module load. */
+function sharedHttpClient(): AdyenHttpClient {
+  return cachedHttpClient ??= nativeHttpClient();
+}
 
 function responseObject(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -186,6 +218,7 @@ async function adyenRequest(input: {
   httpClient: AdyenHttpClient;
 }): Promise<unknown> {
   assertTestOnly({ endpoint: input.endpoint });
+  const { Config, EnvironmentEnum } = library();
   const config = new Config({
     apiKey: input.apiKey,
     environment: EnvironmentEnum.TEST,
@@ -215,7 +248,7 @@ export class AdyenTestClient {
   readonly #secrets: ProfileSecrets;
   readonly #httpClient: AdyenHttpClient;
 
-  constructor(secrets: ProfileSecrets, httpClient: AdyenHttpClient = sharedHttpClient) {
+  constructor(secrets: ProfileSecrets, httpClient: AdyenHttpClient = sharedHttpClient()) {
     profileIsTestOnly(secrets);
     if (!secrets.apiKey) throw new Error("The selected profile has no Adyen TEST API key.");
     this.#secrets = secrets;
