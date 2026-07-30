@@ -47,28 +47,29 @@ type CreateRequest = (
 ) => RequestLike;
 
 /**
- * The library's own node:https transport, adapted to Deno 2.5.6.
+ * The library's own node:https transport, adapted to pre-2.8 Deno.
  *
  * `HttpURLConnectionClient` is written against Node, and two of the details
- * it relies on are missing from Deno 2.5.6's node:http layer. Both were
- * fixed in Deno 2.8.0, so this wrapper becomes dead weight once the pinned
- * runtime moves past that; both are also no-ops on a runtime that already
- * behaves, so it is safe to keep meanwhile. Neither has anything to do with
- * CORS, TLS or the endpoints — the misdiagnosis that led the suite to drop
- * the library's transport in the first place.
+ * it relies on were missing from Deno's node:http layer until 2.8.0. The
+ * pinned runtime is past that now, so neither workaround is load-bearing in
+ * CI or in the images; both are no-ops on a runtime that already behaves,
+ * and they keep the suite usable on an older local Deno. Neither has
+ * anything to do with CORS, TLS or the endpoints — the misdiagnosis that led
+ * the suite to drop the library's transport in the first place.
  *
  * 1. `doRequest()` opens every call with `flushHeaders()`, purely to push
- *    the header block out ahead of the body. On Deno 2.5.6 that call strands
- *    the request: nothing reaches the wire, no error is raised, and the
- *    promise never settles. Dropping it costs nothing, because the `write()`
+ *    the header block out ahead of the body. Before 2.8.0 that call stranded
+ *    the request: nothing reached the wire, no error was raised, and the
+ *    promise never settled. Dropping it costs nothing, because the `write()`
  *    and `end()` that follow flush the very same headers.
  *
  * 2. At the end of the response `doRequest()` rejects unless `res.complete`
- *    is true. Deno 2.5.6 never flips that flag, so every call — including
- *    successful ones — failed with "The connection was terminated while the
- *    message was still being sent". Setting it as the message ends restores
- *    Node's meaning; the listener is attached before the library's own so it
- *    wins the ordering, and it is skipped on runtimes that already set it.
+ *    is true. Before 2.8.0 Deno never flipped that flag, so every call —
+ *    including successful ones — failed with "The connection was terminated
+ *    while the message was still being sent". Setting it as the message ends
+ *    restores Node's meaning; the listener is attached before the library's
+ *    own so it wins the ordering, and it is skipped on runtimes that already
+ *    set it.
  */
 function nativeHttpClient(): AdyenHttpClient {
   const client = new HttpURLConnectionClient();

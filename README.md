@@ -17,7 +17,7 @@ package.
 
 ## Getting started
 
-Requires Deno 2.5.6 or later.
+Requires Deno 2.9.4 or later.
 
 ```bash
 deno task dev:all
@@ -69,7 +69,7 @@ same model on PostgreSQL plus a webhook queue.
 
 | Dependency           | Version | Notes                                             |
 | -------------------- | ------- | ------------------------------------------------- |
-| Deno                 | 2.5.6   | Shared runtime                                    |
+| Deno                 | 2.9.4   | Shared runtime                                    |
 | Fresh                | 2.3.3   | SSR and islands                                   |
 | Hono                 | 4.12.31 | API router inside each Fresh server               |
 | Vite                 | 7.1.4   | Build and HMR                                     |
@@ -78,8 +78,9 @@ same model on PostgreSQL plus a webhook queue.
 | Checkout API         | v72     | Explicit TEST endpoints                           |
 
 Server-side Adyen calls go through the library's `HttpURLConnectionClient`. Two details it relies on
-are missing from Deno 2.5.6's node:http layer and were fixed in Deno 2.8.0, so
-`packages/platform/adyen.ts` works around both; the comments there explain what and why.
+were missing from Deno's node:http layer before 2.8.0, so `packages/platform/adyen.ts` works around
+both. The pinned runtime no longer needs those workarounds, but they are harmless and keep the suite
+runnable on an older local Deno; the comments there explain what and why.
 
 ## Documentation
 

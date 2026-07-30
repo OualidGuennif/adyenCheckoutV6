@@ -3,7 +3,8 @@ body {
 }
 
 @keyframes button-success-flash {
-  0%, 100% {
+  0%,
+  100% {
     border-color: var(--color-border-strong);
     box-shadow: none;
   }

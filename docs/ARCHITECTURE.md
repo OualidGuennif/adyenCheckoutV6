@@ -39,12 +39,13 @@ v1. La bibliothèque fournit ainsi ses propres en-têtes (`X-API-Key`, `Idempote
 et `adyen-library-*`), sa gestion des redirections 308 et son analyse des erreurs ; `adyen.ts` se
 contente de traduire ses exceptions en `AdyenRequestError` et de garantir la contrainte TEST-only.
 
-Ce transport est écrit pour Node et deux détails lui manquent sous Deno 2.5.6, tous deux corrigés
-dans Deno 2.8.0 : `flushHeaders()` fige la requête sans jamais la poser sur le réseau ni lever
-d’erreur, et `res.complete` n’est jamais mis à `true`, ce qui faisait échouer même les réponses
-valides. `packages/platform/adyen.ts` neutralise les deux, sans effet sur un runtime déjà conforme.
-C’est ce blocage silencieux — et non une question de CORS ou de TLS — qui avait fait abandonner la
-bibliothèque au profit de `fetch`.
+Ce transport est écrit pour Node et deux détails lui manquaient sous Deno avant la 2.8.0 :
+`flushHeaders()` figeait la requête sans jamais la poser sur le réseau ni lever d’erreur, et
+`res.complete` n’était jamais mis à `true`, ce qui faisait échouer même les réponses valides.
+`packages/platform/adyen.ts` neutralise les deux. Le runtime épinglé (2.9.4) n’en a plus besoin,
+mais les contournements restent sans effet sur un runtime conforme et permettent de travailler avec
+un Deno local plus ancien. C’est ce blocage silencieux — et non une question de CORS ou de TLS — qui
+avait fait abandonner la bibliothèque au profit de `fetch`.
 
 ## Modèle de données
 
