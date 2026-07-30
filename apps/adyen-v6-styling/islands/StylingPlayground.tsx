@@ -509,6 +509,9 @@ export default function StylingPlayground() {
   // itself instead of clobbering a newer one, which is what caused the
   // Drop-in to visibly flicker/remount on its own.
   const mountToken = useRef(0);
+  // Adyen sessions are single-use: once a payment completes on one, mounting
+  // it again fails with "The provided session identifier or data is invalid".
+  const sessionSpent = useRef(false);
   const generatedCss = useMemo(() => cssText(cssStyles), [cssStyles]);
 
   useEffect(() => {
@@ -617,6 +620,7 @@ export default function StylingPlayground() {
   ) {
     if (!boot?.clientKey || !currentSession || !host.current) return;
     const token = ++mountToken.current;
+    sessionSpent.current = false;
     const checkout = await AdyenCheckout({
       environment: "test",
       clientKey: boot.clientKey,
@@ -624,7 +628,10 @@ export default function StylingPlayground() {
       countryCode,
       locale: shopperLocale,
       analytics: { enabled: false },
-      onPaymentCompleted: () => flashSuccess(),
+      onPaymentCompleted: () => {
+        sessionSpent.current = true;
+        flashSuccess();
+      },
       onPaymentFailed: () => undefined,
       onError: (cause: Error) => {
         if (isNonFatalWalletError(cause)) return;
@@ -655,8 +662,11 @@ export default function StylingPlayground() {
   }
 
   async function remountDropinOnly() {
-    if (!checkoutRef.current) {
-      await mountDropin();
+    // A session Adyen has already taken a payment on can't be mounted again,
+    // so once one is spent every remount has to start from a fresh session
+    // instead of reusing the existing Core.
+    if (sessionSpent.current || !checkoutRef.current) {
+      await refreshSession();
       return;
     }
     mountDropinElement(checkoutRef.current);
@@ -716,8 +726,12 @@ export default function StylingPlayground() {
       showInstallmentAmounts: INSTALLMENT_COUNTRIES.includes(country),
     });
     setError(null);
-    mountDropin(bootstrap, session).catch((cause) =>
-      setError(cause instanceof Error ? cause.message : "Remount failed.")
+    // A fresh session, not a remount of the current one: an Adyen session is
+    // single-use, so once a payment has gone through, reusing it fails with
+    // "The provided session identifier or data is invalid". Reset is meant to
+    // hand back a checkout you can pay with again.
+    refreshSession().catch((cause) =>
+      setError(cause instanceof Error ? cause.message : "Reset failed.")
     );
   }
 
