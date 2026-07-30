@@ -116,43 +116,73 @@ body {
   overflow: auto;
 }
 
-/* Full-width slim bar pinned above the panel tabs. */
+/* Full-width slim bar pinned above the panel tabs. Reads as a button — it has
+   a visible pill outline, an icon and an active press state — while still
+   spanning the panel so it never looks like a section heading. */
 .styling-reset {
   position: sticky;
   z-index: 3;
   top: 0;
-  display: block;
+  display: flex;
   width: 100%;
-  min-height: 38px;
-  padding: 9px 12px;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 12px;
   border: 0;
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface-muted);
-  color: var(--color-ink-muted);
+  background: white;
+  color: var(--color-ink);
   cursor: pointer;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+  font-size: 0.76rem;
+  font-weight: 750;
 }
 
-.styling-reset:hover {
-  border-bottom-color: var(--color-green);
+.styling-reset__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 16px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: var(--color-surface-muted);
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.styling-reset:hover .styling-reset__label {
+  border-color: var(--color-green);
   background: var(--color-green-soft);
   color: var(--color-green-dark);
 }
 
-.styling-reset--success {
-  border-bottom-color: var(--color-green);
+.styling-reset:active .styling-reset__label {
+  transform: translateY(1px);
+}
+
+.styling-reset:focus-visible {
+  outline: none;
+}
+
+.styling-reset:focus-visible .styling-reset__label {
+  border-color: var(--color-green);
+  box-shadow: var(--shadow-focus);
+}
+
+.styling-reset--success .styling-reset__label {
+  border-color: var(--color-green);
   background: var(--color-green-soft);
   color: var(--color-green-dark);
+}
+
+.styling-reset svg {
+  flex: 0 0 auto;
 }
 
 .styling-tabs {
   position: sticky;
   z-index: 2;
-  top: 38px;
+  top: 42px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   border-bottom: 1px solid var(--color-border);

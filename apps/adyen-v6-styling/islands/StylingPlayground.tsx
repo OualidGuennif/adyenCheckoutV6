@@ -410,6 +410,20 @@ function download(name: string, content: string, type: string) {
   URL.revokeObjectURL(link.href);
 }
 
+function ResetIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M3 12a9 9 0 1 0 3.5-7.1M3 4v5h5"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  );
+}
+
 function DownloadIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -467,7 +481,10 @@ export default function StylingPlayground() {
   const [secureStyles, setSecureStyles] = useState(DEFAULT_SECURE);
   const [cssStyles, setCssStyles] = useState(DEFAULT_CSS);
   const [nativeOptions, setNativeOptions] = useState(DEFAULT_NATIVE);
-  const [cardOptions, setCardOptions] = useState(DEFAULT_CARD);
+  const [cardOptions, setCardOptions] = useState(() => ({
+    ...DEFAULT_CARD,
+    showInstallmentAmounts: INSTALLMENT_COUNTRIES.includes(detectInitialCountry()),
+  }));
   // Guessed from the browser's own language preferences on first render, so a
   // Dutch or Japanese visitor lands on their own market instead of a fixed
   // one. Server-side there is no navigator, so the shared European fallback
@@ -476,7 +493,7 @@ export default function StylingPlayground() {
   const [locale, setLocale] = useState(() => localeForCountry(detectInitialCountry()));
   const [localeManual, setLocaleManual] = useState(false);
   const [availableMethods, setAvailableMethods] = useState<AvailableMethod[]>([]);
-  const [section, setSection] = useState<"official" | "native" | "css">("official");
+  const [section, setSection] = useState<"styling" | "configuration" | "css">("configuration");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successFlash, setSuccessFlash] = useState(false);
@@ -673,6 +690,11 @@ export default function StylingPlayground() {
   function updateCountry(nextCountry: string) {
     setCountry(nextCountry);
     if (!localeManual) setLocale(localeForCountry(nextCountry));
+    // Installments only exist on BR/MX/JP, so showing the per-installment
+    // amount is on by default there and off everywhere else. Switching market
+    // re-derives it rather than stranding a toggle from the previous country;
+    // it stays manually overridable for the market you're on.
+    updateCard("showInstallmentAmounts", INSTALLMENT_COUNTRIES.includes(nextCountry));
   }
 
   function updateLocale(nextLocale: string) {
@@ -689,7 +711,10 @@ export default function StylingPlayground() {
     setSecureStyles(DEFAULT_SECURE);
     setCssStyles(DEFAULT_CSS);
     setNativeOptions(DEFAULT_NATIVE);
-    setCardOptions(DEFAULT_CARD);
+    setCardOptions({
+      ...DEFAULT_CARD,
+      showInstallmentAmounts: INSTALLMENT_COUNTRIES.includes(country),
+    });
     setError(null);
     mountDropin(bootstrap, session).catch((cause) =>
       setError(cause instanceof Error ? cause.message : "Remount failed.")
@@ -764,24 +789,27 @@ export default function StylingPlayground() {
             type="button"
             onClick={reset}
           >
-            Reset
+            <span class="styling-reset__label">
+              <ResetIcon />
+              Reset all options
+            </span>
           </button>
           <div class="styling-tabs" role="tablist">
             <button
               type="button"
               role="tab"
-              aria-selected={section === "official"}
-              onClick={() => setSection("official")}
+              aria-selected={section === "styling"}
+              onClick={() => setSection("styling")}
             >
-              A · Official styling
+              Styling
             </button>
             <button
               type="button"
               role="tab"
-              aria-selected={section === "native"}
-              onClick={() => setSection("native")}
+              aria-selected={section === "configuration"}
+              onClick={() => setSection("configuration")}
             >
-              B · Native options
+              Configuration
             </button>
             <button
               type="button"
@@ -789,7 +817,7 @@ export default function StylingPlayground() {
               aria-selected={section === "css"}
               onClick={() => setSection("css")}
             >
-              C · CSS overrides
+              CSS
             </button>
           </div>
           <div class="styling-controls styling-controls--shape">
@@ -817,7 +845,7 @@ export default function StylingPlayground() {
             </Field>
           </div>
           <div class="styling-controls">
-            {section === "official"
+            {section === "styling"
               ? (
                 <>
                   <div class="form-grid">
@@ -926,7 +954,7 @@ export default function StylingPlayground() {
                   />
                 </>
               )
-              : section === "native"
+              : section === "configuration"
               ? (
                 <>
                   <div class="form-grid">

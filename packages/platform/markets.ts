@@ -91,29 +91,40 @@ const MARKET_LOCALE: Record<string, string> = {
  */
 export const ZERO_DECIMAL_CURRENCIES = new Set(["JPY", "KRW", "VND", "IDR"]);
 
+/** The reference order value every market's default is modelled on. */
+const REFERENCE_MAJOR_AMOUNT = 109.99;
+
 /**
- * A presentable default order amount per currency, in minor units. Not an FX
- * conversion — just a number that reads naturally in each currency, so the
- * playground never shows something like "¥109.99" or "₩110".
+ * Default order amount per currency, in MAJOR units (what a shopper reads:
+ * 699 means "699", not "6.99"). `defaultAmountForCurrency` converts to Adyen
+ * minor units — never put minor units in this table.
+ *
+ * Not an FX conversion: each value is the reference amount rounded to
+ * something that looks like a real price tag locally, so the playground never
+ * shows "¥109.99" or an absurd "R$5.49".
  */
 const DEFAULT_MAJOR_AMOUNT: Record<string, number> = {
-  JPY: 11000,
-  KRW: 140000,
-  VND: 2500000,
-  IDR: 1700000,
-  INR: 8999,
-  CZK: 2499,
-  PLN: 449,
-  HUF: 39900,
-  THB: 3900,
-  PHP: 5900,
-  MXN: 1999,
-  BRL: 549,
-  ZAR: 1999,
-  KES: 13999,
+  // Zero-decimal currencies, rounded to a natural round figure.
+  JPY: 17_000,
+  KRW: 150_000,
+  VND: 2_900_000,
+  IDR: 1_900_000,
+  // Two-decimal currencies whose scale is far from the euro.
+  INR: 9_999,
+  CZK: 2_799,
+  PLN: 499,
+  THB: 3_999,
+  PHP: 5_999,
+  MXN: 1_999,
+  BRL: 699,
+  ZAR: 1_999,
+  KES: 14_999,
   HKD: 899,
   CNY: 799,
   AED: 399,
+  DKK: 799,
+  SEK: 1_199,
+  NOK: 1_199,
 };
 
 /** The market used whenever detection is inconclusive — kept in the EU. */
@@ -131,13 +142,20 @@ export function isSupportedMarket(countryCode: string): boolean {
   return countryCode.toUpperCase() in MARKET_CURRENCY;
 }
 
+/** Converts a major (human-readable) amount to Adyen minor units. */
+export function toMinorUnits(major: number, currency: string): number {
+  return Math.round(
+    ZERO_DECIMAL_CURRENCIES.has(currency.toUpperCase()) ? major : major * 100,
+  );
+}
+
 /** Default order amount for a currency, in Adyen minor units. */
 export function defaultAmountForCurrency(currency: string): number {
   const upper = currency.toUpperCase();
-  const major = DEFAULT_MAJOR_AMOUNT[upper];
-  if (major !== undefined) return major;
-  // Everything else is a 2-decimal currency where 109.99 reads fine as-is.
-  return ZERO_DECIMAL_CURRENCIES.has(upper) ? 110 : 10999;
+  // Currencies not in the table are euro-scale (USD, GBP, CHF, CAD, AUD,
+  // SGD, NZD...), where the reference amount already reads as a real price.
+  const major = DEFAULT_MAJOR_AMOUNT[upper] ?? REFERENCE_MAJOR_AMOUNT;
+  return toMinorUnits(major, upper);
 }
 
 export function defaultAmountForCountry(countryCode: string): number {
