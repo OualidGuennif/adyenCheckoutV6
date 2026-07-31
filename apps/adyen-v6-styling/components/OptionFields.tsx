@@ -74,10 +74,13 @@ export function CheckboxDropdown(props: {
   onChange: (next: string[]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  // Names, not the underlying values: the button reads "France", not "FR",
+  // matching the row the reader ticked.
+  const label = (value: string) => props.items.find(([key]) => key === value)?.[1] ?? value;
   const summary = props.selected.length === 0
     ? props.emptyLabel
     : props.selected.length <= 3
-    ? props.selected.join(", ")
+    ? props.selected.map(label).join(", ")
     : `${props.selected.length} selected`;
 
   return (

@@ -291,6 +291,41 @@ body {
   color: var(--color-ink-muted);
 }
 
+/* Wraps the host with anything that has to sit alongside it — the spent-session
+   notice — so the preview row still has exactly two flex items. */
+.dropin-column {
+  display: flex;
+  width: 100%;
+  max-width: 650px;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Adyen tears its own container down when the final screen (and the donation
+   step after it) ends. Nothing is coming back into this box, so it stops
+   reserving a checkout's worth of height. */
+.dropin-host--spent {
+  min-height: 0;
+}
+
+.dropin-done {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 18px 20px;
+  border: 1px solid var(--color-green);
+  border-radius: var(--adyen-sdk-border-radius-m, 16px);
+  background: var(--color-green-soft);
+}
+
+.dropin-done p {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
 .styling-preview .dropin-host {
   max-width: 650px;
   min-height: 480px;
@@ -310,90 +345,78 @@ body {
   overflow: auto;
 }
 
-/* A toolbar rather than a lone button: naming the panel on the left gives the
-   reset something to sit against, so it reads as this panel's action instead
-   of a floating control with no obvious scope. */
-.styling-panel__bar {
-  position: sticky;
-  z-index: 3;
-  top: 0;
-  display: flex;
-  min-height: 42px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--color-border);
-  background: white;
-}
-
-.styling-panel__title {
-  color: var(--color-ink-muted);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-/* Carries Adyen's green at rest rather than only on hover: it is the one
-   control in this panel that undoes everything, so it has to be findable
-   without hunting for it among forty neutral rows. */
+/* Red, not green: green is already the active tab's colour right beside it,
+   and this is the one control that throws work away. Being the only red thing
+   in the panel is what makes it findable. */
 .styling-reset {
   display: inline-flex;
+  align-self: center;
   align-items: center;
   gap: 6px;
-  padding: 5px 13px;
-  border: 1px solid var(--color-green);
+  padding: 6px 12px;
+  border: 1px solid var(--color-border-strong);
   border-radius: 999px;
-  background: var(--color-green-soft);
-  color: var(--color-green-dark);
+  background: white;
+  color: var(--color-red);
   cursor: pointer;
   font-size: 0.72rem;
   font-weight: 750;
+  white-space: nowrap;
   transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
 }
 
 .styling-reset:hover {
-  background: var(--color-green);
-  color: white;
+  border-color: var(--color-red);
+  background: var(--color-red-soft);
+}
+
+.styling-reset:focus-visible {
+  border-color: var(--color-red);
+  box-shadow: var(--shadow-focus);
+  outline: none;
 }
 
 .styling-reset:active {
   transform: translateY(1px);
 }
 
-.styling-reset:focus-visible {
-  border-color: var(--color-green);
-  box-shadow: var(--shadow-focus);
-  outline: none;
-}
-
-/* Confirms the click landed — the panel itself snapping back to defaults is
-   otherwise the only feedback, and that is easy to miss. Fills solid, since
-   the resting state is already tinted. */
+/* Confirms the click landed — the panel snapping back to defaults is otherwise
+   the only feedback, and on an untouched panel there is nothing to see at all.
+   Green here because it reports success, not because it offers an action. */
 .styling-reset--success {
-  background: var(--color-green);
-  color: white;
+  border-color: var(--color-green);
+  background: var(--color-green-soft);
+  color: var(--color-green-dark);
 }
 
 .styling-reset svg {
   flex: 0 0 auto;
 }
 
+/* The panel's only chrome: three tabs and the one control that undoes them. */
 .styling-tabs {
   position: sticky;
   z-index: 2;
-  top: 42px;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  top: 0;
+  display: flex;
+  align-items: stretch;
+  padding-right: 12px;
   border-bottom: 1px solid var(--color-border);
   background: white;
+  gap: 8px;
 }
 
-.styling-tabs button {
+.styling-tabs__list {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.styling-tabs__list button {
   position: relative;
   min-height: 52px;
-  padding: 10px;
+  padding: 10px 6px;
   border: 0;
   background: white;
   color: var(--color-ink-muted);
@@ -402,15 +425,15 @@ body {
   font-weight: 800;
 }
 
-.styling-tabs button[aria-selected="true"] {
+.styling-tabs__list button[aria-selected="true"] {
   color: var(--color-ink);
 }
 
-.styling-tabs button[aria-selected="true"]::after {
+.styling-tabs__list button[aria-selected="true"]::after {
   position: absolute;
-  right: 18px;
+  right: 14px;
   bottom: 0;
-  left: 18px;
+  left: 14px;
   height: 3px;
   border-radius: 3px 3px 0 0;
   background: var(--color-green);
@@ -816,19 +839,20 @@ body {
     gap: 28px;
   }
 
-  .styling-preview .dropin-host {
+  .styling-preview .dropin-column {
     flex: 1 1 620px;
     min-width: 0;
     max-width: 650px;
     margin: 0;
   }
 
-  /* Two per row throughout, and allowed to widen on a big screen so the pair
-     fills the column instead of floating in the middle of it. Not sticky: the
-     tiles belong to the page and stay where they were put. */
+  /* Fixed, not flexible: shrinking this column wraps the card numbers, and a
+     PAN broken across two lines is unreadable. The Drop-in absorbs the
+     difference instead. Not sticky either — the tiles belong to the page and
+     stay where they were put. */
   .test-data {
-    flex: 0 1 auto;
-    width: clamp(344px, 26vw, 500px);
+    flex: 0 0 344px;
+    width: 344px;
     max-width: none;
   }
 
@@ -856,6 +880,12 @@ body {
      floor the host collapses and the page jumps under the reader. */
   .styling-preview .dropin-host {
     min-height: 70vh;
+  }
+
+  /* Except once the session is spent: there is no checkout left to hold open,
+     and 70vh of empty card would push the notice off the screen. */
+  .styling-preview .dropin-host--spent {
+    min-height: 0;
   }
 
   .styling-layout {
@@ -945,6 +975,16 @@ body {
 
   .styling-preview {
     padding: 18px 14px;
+  }
+
+  /* Three tab labels already fill the row here; the reset keeps its icon and
+     drops the word rather than squeezing everything. */
+  .styling-reset__text {
+    display: none;
+  }
+
+  .styling-reset {
+    padding: 8px 10px;
   }
 
   .test-card {

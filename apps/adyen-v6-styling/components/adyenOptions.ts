@@ -824,8 +824,6 @@ export interface CardOptions {
   holderNamePrefill: string;
   hideCVC: boolean;
   maskSecurityCode: boolean;
-  showBrandIcon: boolean;
-  showContextualElement: boolean;
   placeholders: Partial<Record<PlaceholderKey, string>>;
   billingAddressRequired: boolean;
   billingAddressMode: BillingAddressMode;
@@ -852,8 +850,6 @@ export const DEFAULT_CARD: CardOptions = {
   holderNamePrefill: "",
   hideCVC: false,
   maskSecurityCode: false,
-  showBrandIcon: true,
-  showContextualElement: true,
   placeholders: {},
   billingAddressRequired: false,
   billingAddressMode: "full",
@@ -914,8 +910,6 @@ function sharedFieldOptions(styles: SecureStyles, card: CardOptions) {
     styles: secureStyleObject(styles),
     hideCVC: card.hideCVC,
     maskSecurityCode: card.maskSecurityCode,
-    showBrandIcon: card.showBrandIcon,
-    showContextualElement: card.showContextualElement,
     autoFocus: card.autoFocus,
     keypadFix: card.keypadFix,
     legacyInputMode: card.legacyInputMode,

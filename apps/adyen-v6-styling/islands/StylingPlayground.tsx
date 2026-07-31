@@ -142,7 +142,12 @@ const LOCALES = [
   ["ar-AE", "العربية"],
 ] as const;
 
-const COUNTRY_ITEMS = COUNTRIES.map(([code, name]): [string, string] => [code, name]);
+// The market selector keeps the most-used markets on top, where you pick one
+// country. This list is the opposite job — finding a country among all of
+// them — so it is alphabetical.
+const COUNTRY_ITEMS: [string, string][] = COUNTRIES
+  .map(([code, name]): [string, string] => [code, name])
+  .sort((a, b) => a[1].localeCompare(b[1]));
 
 function flagEmoji(countryCode: string): string {
   return String.fromCodePoint(
@@ -182,6 +187,23 @@ interface AvailableMethod {
 
 interface Mounted {
   unmount(): void;
+}
+
+/**
+ * Card defaults for a given market. Two of them only make sense once the
+ * market is known, so they are derived here rather than frozen into
+ * DEFAULT_CARD — and reset goes through the same function, so it restores the
+ * market you are on rather than the one you arrived on.
+ */
+function cardDefaultsFor(country: string): CardOptions {
+  return {
+    ...DEFAULT_CARD,
+    showInstallmentAmounts: INSTALLMENT_COUNTRIES.includes(country),
+    // Starts on the market being previewed: an address form that accepts every
+    // country Adyen supports is rarely what you are demoing, and this is the
+    // one country the reader has already told us about.
+    billingAddressAllowedCountries: [country],
+  };
 }
 
 // Every group starts closed: the panel is a list of what you *can* change, and
@@ -276,10 +298,9 @@ export default function StylingPlayground() {
   const [cssTokens, setCssTokens] = useState<CssTokens>({});
   const [cssRules, setCssRules] = useState<CssRules>(DEFAULT_CSS_RULES);
   const [nativeOptions, setNativeOptions] = useState<NativeOptions>(DEFAULT_NATIVE);
-  const [cardOptions, setCardOptions] = useState<CardOptions>(() => ({
-    ...DEFAULT_CARD,
-    showInstallmentAmounts: INSTALLMENT_COUNTRIES.includes(detectInitialCountry()),
-  }));
+  const [cardOptions, setCardOptions] = useState<CardOptions>(
+    () => cardDefaultsFor(detectInitialCountry()),
+  );
   // Guessed from the browser's own language preferences on first render, so a
   // Dutch or Japanese visitor lands on their own market instead of a fixed
   // one. Server-side there is no navigator, so the shared European fallback
@@ -293,6 +314,10 @@ export default function StylingPlayground() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successFlash, setSuccessFlash] = useState(false);
+  // A session that has been paid on. Adyen's own final screen (and the
+  // donation step after it, where the account has Adyen Giving on) tears its
+  // container down when it ends, leaving an empty box with no way forward.
+  const [completed, setCompleted] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const mounted = useRef<Mounted | null>(null);
   // Persisted so most option changes can be applied by re-instantiating just
@@ -418,7 +443,6 @@ export default function StylingPlayground() {
   ) {
     if (!boot?.clientKey || !currentSession || !host.current) return;
     const token = ++mountToken.current;
-    sessionSpent.current = false;
     const checkout = await AdyenCheckout({
       environment: "test",
       clientKey: boot.clientKey,
@@ -428,7 +452,7 @@ export default function StylingPlayground() {
       analytics: { enabled: false },
       onPaymentCompleted: () => {
         sessionSpent.current = true;
-        flashSuccess();
+        setCompleted(true);
       },
       onPaymentFailed: () => undefined,
       // Swapping the method list for a 3DS challenge changes the host's
@@ -445,6 +469,13 @@ export default function StylingPlayground() {
     // discard this one instead of stomping over the one that superseded it.
     if (mountToken.current !== token) return;
     checkoutRef.current = checkout as Core;
+    // Cleared here rather than at the top of this function: the flag describes
+    // checkoutRef, so until the new Core is actually installed the one still
+    // in there is the spent one. Clearing it early let a remount arriving
+    // mid-build mount the dead Core and bump the token, which then made this
+    // fresh Core discard itself — a reset that visibly did nothing.
+    sessionSpent.current = false;
+    setCompleted(false);
     mountDropinElement(checkout as Core, token);
   }
 
@@ -554,17 +585,23 @@ export default function StylingPlayground() {
     setCssTokens({});
     setCssRules(DEFAULT_CSS_RULES);
     setNativeOptions(DEFAULT_NATIVE);
-    setCardOptions({
-      ...DEFAULT_CARD,
-      showInstallmentAmounts: INSTALLMENT_COUNTRIES.includes(country),
-    });
+    setCardOptions(cardDefaultsFor(country));
     setError(null);
+    flashSuccess();
     // A fresh session, not a remount of the current one: an Adyen session is
     // single-use, so once a payment has gone through, reusing it fails with
     // "The provided session identifier or data is invalid". Reset is meant to
     // hand back a checkout you can pay with again.
     refreshSession().catch((cause) =>
       setError(cause instanceof Error ? cause.message : "Reset failed.")
+    );
+  }
+
+  /** Puts a payable checkout back after a completed payment. */
+  function startNewPayment() {
+    setError(null);
+    refreshSession().catch((cause) =>
+      setError(cause instanceof Error ? cause.message : "Could not start a new payment.")
     );
   }
 
@@ -631,47 +668,79 @@ export default function StylingPlayground() {
         : null}
       <div class="styling-layout">
         <section class="styling-preview" style={previewVariables}>
-          <div class="dropin-host" ref={host} aria-busy={loading}>
-            {loading ? <div class="dropin-placeholder">Loading Adyen TEST Drop-in…</div> : null}
+          <div class="dropin-column">
+            {
+              /* A sibling of the host, never a child: Adyen owns that node and
+                calls replaceChildren on it, so anything Preact renders inside
+                would be torn out from under it. */
+            }
+            {completed && !loading
+              ? (
+                <div class="dropin-done" role="status">
+                  <strong>Payment completed</strong>
+                  <p>
+                    An Adyen session can only be paid once, so this one is spent — including the
+                    donation step after it, if your account has Adyen Giving enabled.
+                  </p>
+                  <button type="button" class="button" onClick={startNewPayment}>
+                    Start a new payment
+                  </button>
+                </div>
+              )
+              : null}
+            <div
+              class={`dropin-host${completed && !loading ? " dropin-host--spent" : ""}`}
+              ref={host}
+              aria-busy={loading}
+            >
+              {loading ? <div class="dropin-placeholder">Loading Adyen TEST Drop-in…</div> : null}
+            </div>
           </div>
           <TestCards />
         </section>
         <aside id="styling-panel" class="styling-panel">
-          <div class="styling-panel__bar">
-            <span class="styling-panel__title">Customisation</span>
+          {
+            /* The tabs already say what this panel is, so they are the header —
+              a "Customisation" caption above them only repeated it. Reset ends
+              the same row: it belongs to the panel, and this is the panel's
+              one piece of chrome. */
+          }
+          <div class="styling-tabs">
+            <div class="styling-tabs__list" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={section === "styling"}
+                onClick={() => selectSection("styling")}
+              >
+                Native Styling
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={section === "configuration"}
+                onClick={() => selectSection("configuration")}
+              >
+                Configuration
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={section === "css"}
+                onClick={() => selectSection("css")}
+              >
+                CSS{tokenOverrides ? ` (${tokenOverrides})` : ""}
+              </button>
+            </div>
             <button
               class={`styling-reset${successFlash ? " styling-reset--success" : ""}`}
               type="button"
+              title="Reset every option to the Adyen default"
+              aria-label="Reset every option to the Adyen default"
               onClick={reset}
             >
               <ResetIcon />
-              {successFlash ? "Reset" : "Reset all"}
-            </button>
-          </div>
-          <div class="styling-tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={section === "styling"}
-              onClick={() => selectSection("styling")}
-            >
-              Native Styling
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={section === "configuration"}
-              onClick={() => selectSection("configuration")}
-            >
-              Configuration
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={section === "css"}
-              onClick={() => selectSection("css")}
-            >
-              CSS{tokenOverrides ? ` (${tokenOverrides})` : ""}
+              <span class="styling-reset__text">{successFlash ? "Done" : "Reset"}</span>
             </button>
           </div>
           <div class="styling-controls styling-controls--shape">
@@ -880,18 +949,6 @@ export default function StylingPlayground() {
                       hint="maskSecurityCode"
                       checked={cardOptions.maskSecurityCode}
                       onChange={(value) => updateCard("maskSecurityCode", value)}
-                    />
-                    <SwitchRow
-                      label="Show brand icon"
-                      hint="showBrandIcon"
-                      checked={cardOptions.showBrandIcon}
-                      onChange={(value) => updateCard("showBrandIcon", value)}
-                    />
-                    <SwitchRow
-                      label="Show contextual element"
-                      hint="showContextualElement — the hint shown next to the logo"
-                      checked={cardOptions.showContextualElement}
-                      onChange={(value) => updateCard("showContextualElement", value)}
                     />
                   </OptionGroup>
                   <OptionGroup
