@@ -7,7 +7,7 @@ export default define.page(function Disclaimer() {
   return (
     <main class="styling-main" id="main-content">
       {
-        /* This app has no shared shell, so the page carries its own header —
+        /* This app has no shared shell, so the page carries its own header ,
           otherwise there is no way back to the playground. */
       }
       <div class="styling-toolbar">

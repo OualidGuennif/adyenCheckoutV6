@@ -8,7 +8,7 @@ export default defineConfig({
   // Only the dev server reads this; the build needs the plugin above.
   ssr: { external: ["@adyen/api-library"] },
   // No root package.json (Deno workspace), so Vite's default workspace-root
-  // detection can't find the monorepo's node_modules — registering more
+  // detection can't find the monorepo's node_modules, registering more
   // Adyen Web components deepens the import graph enough that some chunks
   // fall outside the default fs allowlist and silently 403 in dev, breaking
   // Drop-in. Explicitly allow the monorepo root.

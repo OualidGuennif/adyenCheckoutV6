@@ -11,7 +11,7 @@ const HEX_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 export function OptionGroup(props: {
   title: string;
   hint?: string;
-  /** Renders the hint as a warning — for options that are not safe defaults. */
+  /** Renders the hint as a warning, for options that are not safe defaults. */
   hintTone?: "danger";
   count?: number;
   open: boolean;
@@ -147,7 +147,7 @@ export function CheckboxDropdown(props: {
 }
 
 // A half-typed hex ("#00") would blank the swatch, so the text half only
-// pushes upstream once the value can actually be rendered — while still
+// pushes upstream once the value can actually be rendered, while still
 // accepting the function notations and keywords a hex picker cannot express.
 function isCommittableColor(value: string): boolean {
   if (value === "") return true;

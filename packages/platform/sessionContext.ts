@@ -10,7 +10,7 @@ export function resolveShopperEmail(email?: unknown): string {
 
 // Adyen requires lineItems to be present (and to sum to the order amount)
 // for line-item-aware methods like Klarna and other BNPL/pay-later methods
-// to be considered eligible at all — without it they're silently excluded
+// to be considered eligible at all, without it they're silently excluded
 // from a session's paymentMethods, even though a bare /paymentMethods call
 // (which doesn't need lineItems) still lists them.
 export function buildLineItems(
@@ -40,7 +40,7 @@ const SPLIT_CARD_FUNDING_COUNTRIES = new Set(["BR", "MX", "FI"]);
 
 /**
  * Markets where Adyen returns debit and credit cards as separate payment
- * methods. Needed on /paymentMethods as well as /sessions — without it the
+ * methods. Needed on /paymentMethods as well as /sessions, without it the
  * Advanced flow gets a single merged "Cards" entry on those markets.
  */
 export function splitsCardFundingSources(countryCode: string): boolean {
@@ -49,13 +49,13 @@ export function splitsCardFundingSources(countryCode: string): boolean {
 
 /**
  * The risk/context fields the legacy playground's adyenService.js always
- * sent, common to both /sessions and /payments — shopperInteraction,
+ * sent, common to both /sessions and /payments, shopperInteraction,
  * shopperName, telephoneNumber, riskdata, 3DS preference and accountInfo.
  * Centralized here so every app's Adyen request stays aligned without
  * copy-pasting this block into each api.ts.
  *
- * The Sessions and Payments (Checkout) APIs accept different field sets —
- * each rejects unknown fields outright rather than ignoring them — so
+ * The Sessions and Payments (Checkout) APIs accept different field sets ,
+ * each rejects unknown fields outright rather than ignoring them, so
  * `splitCardFundingSources` (sessions-only) and `merchantRiskIndicator`
  * (payments-only) are added by `sessionRiskFields()`/`paymentsRiskFields()`
  * respectively rather than living in this shared base.

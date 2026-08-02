@@ -88,7 +88,7 @@ export async function ensureSession(c: Context, signingSecret: string): Promise<
 
 // "localhost" and "127.0.0.1" are the same loopback host for local dev
 // purposes, but the browser's Origin header and a hand-set PUBLIC_ORIGIN
-// rarely agree on which spelling to use — normalize both to one form so
+// rarely agree on which spelling to use, normalize both to one form so
 // switching between them doesn't trip the check below.
 function normalizeHost(host: string): string {
   return host.replace(/^localhost(?=:|$)/, "127.0.0.1");
@@ -112,7 +112,7 @@ export function csrfProtection(signingSecret: string, publicOrigin: string): Mid
       if (origin) {
         // Host-only comparison (scheme ignored: Render terminates TLS and
         // forwards over plain http internally). Accepts the host the request
-        // actually arrived on as well as the configured PUBLIC_ORIGIN —
+        // actually arrived on as well as the configured PUBLIC_ORIGIN ,
         // PUBLIC_ORIGIN is a fixed env var, so a renamed service, a custom
         // domain or a www/non-www visit would otherwise 403 real users even
         // though the request is genuinely same-origin.
@@ -214,7 +214,7 @@ export function applySecurityHeaders(headers: Headers): void {
   // No Content-Security-Policy: on this TEST playground it kept blocking
   // legitimate Adyen/wallet subresources one host at a time (icons, wallet
   // SDKs, 3DS). Adyen's own iframes remain the real PCI boundary regardless
-  // of our page CSP, so it wasn't buying real protection here — only churn.
+  // of our page CSP, so it wasn't buying real protection here, only churn.
 }
 
 export function optionalBasicAuth(): MiddlewareHandler {

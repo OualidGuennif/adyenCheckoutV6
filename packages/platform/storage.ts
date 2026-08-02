@@ -84,7 +84,7 @@ function mapAttempt(row: AttemptRow): AttemptAggregate {
 }
 
 // Back Office paginates 10 orders/page and shows at most 7 pages, so there is
-// never a reason to retain more than that per app — purge the rest on write
+// never a reason to retain more than that per app, purge the rest on write
 // so the TEST database doesn't grow unbounded across repeated demo runs.
 const MAX_RETAINED_ORDERS_PER_APP = 70;
 

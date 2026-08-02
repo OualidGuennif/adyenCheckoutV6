@@ -9,7 +9,7 @@ const LIBRARY = "@adyen/api-library";
  * like everything else, which drags its CommonJS transport chain
  * (`https-proxy-agent` then `debug`) through the CJS-to-ESM conversion. That
  * conversion loses `debug`'s callable default export, and the built server dies
- * on import — before serving a single request — with
+ * on import, before serving a single request, with
  * `TypeError: debug_1.default is not a function`.
  *
  * An external result returned by another plugin is the one form the Deno plugin

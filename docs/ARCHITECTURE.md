@@ -28,12 +28,12 @@ adyenCheckoutV6/
 ```
 
 `deno.json` at the root is the only place dependency versions are pinned. Apps inherit them through
-the workspace, so `@adyen/adyen-web` is one version everywhere — worth keeping that way, since the
+the workspace, so `@adyen/adyen-web` is one version everywhere, worth keeping that way, since the
 SDK version is baked into the UI copy and into the token audit test.
 
 ## The landing page
 
-`apps/landing/` is plain HTML and CSS — no framework, no build, no server. It only lists the four
+`apps/landing/` is plain HTML and CSS, no framework, no build, no server. It only lists the four
 playgrounds and says what they are, which is not work a runtime should be doing; keeping it static
 means it costs nothing to host and cannot quietly grow into a fifth app.
 
@@ -41,7 +41,7 @@ The four destination URLs sit in one block at the top of `index.html`. Nothing l
 playground to the landing: every brand link inside an app is `href="/"`, so a visitor on a subdomain
 stays on that subdomain.
 
-It carries its own wordmark rather than Adyen's — a logo is a claim of identity, and these
+It carries its own wordmark rather than Adyen's, a logo is a claim of identity, and these
 playgrounds are not Adyen's.
 
 ## How one app is put together
@@ -62,11 +62,11 @@ same server. It avoids a second runtime and a proxy hop for what is, in the end,
 playground.
 
 **Islands are the boundary that matters.** Anything under `islands/` ships to the browser. Server
-secrets live behind `api.ts` and are never imported from an island — see [SECURITY.md](SECURITY.md).
+secrets live behind `api.ts` and are never imported from an island, see [SECURITY.md](SECURITY.md).
 
 ## What the shared packages hold
 
-### `packages/platform` — server only
+### `packages/platform`: server only
 
 Never import this from an island. It reaches SQLite, Adyen credentials and the filesystem.
 
@@ -89,7 +89,7 @@ Never import this from an island. It reaches SQLite, Adyen credentials and the f
 `markets.ts` is shared deliberately: the styling playground and the digital one have to agree on
 what a Brazilian checkout looks like, and they only do because there is exactly one table.
 
-### `packages/ui` — safe for the browser
+### `packages/ui`: safe for the browser
 
 Design tokens and shell components (`styles.css`, `components.tsx`), the fetch helper that attaches
 the CSRF token (`client.ts`), and Adyen Web component registration (`registerPaymentMethods.ts`,
@@ -99,7 +99,7 @@ the CSRF token (`client.ts`), and Adyen Web component registration (`registerPay
 
 All server-side calls go through `packages/platform/adyen.ts`, over the official Adyen Node library
 (v32) rather than bare `fetch`. The library supplies `X-API-Key`, idempotency keys, user-agent and
-`adyen-library-*` headers, follows 308 redirects and parses Adyen's error shapes — all things that
+`adyen-library-*` headers, follows 308 redirects and parses Adyen's error shapes, all things that
 would otherwise be reimplemented by hand and drift.
 
 Two things are worth knowing before touching this file:
@@ -110,7 +110,7 @@ Two things are worth knowing before touching this file:
   2.8.0, `flushHeaders()` would freeze a request without ever sending it _or_ raising, and
   `res.complete` was never set, so even valid responses failed. Both are neutralised here. The
   pinned runtime no longer needs them; they are harmless on a compliant one and let the repo still
-  run on an older local Deno. That silent hang — not CORS, not TLS — is why an earlier attempt
+  run on an older local Deno. That silent hang, not CORS, not TLS, is why an earlier attempt
   abandoned the library for `fetch`.
 
 **Each API family accepts a different set of fields.** `/sessions`, `/payments` and `/paymentLinks`
@@ -125,9 +125,8 @@ Ten tables, defined in `packages/platform/migrations/`: `profiles`, `orders`, `p
 `audit_log`.
 
 An order reference or a correlation UUID ties an observability row back to the Back Office. Unique
-constraints on `dedupe_key` and `idempotency_key` make repeated writes harmless — which is what
-makes webhook redelivery and a double-clicked action safe by construction rather than by retry
-logic.
+constraints on `dedupe_key` and `idempotency_key` make repeated writes harmless, which is what makes
+webhook redelivery and a double-clicked action safe by construction rather than by retry logic.
 
 **A refusal ends an attempt, not an order.** An order stays open while its link or order is valid
 and another attempt could still happen. Authorised amounts are deduplicated by PSP reference,
@@ -152,7 +151,7 @@ styling 8004.
 **Some tests reach the network.** The token audit in
 `apps/adyen-v6-styling/components/adyenOptions.test.ts` fetches the real `adyen.css` for the pinned
 SDK version and fails if the panel offers a custom property Adyen no longer reads, or misses one it
-added. That is the point — an SDK bump should not pass quietly. Run it offline and it fails on the
+added. That is the point, an SDK bump should not pass quietly. Run it offline and it fails on the
 fetch, not on a real regression.
 
 ## Deployment
@@ -171,7 +170,7 @@ and a mismatch surfaces as a 403 on every mutation rather than as a configuratio
 3. Mount `basePlatformApi` from `packages/platform/base-api.ts` so it inherits bootstrap, profile
    and health for free.
 4. Add a service block to `render.yaml`, with a disk only if it needs to persist anything.
-5. Add it to `apps/landing/index.html` and to the applications table in the root `README.md` — a
+5. Add it to `apps/landing/index.html` and to the applications table in the root `README.md`, a
    playground nobody can reach from the front door may as well not be deployed.
 
 Put anything a second app could plausibly want in `packages/platform`, not in the app. That rule is

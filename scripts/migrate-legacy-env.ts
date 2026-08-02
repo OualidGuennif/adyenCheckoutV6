@@ -111,7 +111,7 @@ for (const app of apps) {
   const envPath = join(suiteRoot, app.directory, ".env");
   const existing = readEnv(envPath);
   const lines = [
-    "# TEST ENVIRONMENT ONLY — generated from the legacy local playground.",
+    "# TEST ENVIRONMENT ONLY, generated from the legacy local playground.",
     "# This file is ignored by Git and Docker. Never commit it.",
     "",
   ];

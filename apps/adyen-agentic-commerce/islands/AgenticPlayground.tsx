@@ -199,7 +199,7 @@ export default function AgenticPlayground() {
                     onChange={(event) => setMode(event.currentTarget.value as "mock" | "real")}
                   >
                     <option value="mock">Executable local mock</option>
-                    <option value="real">Real Agentic — availability check</option>
+                    <option value="real">Real Agentic, availability check</option>
                   </select>
                 </Field>
               </div>

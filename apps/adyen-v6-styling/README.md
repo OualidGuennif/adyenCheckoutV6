@@ -4,7 +4,7 @@ A workbench for theming the Adyen Web Drop-in. The checkout is live on the left,
 exposes is on the right, and it re-renders as you change things. Copy the result out as a JSON
 config, a CSS file, or both.
 
-No orders, no back office, no database rows — it creates a TEST session, mounts a Drop-in, and keeps
+No orders, no back office, no database rows, it creates a TEST session, mounts a Drop-in, and keeps
 your panel settings in `localStorage`.
 
 ## Quick start
@@ -17,13 +17,13 @@ deno task dev             # http://localhost:8000
 From the repository root, `deno task dev:styling` runs it on port 8004 alongside the other three
 playgrounds.
 
-| Task              | What it does                                                      |
-| ----------------- | ----------------------------------------------------------------- |
-| `deno task dev`   | Development server with hot reload.                               |
-| `deno task build` | Production build.                                                 |
-| `deno task start` | Serve a build.                                                    |
-| `deno task test`  | Tests, including the CSS token audit (needs network — see below). |
-| `deno task check` | Format, lint and type-check.                                      |
+| Task              | What it does                                                     |
+| ----------------- | ---------------------------------------------------------------- |
+| `deno task dev`   | Development server with hot reload.                              |
+| `deno task build` | Production build.                                                |
+| `deno task start` | Serve a build.                                                   |
+| `deno task test`  | Tests, including the CSS token audit (needs network, see below). |
+| `deno task check` | Format, lint and type-check.                                     |
 
 ## Environment variables
 
@@ -39,11 +39,11 @@ Copy `.env.example` to `.env`. **Only the first three need a value from you.**
 
 ### Set these only when you deploy
 
-| Variable                 | Default if unset                                        | When it matters                                                                                                                                                   |
-| ------------------------ | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PUBLIC_ORIGIN`          | `http://localhost:<PORT>`                               | The exact origin browsers use. It anchors the CSRF check — a mismatch turns every request into a 403. Must also be allow-listed on your client key.               |
-| `PROFILE_ENCRYPTION_KEY` | A key file next to the database, generated on first run | Encrypts profiles added through the UI. **Required** on Render or Deno Deploy — the app refuses to save a profile without it. 32-byte Base64 or 64-character hex. |
-| `SESSION_SIGNING_SECRET` | A new random value on every boot                        | Signs the session and CSRF cookies. Fine to leave unset locally; without it, restarting logs everyone out and two instances reject each other's cookies.          |
+| Variable                 | Default if unset                                        | When it matters                                                                                                                                                  |
+| ------------------------ | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PUBLIC_ORIGIN`          | `http://localhost:<PORT>`                               | The exact origin browsers use. It anchors the CSRF check, a mismatch turns every request into a 403. Must also be allow-listed on your client key.               |
+| `PROFILE_ENCRYPTION_KEY` | A key file next to the database, generated on first run | Encrypts profiles added through the UI. **Required** on Render or Deno Deploy, the app refuses to save a profile without it. 32-byte Base64 or 64-character hex. |
+| `SESSION_SIGNING_SECRET` | A new random value on every boot                        | Signs the session and CSRF cookies. Fine to leave unset locally; without it, restarting logs everyone out and two instances reject each other's cookies.         |
 
 ### Rarely worth touching
 
@@ -58,17 +58,17 @@ so there is nothing to notify.
 
 ## What the three panel tabs do
 
-- **Field styles** — the `styles` object. The card number, expiry and security code render inside
+- **Field styles**: the `styles` object. The card number, expiry and security code render inside
   Adyen-hosted iframes, so no page CSS can reach them; this object is the only way to style them.
   Four states: base, placeholder, error, validated.
-- **Components** — the configuration objects: Drop-in behaviour, card fields, and Apple Pay / Google
+- **Components**: the configuration objects: Drop-in behaviour, card fields, and Apple Pay / Google
   Pay / PayPal. Wallet buttons are drawn by the provider, so neither your CSS nor the field styles
-  reach them — only each vendor's own options do.
-- **Theme** — the `--adyen-sdk-*` custom properties Adyen Web reads. This is the supported way to
+  reach them, only each vendor's own options do.
+- **Theme**: the `--adyen-sdk-*` custom properties Adyen Web reads. This is the supported way to
   theme everything outside the secured fields.
 
 The **theme picker** next to the market selectors applies a whole look at once. _Adyen default_
-changes nothing at all; _Mono_, _Contrast_ and _Soft_ are starting points you can then edit — the
+changes nothing at all; _Mono_, _Contrast_ and _Soft_ are starting points you can then edit, the
 picker falls back to _Custom_ as soon as you do.
 
 At the bottom of the Theme tab, **Class-name rules** targets Adyen's internal class names. It is
@@ -91,7 +91,7 @@ Both are copy-or-download, at the bottom of the relevant tab:
 `components/adyenOptions.test.ts` fetches the real `adyen.css` for the pinned SDK version and fails
 if the panel offers a custom property Adyen no longer reads, or misses one it added. That is
 deliberate: merchants paste this output into production stylesheets, so an SDK bump should not pass
-quietly. **It needs network access** — offline it fails on the fetch, not on a real regression.
+quietly. **It needs network access**: offline it fails on the fetch, not on a real regression.
 
 ## Docker
 
@@ -115,7 +115,7 @@ A playground for exploring and testing Adyen against its **TEST** environment. N
 reference integration, and not intended to be deployed to production as-is. Not built or supported
 by Adyen.
 
-If you reuse any of this, you alone remain responsible for your own payment stack — PCI scope,
+If you reuse any of this, you alone remain responsible for your own payment stack, PCI scope,
 regulatory compliance, security review and the correctness of your flows. Provided as is, with no
 warranty and no liability, under the MIT Licence.
 

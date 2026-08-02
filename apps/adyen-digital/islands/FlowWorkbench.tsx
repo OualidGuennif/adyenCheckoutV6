@@ -80,7 +80,7 @@ const CALLBACK_CATALOG: Record<string, CallbackMeta> = {
   },
   onPaymentCompleted: {
     rank: "required",
-    hint: "Terminal success. The resultCode is final — show the success page here.",
+    hint: "Terminal success. The resultCode is final, show the success page here.",
   },
   onPaymentFailed: {
     rank: "required",
@@ -142,7 +142,7 @@ const CALLBACK_CATALOG: Record<string, CallbackMeta> = {
 
 const UNLISTED_CALLBACK: CallbackMeta = {
   rank: "optional",
-  hint: "Not in the reference list of this playground — check the Adyen Web changelog.",
+  hint: "Not in the reference list of this playground, check the Adyen Web changelog.",
 };
 
 function callbackMeta(name: string): CallbackMeta {
@@ -268,7 +268,7 @@ function detectInitialCountry(flow: Flow): string {
 
 // Reuses Adyen's own shipped CSS classes (imported globally as adyen.css) for
 // field box sizing/focus states, same as the legacy playground's hand-rolled
-// Secure Fields form — only the wrapper/status/hint below are custom.
+// Secure Fields form, only the wrapper/status/hint below are custom.
 const CUSTOM_CARD_MARKUP = `
   <div class="custom-card-form">
     <div class="adyen-checkout__field">
@@ -312,7 +312,7 @@ const CUSTOM_CARD_MARKUP = `
       Pay now
     </button>
     <p class="custom-card-hint">
-      Card data never touches our server — these fields are Adyen-hosted iframes (Secure
+      Card data never touches our server, these fields are Adyen-hosted iframes (Secure
       Fields). Only encrypted blobs reach the backend.
     </p>
   </div>
@@ -325,7 +325,7 @@ function flagEmoji(countryCode: string): string {
 }
 
 // This is a TEST playground: sdkData, sessionData and other frontend
-// callback payloads are shown in full — nothing here is a real credential,
+// callback payloads are shown in full, nothing here is a real credential,
 // and truncating them just hides useful debug information.
 function recordSafe(value: unknown, depth = 0): unknown {
   if (depth > 5) return "[depth limited]";
@@ -447,7 +447,7 @@ export default function FlowWorkbench(
   );
   const [locale, setLocale] = useState(() => localeForCountry(detectInitialCountry(flow)));
   // Whether installments are offered is a property of the market, not a
-  // manual preference — always derived from country rather than a toggle.
+  // manual preference, always derived from country rather than a toggle.
   const installments = INSTALLMENT_COUNTRIES.includes(country.toUpperCase());
   const [correlationId, setCorrelationId] = useState<string | null>(null);
   // The advanced flow mints a new correlation id at /payments, so keeping only
@@ -517,7 +517,7 @@ export default function FlowWorkbench(
     start();
   }, [bootstrap]);
 
-  // No "Update settings" button — any change to the scenario reloads the
+  // No "Update settings" button, any change to the scenario reloads the
   // checkout on its own, debounced so typing an amount or flipping through
   // markets doesn't refire on every keystroke.
   const skipFirstAutoRestart = useRef(true);
@@ -667,7 +667,7 @@ export default function FlowWorkbench(
       })[type] as Record<string, unknown> | undefined;
       // Card/PayPal/etc. have dedicated classes whose static `type` is already
       // correct, but every redirect-only method (Alma, Wero, WeChat...) shares
-      // the same generic Redirect element — without an explicit `type` here it
+      // the same generic Redirect element, without an explicit `type` here it
       // mounts with no identifiable payment method, so `state.data.paymentMethod`
       // comes back empty and the backend later rejects it as null.
       const instance = new ComponentClass(checkout, { ...config, type });
@@ -768,7 +768,7 @@ export default function FlowWorkbench(
       session: data.session,
       beforeSubmit: (state: unknown, _component: unknown, actions: CallbackActions) => {
         addCallback("beforeSubmit", state, data.correlationId);
-        // beforeSubmit's resolve() is not a plain continue — Adyen Web sends
+        // beforeSubmit's resolve() is not a plain continue, Adyen Web sends
         // back whatever is passed here as the actual /payments payload. An
         // empty resolve() submits with no paymentMethod at all, which Adyen
         // then rejects as "Required field 'paymentMethod' is null".
@@ -1120,7 +1120,7 @@ export default function FlowWorkbench(
                     {bootstrap?.profiles.map((profile) => (
                       <option key={profile.id} value={profile.id}>
                         {profile.label}
-                        {profile.isConfigured ? "" : " — incomplete"}
+                        {profile.isConfigured ? "" : ", incomplete"}
                       </option>
                     ))}
                   </select>

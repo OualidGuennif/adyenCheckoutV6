@@ -83,7 +83,7 @@ export function createPlatformContext(appId: AppId): PlatformContext {
       appId,
       environment: "TEST",
       warning:
-        "TEST ENVIRONMENT ONLY — Do not enter or upload production credentials. All variables, endpoints and payment flows are exclusively for Adyen TEST.",
+        "TEST ENVIRONMENT ONLY, Do not enter or upload production credentials. All variables, endpoints and payment flows are exclusively for Adyen TEST.",
       profile: selected,
       profiles: available,
       // Adyen client keys are publishable by design and are required by Web

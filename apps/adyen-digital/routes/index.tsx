@@ -10,7 +10,7 @@ interface FlowCard {
 const flows: FlowCard[] = [
   {
     title: "Sessions Flow",
-    subtitle: "The simplest PCI-conscious integration — Adyen Web manages 3DS and orchestration.",
+    subtitle: "The simplest PCI-conscious integration, Adyen Web manages 3DS and orchestration.",
     href: "/sessions?integration=dropin",
   },
   {
@@ -24,7 +24,7 @@ const flows: FlowCard[] = [
     href: "/api-only",
   },
   {
-    title: "MIT — Merchant Initiated Transactions",
+    title: "MIT, Merchant Initiated Transactions",
     subtitle: "Charge a stored card without shopper interaction using tokenised credentials.",
     href: "/mit",
   },

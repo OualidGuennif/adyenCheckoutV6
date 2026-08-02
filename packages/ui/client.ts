@@ -32,7 +32,7 @@ export async function apiFetch<T>(
   return payload as T;
 }
 
-// Adyen's "minor units" are currency-exponent-aware — JPY and friends have no
+// Adyen's "minor units" are currency-exponent-aware, JPY and friends have no
 // fractional unit, so their minor units equal their major units (¥110 is
 // `{value: 110}`, not 11000). Dividing by 100 unconditionally under-displays
 // them 100x.

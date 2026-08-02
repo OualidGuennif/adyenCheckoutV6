@@ -165,8 +165,8 @@ const LOCALES = [
 ] as const;
 
 // The market selector keeps the most-used markets on top, where you pick one
-// country. This list is the opposite job — finding a country among all of
-// them — so it is alphabetical.
+// country. This list is the opposite job, finding a country among all of
+// them, so it is alphabetical.
 const COUNTRY_ITEMS: [string, string][] = COUNTRIES
   .map(([code, name]): [string, string] => [code, name])
   .sort((a, b) => a[1].localeCompare(b[1]));
@@ -214,7 +214,7 @@ interface Mounted {
 /**
  * Card defaults for a given market. Two of them only make sense once the
  * market is known, so they are derived here rather than frozen into
- * DEFAULT_CARD — and reset goes through the same function, so it restores the
+ * DEFAULT_CARD, and reset goes through the same function, so it restores the
  * market you are on rather than the one you arrived on.
  */
 function cardDefaultsFor(country: string): CardOptions {
@@ -233,16 +233,16 @@ function cardDefaultsFor(country: string): CardOptions {
 // between them and the section they came for.
 const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {};
 
-const PLACEHOLDERS_HINT = "placeholders — Adyen ships localised placeholders; anything " +
+const PLACEHOLDERS_HINT = "placeholders, Adyen ships localised placeholders; anything " +
   "set here replaces them.";
 
 const RULES_HINT = "Not recommended. No design token covers these, so they reach into " +
-  "Adyen's own class names — private API that can be renamed in any release, with no " +
+  "Adyen's own class names, private API that can be renamed in any release, with no " +
   "warning and no deprecation. A checkout styled this way can break on an SDK upgrade. " +
   "Use the theme tokens above wherever one exists.";
 
 const WALLET_HINT = "The provider draws this button itself, so neither the field styles nor " +
-  "the CSS theme reach it — only its own options do.";
+  "the CSS theme reach it, only its own options do.";
 
 /* -------------------------------------------------------------------------- */
 /* Persistence                                                                */
@@ -422,16 +422,16 @@ export default function StylingPlayground() {
   // container down when it ends, leaving an empty box with no way forward.
   const [completed, setCompleted] = useState(false);
   // What Adyen Giving reported, when the account has it on. Null until the
-  // donation step actually resolves — the two outcomes look identical from
+  // donation step actually resolves, the two outcomes look identical from
   // the checkout otherwise, and a failed donation is easy to miss entirely.
   const [donation, setDonation] = useState<"donated" | "skipped" | "failed" | null>(null);
   const host = useRef<HTMLDivElement>(null);
   const mounted = useRef<Mounted | null>(null);
   // Persisted so most option changes can be applied by re-instantiating just
-  // the Dropin element — no need to rebuild the whole Core / hit /sessions.
+  // the Dropin element, no need to rebuild the whole Core / hit /sessions.
   const checkoutRef = useRef<Core | null>(null);
   // The country/locale refresh (async, hits /sessions) and the lightweight
-  // native/style remount (near-instant) can overlap — dragging a slider right
+  // native/style remount (near-instant) can overlap, dragging a slider right
   // after switching country, for instance. Each mount reserves the next
   // token and any mount whose token has since been superseded discards
   // itself instead of clobbering a newer one, which is what caused the
@@ -514,7 +514,7 @@ export default function StylingPlayground() {
   ]);
 
   // Secure-field styles, native Drop-in options and card component options are
-  // all Dropin-construction props — none of them need a new Core / /sessions
+  // all Dropin-construction props, none of them need a new Core / /sessions
   // call, only re-instantiating the Dropin element against the existing Core.
   // Debounced so dragging a slider doesn't remount on every tick.
   const skipFirstNativeRefresh = useRef(true);
@@ -531,7 +531,7 @@ export default function StylingPlayground() {
     return () => clearTimeout(timeout);
   }, [secureStyles, nativeOptions, cardOptions, walletOptions]);
 
-  // Side lookup only — populates the pre-select dropdown with this
+  // Side lookup only, populates the pre-select dropdown with this
   // merchant's real payment methods for the chosen country. Independent of
   // the /sessions call the preview actually uses.
   useEffect(() => {
@@ -565,7 +565,7 @@ export default function StylingPlayground() {
   }
 
   // Fetches a brand-new session carrying the current country/locale, then
-  // rebuilds the Core against it — used whenever either changes.
+  // rebuilds the Core against it, used whenever either changes.
   async function refreshSession(countryCode = country, shopperLocale = locale) {
     if (!bootstrap?.clientKey) return;
     setLoading(true);
@@ -612,12 +612,12 @@ export default function StylingPlayground() {
         autoMount: showDonation,
         onDonationSuccess: ({ didDonate }: { didDonate: boolean }) =>
           setDonation(didDonate ? "donated" : "skipped"),
-        // Not fatal — the payment already went through, so this reports rather
+        // Not fatal, the payment already went through, so this reports rather
         // than raising the error banner over a completed checkout.
         onDonationFailure: () => setDonation("failed"),
       },
       // Swapping the method list for a 3DS challenge changes the host's
-      // height, and on a phone — where the dataset sits above the Drop-in —
+      // height, and on a phone, where the dataset sits above the Drop-in ,
       // that leaves the challenge scrolled off screen. Bring it back into
       // view once Adyen has actually rendered the action.
       onActionHandled: () => revealDropin(),
@@ -626,7 +626,7 @@ export default function StylingPlayground() {
         setError(cause.message);
       },
     } as never);
-    // A newer mount was requested while this session/Core was being built —
+    // A newer mount was requested while this session/Core was being built ,
     // discard this one instead of stomping over the one that superseded it.
     if (mountToken.current !== token) return;
     checkoutRef.current = checkout as Core;
@@ -634,7 +634,7 @@ export default function StylingPlayground() {
     // checkoutRef, so until the new Core is actually installed the one still
     // in there is the spent one. Clearing it early let a remount arriving
     // mid-build mount the dead Core and bump the token, which then made this
-    // fresh Core discard itself — a reset that visibly did nothing.
+    // fresh Core discard itself, a reset that visibly did nothing.
     sessionSpent.current = false;
     setCompleted(false);
     setDonation(null);
@@ -702,7 +702,7 @@ export default function StylingPlayground() {
     )?.id ?? "custom";
   }, [secureStyles, cssTokens, walletOptions, showDonation]);
 
-  /** Themes own the look only — Drop-in behaviour and card fields are left. */
+  /** Themes own the look only, Drop-in behaviour and card fields are left. */
   function applyTheme(id: string) {
     const preset = THEME_PRESETS.find((entry) => entry.id === id);
     if (!preset) return;
@@ -909,7 +909,7 @@ export default function StylingPlayground() {
                         : donation === "skipped"
                         ? "Donation declined."
                         : donation === "failed"
-                        ? "Donation failed — the payment itself went through."
+                        ? "Donation failed, the payment itself went through."
                         : "Sessions are single-use."}
                     </span>
                   </div>
@@ -931,7 +931,7 @@ export default function StylingPlayground() {
         </section>
         <aside id="styling-panel" class="styling-panel">
           {
-            /* The tabs already say what this panel is, so they are the header —
+            /* The tabs already say what this panel is, so they are the header ,
               a "Customisation" caption above them only repeated it. Reset ends
               the same row: it belongs to the panel, and this is the panel's
               one piece of chrome. */
@@ -976,7 +976,7 @@ export default function StylingPlayground() {
           </div>
           {
             /* Both write CSS custom properties, so they live with the rest of
-              the theme rather than standing above all three tabs — where they
+              the theme rather than standing above all three tabs, where they
               read as global controls and applied to none of the other two. */
           }
           {section === "css"
@@ -1097,7 +1097,7 @@ export default function StylingPlayground() {
                     />
                     <SwitchRow
                       label="Open first stored method"
-                      hint="openFirstStoredPaymentMethod — takes priority over the toggle above"
+                      hint="openFirstStoredPaymentMethod, takes priority over the toggle above"
                       checked={nativeOptions.openFirstStoredPaymentMethod}
                       onChange={(value) => updateNative("openFirstStoredPaymentMethod", value)}
                     />
@@ -1115,7 +1115,7 @@ export default function StylingPlayground() {
                     />
                     <SwitchRow
                       label="Adyen Giving"
-                      hint={"donation.autoMount — offers a donation once the payment is done, " +
+                      hint={"donation.autoMount, offers a donation once the payment is done, " +
                         "when the account has Adyen Giving enabled. Rebuilds the session."}
                       checked={showDonation}
                       onChange={setShowDonation}
@@ -1144,7 +1144,7 @@ export default function StylingPlayground() {
                           <option value={type}>{name}</option>
                         ))}
                       </select>
-                      <small>openPaymentMethod — takes priority over the two toggles above.</small>
+                      <small>openPaymentMethod, takes priority over the two toggles above.</small>
                     </Field>
                   </OptionGroup>
                   <OptionGroup
@@ -1220,7 +1220,7 @@ export default function StylingPlayground() {
                           <option key={value} value={value}>{value}</option>
                         ))}
                       </select>
-                      <small>applepay.buttonType — the wording Apple prints on the button.</small>
+                      <small>applepay.buttonType, the wording Apple prints on the button.</small>
                     </Field>
                     <Field label="Button colour" htmlFor="applepay-color">
                       <select
@@ -1249,7 +1249,7 @@ export default function StylingPlayground() {
                           updateWallet("applePayTotalPriceLabel", event.currentTarget.value)}
                       />
                       <small>
-                        applepay.totalPriceLabel — the name shown beside the total on the Apple Pay
+                        applepay.totalPriceLabel, the name shown beside the total on the Apple Pay
                         sheet.
                       </small>
                     </Field>
@@ -1264,7 +1264,7 @@ export default function StylingPlayground() {
                       />
                       <small>
                         {APPLE_PAY_RADIUS_VARIABLE}{" "}
-                        — Apple's own property, so this one ships in the stylesheet rather than the
+                        , Apple's own property, so this one ships in the stylesheet rather than the
                         config. A bare number is read as pixels; 9999px gives a pill.
                       </small>
                     </Field>
@@ -1308,7 +1308,7 @@ export default function StylingPlayground() {
                           <option key={value} value={value}>{value}</option>
                         ))}
                       </select>
-                      <small>googlepay.buttonColor — "default" follows the shopper's theme.</small>
+                      <small>googlepay.buttonColor, "default" follows the shopper's theme.</small>
                     </Field>
                     <Field label="Corner radius" htmlFor="googlepay-radius">
                       <input
@@ -1320,7 +1320,7 @@ export default function StylingPlayground() {
                         onInput={(event) =>
                           updateWallet("googlePayButtonRadius", event.currentTarget.value)}
                       />
-                      <small>googlepay.buttonRadius — in pixels.</small>
+                      <small>googlepay.buttonRadius, in pixels.</small>
                     </Field>
                   </OptionGroup>
                   <OptionGroup
@@ -1374,7 +1374,7 @@ export default function StylingPlayground() {
                     </Field>
                     <SwitchRow
                       label="Hide Pay Later button"
-                      hint={"blockPayPalPayLaterButton — PayPal adds a second, instalments " +
+                      hint={"blockPayPalPayLaterButton, PayPal adds a second, instalments " +
                         "button when the amount and market qualify."}
                       checked={walletOptions.paypalBlockPayLater}
                       onChange={(value) => updateWallet("paypalBlockPayLater", value)}
@@ -1423,9 +1423,9 @@ export default function StylingPlayground() {
                                   event.currentTarget.value as BillingAddressMode,
                                 )}
                             >
-                              <option value="full">full — every field</option>
-                              <option value="partial">partial — postal code only</option>
-                              <option value="none">none — no fields</option>
+                              <option value="full">full, every field</option>
+                              <option value="partial">partial, postal code only</option>
+                              <option value="none">none, no fields</option>
                             </select>
                             <small>billingAddressMode</small>
                           </Field>
@@ -1439,7 +1439,7 @@ export default function StylingPlayground() {
                               onChange={(next) => updateCard("billingAddressRequiredFields", next)}
                             />
                             <small>
-                              billingAddressRequiredFields — empty means Adyen applies its own
+                              billingAddressRequiredFields, empty means Adyen applies its own
                               per-country schema.
                             </small>
                           </div>
@@ -1454,7 +1454,7 @@ export default function StylingPlayground() {
                                 updateCard("billingAddressAllowedCountries", next)}
                             />
                             <small>
-                              billingAddressAllowedCountries — empty means every country Adyen
+                              billingAddressAllowedCountries, empty means every country Adyen
                               supports.
                             </small>
                           </div>
@@ -1476,30 +1476,30 @@ export default function StylingPlayground() {
                     />
                     <SwitchRow
                       label="iOS keypad fix"
-                      hint={"keypadFix — works around an iOS/Safari bug where the keypad " +
+                      hint={"keypadFix, works around an iOS/Safari bug where the keypad " +
                         "stays up after the card field is no longer active."}
                       checked={cardOptions.keypadFix}
                       onChange={(value) => updateCard("keypadFix", value)}
                     />
                     <SwitchRow
                       label="Legacy input mode"
-                      hint={"legacyInputMode — gives the fields type=tel instead of " +
+                      hint={"legacyInputMode, gives the fields type=tel instead of " +
                         'type=text inputmode="numeric", for keyboards that ignore inputmode.'}
                       checked={cardOptions.legacyInputMode}
                       onChange={(value) => updateCard("legacyInputMode", value)}
                     />
                     <SwitchRow
                       label="Disable iOS arrow keys"
-                      hint={"disableIOSArrowKeys — hides the ‹ › keys above the iOS keyboard, " +
+                      hint={"disableIOSArrowKeys, hides the ‹ › keys above the iOS keyboard, " +
                         "which otherwise jump focus out of the secured field."}
                       checked={cardOptions.disableIOSArrowKeys}
                       onChange={(value) => updateCard("disableIOSArrowKeys", value)}
                     />
                     <SwitchRow
                       label="Expose expiry date"
-                      hint={"exposeExpiryDate — the secured field also returns the expiry " +
+                      hint={"exposeExpiryDate, the secured field also returns the expiry " +
                         "unencrypted. Only the expiry, never the PAN, so it stays out of " +
-                        "PCI scope — but it does leave the iframe in clear."}
+                        "PCI scope, but it does leave the iframe in clear."}
                       checked={cardOptions.exposeExpiryDate}
                       onChange={(value) => updateCard("exposeExpiryDate", value)}
                     />
@@ -1515,7 +1515,7 @@ export default function StylingPlayground() {
                       {cardOptions.minimumExpiryDate &&
                           !isValidExpiryDate(cardOptions.minimumExpiryDate)
                         ? <small class="field-warning">Use the mm/yy format.</small>
-                        : <small>minimumExpiryDate — rejects cards expiring before this.</small>}
+                        : <small>minimumExpiryDate, rejects cards expiring before this.</small>}
                     </Field>
                   </OptionGroup>
                   {socialSecurityMarket || installmentMarket
@@ -1542,7 +1542,7 @@ export default function StylingPlayground() {
                                 <option value="show">Always show</option>
                                 <option value="hide">Never show</option>
                               </select>
-                              <small>configuration.socialSecurityNumberMode — Brazil only.</small>
+                              <small>configuration.socialSecurityNumberMode, Brazil only.</small>
                             </Field>
                           )
                           : null}
@@ -1551,8 +1551,8 @@ export default function StylingPlayground() {
                             <>
                               <p class="option-note">
                                 installmentOptions is automatically sent in the /sessions request
-                                for this market (Brazil, Mexico, Japan) — no toggle needed. This
-                                only controls whether the per-installment amount is displayed.
+                                for this market (Brazil, Mexico, Japan), no toggle needed. This only
+                                controls whether the per-installment amount is displayed.
                               </p>
                               <SwitchRow
                                 label="Show installment amounts"
@@ -1568,7 +1568,7 @@ export default function StylingPlayground() {
                     : null}
                   <OptionGroup
                     title="Disclaimer message"
-                    hint="disclaimerMessage — rendered under the card fields."
+                    hint="disclaimerMessage, rendered under the card fields."
                     open={groupOpen("config:Disclaimer")}
                     onToggle={(open) => setGroupOpen("config:Disclaimer", open)}
                   >
@@ -1581,7 +1581,7 @@ export default function StylingPlayground() {
                       ? (
                         <>
                           <p class="option-note">
-                            A valid http(s):// Link URL is required to render the message — add one
+                            A valid http(s):// Link URL is required to render the message, add one
                             below even if you don't need clickable link text.
                           </p>
                           <Field label="Message" htmlFor="disclaimer-message">
@@ -1724,7 +1724,7 @@ export default function StylingPlayground() {
                     />
                     {
                       /* A slider commits as soon as it is touched, and these
-                        now persist — so brushing one leaves a rule we advise
+                        now persist, so brushing one leaves a rule we advise
                         against in the stylesheet until it is cleared. One
                         click drops all of them. */
                     }

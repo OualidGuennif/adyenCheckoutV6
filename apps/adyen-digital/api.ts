@@ -33,7 +33,7 @@ function object(value: unknown): Record<string, unknown> {
 
 /**
  * checkoutAttemptId is already carried inside sdkData, so forwarding it as a
- * sibling field duplicates the analytics payload — the legacy playground
+ * sibling field duplicates the analytics payload, the legacy playground
  * stripped it for the same reason.
  */
 function sanitizePaymentMethod(paymentMethod: Record<string, unknown>) {
@@ -54,7 +54,7 @@ function amountFrom(value: unknown, defaultCurrency = "EUR"): Amount {
 
 /**
  * Adyen documents shopperConversionId as an opaque unique id, so a UUID is
- * kept as-is and anything else is replaced rather than trusted — the client
+ * kept as-is and anything else is replaced rather than trusted, the client
  * only ever echoes back a value this server minted.
  */
 function conversionIdFrom(value: unknown): string {
@@ -149,7 +149,7 @@ function requestBase(input: {
     amount: input.order.amount,
     reference: input.order.reference,
     merchantAccount: input.secrets.merchantAccount,
-    // Required by /sessions and /payments — /payments rejects the request
+    // Required by /sessions and /payments, /payments rejects the request
     // outright ("Required field 'channel' is not provided") without it. Left
     // off /paymentLinks, whose request schema has no channel field and
     // rejects unknown ones.
@@ -159,13 +159,13 @@ function requestBase(input: {
     shopperReference: weeklyShopperReference(),
     shopperEmail: resolveShopperEmail(input.body.shopperEmail),
     // Required for line-item-aware methods (Klarna and other BNPL) to be
-    // considered eligible at all — without it they're silently excluded.
+    // considered eligible at all, without it they're silently excluded.
     lineItems: buildLineItems(input.order.amount),
     returnUrl: `${context.config.publicOrigin}/result?orderId=${input.order.id}`,
     billingAddress,
     deliveryAddress,
     // Lets the shopper opt in to saving the card (shown as a checkbox in the
-    // Card component) so the "save card" / one-click flow can be previewed —
+    // Card component) so the "save card" / one-click flow can be previewed ,
     // Sessions-only: the Advanced flow's equivalent is the client-side
     // enableStoreDetails config plus a per-payment storePaymentMethod flag.
     ...(input.context === "sessions"
@@ -275,7 +275,7 @@ api.post("/api/digital/payment-methods", async (c) => {
   const { client, secrets } = await profileClient(c.req.raw);
   const correlationId = String(body.correlationId ?? crypto.randomUUID());
   // One id per Advanced-flow checkout, minted here and echoed back so the
-  // /payments call that follows can repeat it — that pairing is the whole
+  // /payments call that follows can repeat it, that pairing is the whole
   // point of the field, and it is what Adyen's checkout conversion insights
   // key on. Only /paymentMethods and /payments accept it; /sessions and
   // /paymentLinks reject it as an unknown field.
@@ -330,7 +330,7 @@ api.post("/api/digital/payments", async (c) => {
     browserInfo: body.browserInfo,
     origin: context.config.publicOrigin,
     // Paying with a token, or asking to store one, is a card-on-file
-    // transaction — the legacy playground derived both fields from the payload
+    // transaction, the legacy playground derived both fields from the payload
     // instead of trusting the client to label it correctly.
     shopperInteraction: body.shopperInteraction ??
       (isStoredPaymentMethod ? "ContAuth" : "Ecommerce"),

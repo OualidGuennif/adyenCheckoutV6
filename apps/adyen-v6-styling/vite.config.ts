@@ -8,6 +8,6 @@ export default defineConfig({
   // Only the dev server reads this; the build needs the plugin above.
   ssr: { external: ["@adyen/api-library"] },
   // No root package.json (Deno workspace), so Vite's default workspace-root
-  // detection can't find the monorepo's node_modules — explicitly allow it.
+  // detection can't find the monorepo's node_modules, explicitly allow it.
   server: { fs: { allow: ["../.."] } },
 });

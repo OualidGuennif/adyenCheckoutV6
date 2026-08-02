@@ -3,7 +3,7 @@
 Four self-contained Fresh + Hono apps for exploring Adyen integrations, sharing one platform and UI
 package.
 
-> **TEST ENVIRONMENT ONLY** — never enter production credentials. Every endpoint, variable and
+> **TEST ENVIRONMENT ONLY**: never enter production credentials. Every endpoint, variable and
 > payment flow here targets Adyen TEST and will not work in production.
 >
 > **These are playgrounds, proofs of concept and test harnesses. None of them is intended to be
@@ -13,15 +13,15 @@ package.
 ## Applications
 
 **Only the styling playground is ready to use.** The other three run and are worth exploring, but
-they are still being built — treat anything you see there as work in progress, not as a reference
+they are still being built, treat anything you see there as work in progress, not as a reference
 integration.
 
 | App                       | Covers                                                         | Status                     | Dev port |
 | ------------------------- | -------------------------------------------------------------- | -------------------------- | -------: |
 | `adyen-v6-styling`        | Drop-in styling options and CSS overrides                      | **Ready**                  |     8004 |
-| `adyen-digital`           | Sessions, Advanced, Pay by Link, MIT, API Only and Back Office | In progress — est. Q3 2026 |     8001 |
-| `adyen-ipp-endless-aisle` | Endless Aisle cart and Terminal API Cloud Device               | In progress — est. Q4 2026 |     8002 |
-| `adyen-agentic-commerce`  | Agentic checkout, with mock and real paths kept distinct       | In progress — est. Q1 2027 |     8003 |
+| `adyen-digital`           | Sessions, Advanced, Pay by Link, MIT, API Only and Back Office | In progress · est. Q3 2026 |     8001 |
+| `adyen-ipp-endless-aisle` | Endless Aisle cart and Terminal API Cloud Device               | In progress · est. Q4 2026 |     8002 |
+| `adyen-agentic-commerce`  | Agentic checkout, with mock and real paths kept distinct       | In progress · est. Q1 2027 |     8003 |
 
 Dates are estimates for the end of the quarter, not commitments.
 
@@ -40,7 +40,7 @@ That starts all four apps on ports 8001–8004 with hot reload; one `Ctrl+C` sto
 one, use `dev:digital`, `dev:ipp`, `dev:agentic` or `dev:styling`.
 
 Each app reads its credentials from its own `.env`. Copy `apps/<app>/.env.example` to
-`apps/<app>/.env` and fill in your TEST values — no `.env` file is committed. The browser only ever
+`apps/<app>/.env` and fill in your TEST values, no `.env` file is committed. The browser only ever
 receives the publishable TEST client key; API keys, HMAC keys and bearer tokens stay server-side,
 and extra profiles are encrypted at rest.
 
@@ -100,7 +100,7 @@ runnable on an older local Deno; the comments there explain what and why.
 **Purpose.** Everything in this repository exists to demonstrate, explore and test Adyen
 integrations against the Adyen **TEST** environment. It is written for learning, prototyping and
 proofs of concept. It is not a product, not a template to ship, and not a certified or reference
-integration — including the parts marked _Ready_, which means "usable as a playground", not
+integration, including the parts marked _Ready_, which means "usable as a playground", not
 "production-grade".
 
 **Not an Adyen product.** This is an independent personal project. It is not built, reviewed,

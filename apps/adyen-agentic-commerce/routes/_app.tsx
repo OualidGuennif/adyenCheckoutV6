@@ -8,7 +8,7 @@ export default define.page(function App({ Component }) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="theme-color" content="#ffffff" />
         <meta name="robots" content="noindex,nofollow" />
-        <title>Agentic Commerce — TEST Playground</title>
+        <title>Agentic Commerce · TEST Playground</title>
       </head>
       <body>
         <Component />

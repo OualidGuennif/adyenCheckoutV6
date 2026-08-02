@@ -33,13 +33,13 @@ interface AltMethod {
   note?: string;
   /** Second line under the value, as on a card tile: PIN, expiry, and so on. */
   detail?: string;
-  /** Rendered in italics — for wallets you can only test with your own account. */
+  /** Rendered in italics, for wallets you can only test with your own account. */
   disclaimer?: { text: string; linkLabel: string; href: string };
 }
 
 /**
  * Wallets first: they are the ones people reach for and the ones that need
- * explaining. Then the gift card and iDEAL, then Klarna — whose flow only
+ * explaining. Then the gift card and iDEAL, then Klarna, whose flow only
  * needs the approved shopper phone number for the market you are testing.
  */
 const ALT_METHODS: AltMethod[] = [
@@ -92,7 +92,7 @@ function useCopy() {
 
 /**
  * Test credentials sit one tap away from the Drop-in instead of behind a trip
- * to the docs. Both sections collapse on every screen — this is reference
+ * to the docs. Both sections collapse on every screen, this is reference
  * material, and the checkout is what the page is about.
  */
 export function TestCards() {

@@ -139,7 +139,7 @@
   color: #ff9db0;
 }
 
-/* Truncation marker for values over 120 characters — sdkData alone is long
+/* Truncation marker for values over 120 characters, sdkData alone is long
    enough to bury the four fields printed around it. */
 .json-fold {
   padding: 0 6px;

@@ -9,7 +9,7 @@ export default define.page(function Home() {
       <PageHeader
         eyebrow="Merchant-controlled AI commerce"
         title="Inspect every delegated decision before payment."
-        description="A transparent local agentic mock, a real merchant catalogue, and an optional human-confirmed Adyen TEST checkout—without fabricating provider responses."
+        description="A transparent local agentic mock, a real merchant catalogue, and an optional human-confirmed Adyen TEST checkout, without fabricating provider responses."
         actions={
           <>
             <a class="button button--quiet button--small" href="/history">Run history</a>

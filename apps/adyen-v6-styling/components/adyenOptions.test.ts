@@ -1,7 +1,7 @@
 /**
  * The panel claims to expose "every custom property Adyen Web actually reads".
  * Merchants copy the output straight into their own stylesheet, so a token
- * that no longer exists — or one that quietly appeared in a new SDK — is a
+ * that no longer exists, or one that quietly appeared in a new SDK, is a
  * broken promise, not a cosmetic slip.
  *
  * These read the real adyen.css for the pinned version and fail on drift, so

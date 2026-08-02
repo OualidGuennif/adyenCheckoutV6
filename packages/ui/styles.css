@@ -1645,7 +1645,7 @@ details > summary {
     padding: 8px 14px;
   }
 
-  /* Hidden only in the cramped header bar — pages that moved it next to their
+  /* Hidden only in the cramped header bar, pages that moved it next to their
      market selector keep it, since there it has room of its own. */
   .header-link,
   .app-header__actions .header-tools {
@@ -1792,7 +1792,7 @@ details > summary {
 }
 
 /* The playgrounds' own mark: a green dot and the app's name. Deliberately
-   plain — it identifies the site without borrowing anyone's identity. */
+   plain, it identifies the site without borrowing anyone's identity. */
 .wordmark {
   display: inline-flex;
   align-items: center;

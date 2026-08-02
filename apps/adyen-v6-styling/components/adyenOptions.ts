@@ -4,7 +4,7 @@
  * The lists are not a hand-picked subset: the secured-field properties are
  * StyleDefinitions, the card/Drop-in options are CardConfiguration and
  * DropinConfiguration (all of them that a merchant is allowed to set), and the
- * CSS custom properties are the ones actually shipped in adyen.css — all read
+ * CSS custom properties are the ones actually shipped in adyen.css, all read
  * from @adyen/adyen-web 6.41.0. Re-check them on every SDK bump.
  */
 
@@ -331,7 +331,7 @@ export const SECURE_PROPERTY_SPECS: SecurePropertySpec[] = [
     group: "Text rendering",
     kind: "select",
     options: ["block", "inline-block", "flex", "inline-flex", "inline"],
-    hint: "The iframe only holds a single input — display: none hides the field.",
+    hint: "The iframe only holds a single input, display: none hides the field.",
   },
   {
     property: "padding",
@@ -655,7 +655,7 @@ export function cssTokenSetCount(tokens: CssTokens, group?: CssTokenGroup) {
 /**
  * Rules that have no design token behind them, so they have to be written as
  * plain CSS against Adyen's class names. Those class names are internal and
- * can change on any SDK upgrade — unlike the tokens above.
+ * can change on any SDK upgrade, unlike the tokens above.
  */
 export interface CssRules {
   payButtonBackground: string;
@@ -703,9 +703,9 @@ export function cssRuleSetCount(rules: CssRules) {
     (rules.uppercaseButton ? 1 : 0) + (rules.compactMethods ? 1 : 0);
 }
 
-const NOTHING_SET = "/* Nothing overridden yet — the Drop-in runs Adyen's own values. */";
+const NOTHING_SET = "/* Nothing overridden yet, the Drop-in runs Adyen's own values. */";
 
-const CSS_HEADER = `/* Adyen Web ${ADYEN_WEB_VERSION} — TEST playground overrides.
+const CSS_HEADER = `/* Adyen Web ${ADYEN_WEB_VERSION}, TEST playground overrides.
  * Import after @adyen/adyen-web/styles/adyen.css.
  */
 `;
@@ -871,7 +871,7 @@ export const DEFAULT_CARD: CardOptions = {
 
 // Adyen's own DisclaimerMessage component silently renders nothing at all
 // (not even the message text) unless every url passed to it is a valid
-// http(s) URL — an empty or missing link string means the whole disclaimer
+// http(s) URL, an empty or missing link string means the whole disclaimer
 // disappears, message included. Guard against sending a config that would
 // silently vanish.
 export function isValidHttpUrl(value: string): boolean {
@@ -951,7 +951,7 @@ export function cardConfigObject(styles: SecureStyles, card: CardOptions, countr
     // installmentOptions itself is NOT set here: for the Sessions flow, Adyen
     // only honors the installment plan baked into the session token at
     // creation time (sent server-side in /api/styling/session, automatically
-    // for BR/MX/JP) — a client-side override here is silently ignored.
+    // for BR/MX/JP), a client-side override here is silently ignored.
     // showInstallmentAmounts is a pure Component display toggle, so it's
     // still set client-side.
     ...(INSTALLMENT_COUNTRIES.includes(upperCountry)
@@ -960,7 +960,7 @@ export function cardConfigObject(styles: SecureStyles, card: CardOptions, countr
   };
 }
 
-// storedCard only ever re-collects a CVC — it never renders a holder name,
+// storedCard only ever re-collects a CVC, it never renders a holder name,
 // billing address or social security number field. Applying
 // holderNameRequired/billingAddressRequired to it anyway makes the
 // Component report isValid: false with no visible field to fix, so
@@ -978,7 +978,7 @@ export function storedCardConfigObject(styles: SecureStyles, card: CardOptions) 
  * A wallet button is drawn by the provider, not by Adyen, so none of the CSS
  * or the secured-field styles above reach it. Each vendor exposes its own
  * small set of knobs instead, and these are the ones that change what you can
- * see — the rest are merchant identifiers and flow callbacks.
+ * see, the rest are merchant identifiers and flow callbacks.
  *
  * Values come from ApplePayConfiguration / GooglePayConfiguration /
  * PayPalConfiguration in @adyen/adyen-web 6.41.0.
@@ -1063,14 +1063,14 @@ export const PAYPAL_LABELS: PayPalLabel[] = ["paypal", "checkout", "buynow", "pa
  * Apple ships the Pay button as a web component and Adyen has no config option
  * for its shape. Apple's own component reads
  * `border-radius: var(--apple-pay-button-border-radius, 4px)`, so the variable
- * is the way in — but it has to be set *on the element*: adyen.css declares
+ * is the way in, but it has to be set *on the element*: adyen.css declares
  *
  *   apple-pay-button { --apple-pay-button-border-radius: 4px }
  *
  * and a custom property declared on the element always beats one inherited
  * from an ancestor. Setting it on a wrapper does nothing at all.
  *
- * So the rule targets the element too, with the same specificity as Adyen's —
+ * So the rule targets the element too, with the same specificity as Adyen's ,
  * source order settles it, and this stylesheet is meant to load after
  * adyen.css. It is also the plain thing a merchant would write, rather than a
  * selector engineered around a container class the Drop-in may not render.
@@ -1088,7 +1088,7 @@ export interface WalletOptions {
   applePayButtonType: ApplePayButtonType | "";
   applePayButtonColor: ApplePayButtonColor | "";
   applePayTotalPriceLabel: string;
-  /** CSS, not configuration — see APPLE_PAY_RADIUS_VARIABLE. */
+  /** CSS, not configuration, see APPLE_PAY_RADIUS_VARIABLE. */
   applePayButtonRadius: string;
   googlePayButtonType: GooglePayButtonType | "";
   googlePayButtonColor: GooglePayButtonColor | "";
@@ -1174,7 +1174,7 @@ export function walletConfigObjects(wallets: WalletOptions) {
 /* -------------------------------------------------------------------------- */
 
 /**
- * A starting point, not a destination — every value a preset sets is one you
+ * A starting point, not a destination, every value a preset sets is one you
  * can still change afterwards.
  *
  * They only touch what the checkout looks like: secured-field styles, design
@@ -1225,7 +1225,7 @@ function secureWith(overrides: {
 const SYSTEM_STACK = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
 /**
- * The pay button reads three different tokens — rest, hover and active — and
+ * The pay button reads three different tokens, rest, hover and active, and
  * they are not named as a family:
  *
  *   .adyen-checkout__button         background: color-background-always-dark
@@ -1248,7 +1248,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: "adyen",
     label: "Adyen default",
-    description: "Nothing overridden — the Drop-in exactly as Adyen ships it.",
+    description: "Nothing overridden, the Drop-in exactly as Adyen ships it.",
     secure: DEFAULT_SECURE,
     tokens: {},
     wallets: DEFAULT_WALLETS,

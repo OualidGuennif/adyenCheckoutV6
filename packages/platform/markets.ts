@@ -86,7 +86,7 @@ const MARKET_LOCALE: Record<string, string> = {
 };
 
 /**
- * Currencies with no minor unit — their Adyen "minor units" value equals the
+ * Currencies with no minor unit, their Adyen "minor units" value equals the
  * major amount (¥110 is `{value: 110}`, not 11000).
  */
 export const ZERO_DECIMAL_CURRENCIES = new Set(["JPY", "KRW", "VND", "IDR"]);
@@ -97,7 +97,7 @@ const REFERENCE_MAJOR_AMOUNT = 109.99;
 /**
  * Default order amount per currency, in MAJOR units (what a shopper reads:
  * 699 means "699", not "6.99"). `defaultAmountForCurrency` converts to Adyen
- * minor units — never put minor units in this table.
+ * minor units, never put minor units in this table.
  *
  * Not an FX conversion: each value is the reference amount rounded to
  * something that looks like a real price tag locally, so the playground never
@@ -127,7 +127,7 @@ const DEFAULT_MAJOR_AMOUNT: Record<string, number> = {
   NOK: 1_199,
 };
 
-/** The market used whenever detection is inconclusive — kept in the EU. */
+/** The market used whenever detection is inconclusive, kept in the EU. */
 export const FALLBACK_COUNTRY = "NL";
 
 export function currencyForCountry(countryCode: string): string {

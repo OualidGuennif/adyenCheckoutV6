@@ -286,7 +286,7 @@ export default function BackOffice() {
                     <tbody>
                       {selected.attempts.map((attempt) => (
                         <tr>
-                          <td>{attempt.paymentMethod ?? "—"}</td>
+                          <td>{attempt.paymentMethod ?? ", "}</td>
                           <td class="mono">{attempt.pspReference ?? "pending"}</td>
                           <td>
                             <StatusPill tone={tone(attempt.state)}>{attempt.state}</StatusPill>

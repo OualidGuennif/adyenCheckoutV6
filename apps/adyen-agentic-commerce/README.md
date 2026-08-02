@@ -34,7 +34,7 @@ describes agentic integrations as a pilot, and no publicly verifiable TEST contr
 build against. Shipping a plausible-looking fake would be worse than an honest 501.
 
 **Human-confirmed payment** is the part that does work end to end. Once you confirm as a human, it
-creates a standard Adyen Checkout **TEST session** — with a configured profile. It is a normal
+creates a standard Adyen Checkout **TEST session**: with a configured profile. It is a normal
 session, and the UI says so rather than dressing it up as an Agentic Commerce API call.
 
 ## Environment variables
@@ -89,7 +89,7 @@ A playground for exploring and testing Adyen against its **TEST** environment. N
 reference integration, and not intended to be deployed to production as-is. Not built or supported
 by Adyen.
 
-If you reuse any of this, you alone remain responsible for your own payment stack — PCI scope,
+If you reuse any of this, you alone remain responsible for your own payment stack, PCI scope,
 regulatory compliance, security review and the correctness of your flows. Provided as is, with no
 warranty and no liability, under the MIT Licence.
 

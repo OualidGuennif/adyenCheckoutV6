@@ -3,8 +3,8 @@ import type { JsonValue } from "./types.ts";
 // This is a TEST-only playground: sessionData, sdkData, encrypted card blobs
 // and similar fields are opaque ciphertext or fixture data, not real secrets,
 // and hiding them defeats the whole point of the debug inspector. Only true
-// infrastructure credentials — which would let someone call Adyen as this
-// merchant — stay redacted, regardless of environment.
+// infrastructure credentials, which would let someone call Adyen as this
+// merchant, stay redacted, regardless of environment.
 const DROP_KEYS = [
   "apikey",
   "authorization",

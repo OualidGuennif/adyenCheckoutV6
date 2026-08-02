@@ -1,14 +1,14 @@
 # Security
 
 These are TEST playgrounds. They are built so that a leaked screenshot, a forked repo or a public
-URL costs you nothing — but they are not a PCI-certified platform and not a production secret store.
+URL costs you nothing, but they are not a PCI-certified platform and not a production secret store.
 
 **If you fork this, read the checklist and nothing else is mandatory.**
 
 ## Forking checklist
 
 1. **Never put LIVE credentials in it.** The app rejects LIVE endpoints and any client key that does
-   not start with `test_`, but do not lean on that — treat it as a seatbelt, not a policy.
+   not start with `test_`, but do not lean on that, treat it as a seatbelt, not a policy.
 2. **Set `PROFILE_ENCRYPTION_KEY`** before deploying anywhere. It encrypts merchant profiles at
    rest, and it is required on Render.
 3. **Set `PUBLIC_ORIGIN`** to the exact host browsers will use. It anchors the CSRF origin check;
@@ -38,7 +38,7 @@ Only Adyen Web Drop-in, Components, secured fields and stored-payment-method ide
 The card number, expiry and CVC live inside Adyen-hosted iframes and never touch this backend.
 
 The API-only flow demonstrates the contract using Adyen's encrypted blobs. **Using it does not by
-itself reduce your PCI obligations** — that depends on your integration and your assessor, not on
+itself reduce your PCI obligations**, that depends on your integration and your assessor, not on
 this repo.
 
 `packages/platform/sanitize.ts` rejects anything that looks like a raw PAN or CVC before it can be
@@ -79,7 +79,7 @@ clear. Deleting one is irreversible.
 
 Application-level encryption is not a secret manager. Restrict who can reach your hosting dashboard
 and the persistent disk. Rotating `PROFILE_ENCRYPTION_KEY` means migrating or recreating every
-encrypted profile — there is no automatic re-encryption.
+encrypted profile, there is no automatic re-encryption.
 
 ## What this does not protect against
 
@@ -95,7 +95,7 @@ Stated plainly, so you can decide whether it matters for your fork:
 - **There is no authentication model beyond optional Basic Auth.** Anyone who can reach the URL can
   use the playground.
 
-None of this is a reason to point it at LIVE credentials — including if you find a way around a
+None of this is a reason to point it at LIVE credentials, including if you find a way around a
 control listed above.
 
 ## Reporting something

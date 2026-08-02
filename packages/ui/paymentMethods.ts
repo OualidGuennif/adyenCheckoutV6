@@ -1,9 +1,9 @@
 // Adyen Web reports a wallet's SDK failing to load (e.g. Apple Pay outside
 // Safari/HTTPS, Google Pay without domain verification) through the same
 // top-level onError as a real payment failure. Those are expected and
-// shouldn't stop the whole Drop-in — only genuine payment/session errors
+// shouldn't stop the whole Drop-in, only genuine payment/session errors
 // should.
-// CANCEL is the shopper closing a wallet sheet ("ApplePay UI dismissed") —
+// CANCEL is the shopper closing a wallet sheet ("ApplePay UI dismissed") ,
 // a normal thing to do, and never something to show as an error.
 const NON_FATAL_ERROR_NAMES = new Set(["SCRIPT_ERROR", "SDK_ERROR", "CANCEL"]);
 
@@ -12,13 +12,13 @@ export function isNonFatalWalletError(cause: unknown): boolean {
   return typeof name === "string" && NON_FATAL_ERROR_NAMES.has(name);
 }
 
-// Credit card installments only make sense on these markets — kept as the
+// Credit card installments only make sense on these markets, kept as the
 // single source of truth so the v6-styling playground's country-gated
 // installments toggle stays aligned with what adyen-digital actually sends.
 export const INSTALLMENT_COUNTRIES = ["BR", "MX", "JP"];
 
 // Brazil requires a CPF/CNPJ (social security number) field on certain card
-// payments — irrelevant everywhere else, so only gated on for BR.
+// payments, irrelevant everywhere else, so only gated on for BR.
 export const SOCIAL_SECURITY_NUMBER_COUNTRIES = ["BR"];
 
 export function installmentsConfiguration(countryCode: string): Record<string, unknown> {
@@ -42,7 +42,7 @@ export function cardConfiguration(
     hideCVC: false,
     maskSecurityCode: false,
     // Sessions flow shows the "save card" checkbox on its own from the
-    // session's storePaymentMethodMode — this only matters for the Advanced
+    // session's storePaymentMethodMode, this only matters for the Advanced
     // flow, which owns the Card config directly with no session to drive it.
     ...(options.enableStoreDetails ? { enableStoreDetails: true } : {}),
     placeholders: {

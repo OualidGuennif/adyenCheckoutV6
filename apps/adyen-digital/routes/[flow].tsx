@@ -7,11 +7,11 @@ import { define } from "../utils.ts";
 
 const FLOWS = {
   sessions: {
-    title: "Sessions — Drop-in & Components",
+    title: "Sessions, Drop-in & Components",
     description: "Adyen Web manages 3DS and orchestration from a single /sessions call.",
   },
   advanced: {
-    title: "Advanced Flow — Drop-in & Components",
+    title: "Advanced Flow, Drop-in & Components",
     description:
       "The server owns /paymentMethods, /payments and /payments/details; the browser owns only encrypted component state.",
   },
@@ -21,7 +21,7 @@ const FLOWS = {
       "A refusal closes an attempt, not the order. Link validity, successful authorisation and terminal webhooks determine closure.",
   },
   mit: {
-    title: "MIT — Merchant Initiated Transactions",
+    title: "MIT, Merchant Initiated Transactions",
     description:
       "Use a storedPaymentMethodId and non-PII shopperReference with ContAuth. Raw card details are not accepted.",
   },

@@ -25,7 +25,7 @@ function marketFrom(value: unknown): string {
 }
 
 // Side lookup only, used to populate the "pre-select payment method" dropdown
-// with the merchant's real available methods for a country — unrelated to
+// with the merchant's real available methods for a country, unrelated to
 // (and doesn't affect) the /sessions call the Drop-in preview actually uses.
 api.post("/api/styling/payment-methods", async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as { countryCode?: unknown };
@@ -62,7 +62,7 @@ api.post("/api/styling/session", async (c) => {
     ? String(body.shopperLocale)
     : "en-US";
   // For the Sessions flow, Adyen only honors the installment plan baked into
-  // the session token at creation time — a client-side
+  // the session token at creation time, a client-side
   // paymentMethodsConfiguration.card.installmentOptions override is ignored.
   const installmentsRequested = body.installments === true &&
     INSTALLMENT_COUNTRIES.includes(countryCode);
@@ -90,7 +90,7 @@ api.post("/api/styling/session", async (c) => {
     shopperReference: weeklyShopperReference(),
     shopperEmail: resolveShopperEmail(),
     // Required for line-item-aware methods (Klarna and other BNPL) to be
-    // considered eligible at all — without it they're silently excluded.
+    // considered eligible at all, without it they're silently excluded.
     lineItems: buildLineItems(order.amount),
     // Lets the shopper opt in to saving the card (shown as a checkbox in the
     // Card component) so the "save card" / cardOnFile UI can be previewed.

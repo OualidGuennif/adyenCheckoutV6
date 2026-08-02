@@ -70,7 +70,7 @@ export function TestDataAndTools() {
  * Anyone who reaches a deployed playground sees a working checkout, real
  * payment methods and an Adyen wordmark; nothing on screen otherwise says it is
  * a test harness rather than a product, or who carries the obligations if they
- * copy it. A link in a README does not reach them — this page does. Every app
+ * copy it. A link in a README does not reach them, this page does. Every app
  * mounts it at /disclaimer.
  */
 export function DisclaimerPage(props: { appName: string; repositoryUrl?: string }) {
@@ -95,9 +95,12 @@ export function DisclaimerPage(props: { appName: string; repositoryUrl?: string 
       <h2>Not an Adyen product</h2>
       <p>
         This is an independent project. It is not built, reviewed, endorsed or supported by Adyen,
-        and it is not covered by any Adyen support agreement or service level. Adyen's own
-        documentation and Customer Area are the authoritative sources; wherever they and this
-        application disagree, Adyen is right.
+        and it is not covered by any Adyen support agreement or service level.{" "}
+        <a href="https://docs.adyen.com/" target="_blank" rel="noopener noreferrer">
+          Adyen's own documentation
+        </a>{" "}
+        and Customer Area are the authoritative sources; wherever they and this application
+        disagree, Adyen is right.
       </p>
 
       <h2>If you reuse any of it</h2>
@@ -144,7 +147,7 @@ export function TestBanner() {
     <div class="test-banner" role="note" aria-label="Test environment warning">
       <span class="test-badge">TEST</span>
       <span>
-        Test environment only — never use production credentials or live endpoints.
+        Test environment only, never use production credentials or live endpoints.
       </span>
     </div>
   );
@@ -154,7 +157,7 @@ export function TestBanner() {
  * The playgrounds' own mark, not Adyen's.
  *
  * A logo in a site's header is a claim of identity, not a description of what
- * the site talks about — "Adyen" beside a "DEMOS" chip reads as an Adyen
+ * the site talks about, "Adyen" beside a "DEMOS" chip reads as an Adyen
  * product line, which is exactly the impression these are not entitled to
  * give. Adyen still appears wherever it is genuinely descriptive: the SDK
  * version, links to their docs, and the payment-method logos the SDK renders
@@ -297,7 +300,7 @@ export function Field(props: {
 
 const HEX_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
-// Native <input type="color"> has no way to type/paste a hex value directly —
+// Native <input type="color"> has no way to type/paste a hex value directly ,
 // pairs it with a text input kept in sync both ways, so the text field always
 // reflects the live color (not some unrelated default) and only pushes
 // upstream once the typed value is a valid hex, so a half-typed value doesn't

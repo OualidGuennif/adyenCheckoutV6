@@ -177,7 +177,7 @@ export default function TerminalWorkspace() {
                     {bootstrap?.profiles.map((profile) => (
                       <option key={profile.id} value={profile.id}>
                         {profile.label}
-                        {profile.isConfigured ? "" : " — incomplete"}
+                        {profile.isConfigured ? "" : ", incomplete"}
                       </option>
                     ))}
                   </select>

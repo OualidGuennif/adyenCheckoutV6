@@ -75,7 +75,7 @@ body {
 }
 
 /* Vertical and horizontal are not the same problem. 5vw all round put 68px of
-   nothing above the checkout — dead space before anything you came to look at.
+   nothing above the checkout, dead space before anything you came to look at.
    Sideways that same room is what frames the pair and keeps the tiles off the
    window edge, so only the vertical is cut. */
 .styling-preview {
@@ -250,7 +250,7 @@ body {
   white-space: nowrap;
 }
 
-/* Sized so the longest number still sits on one line in the narrowest tile —
+/* Sized so the longest number still sits on one line in the narrowest tile , 
    the extra tracking and the larger size were costing about ten pixels, which
    was the whole margin. A wrapped PAN is worse than a slightly smaller one:
    you can't read a card number that has been cut in half. */
@@ -262,7 +262,7 @@ body {
   overflow-wrap: anywhere;
 }
 
-/* The gift card number is 23 digits — four more than a PAN, and past what the
+/* The gift card number is 23 digits, four more than a PAN, and past what the
    tile holds at any size the card numbers are comfortable at. It takes the
    step down rather than making every tile smaller for the one outlier. */
 .test-card__pan--long {
@@ -306,8 +306,8 @@ body {
   color: var(--color-ink-muted);
 }
 
-/* Wraps the host with anything that has to sit alongside it — the spent-session
-   notice — so the preview row still has exactly two flex items. */
+/* Wraps the host with anything that has to sit alongside it, the spent-session
+   notice, so the preview row still has exactly two flex items. */
 .dropin-column {
   display: flex;
   width: 100%;
@@ -429,7 +429,7 @@ body {
 
 /* The shared stylesheet caps .dropin-host at min(600px, 100%), which the other
    apps want. Here the column already owns the width, and leaving the cap on
-   made the host 50px narrower than the notice stacked above it — the banner
+   made the host 50px narrower than the notice stacked above it, the banner
    visibly overhanging on the right. */
 .styling-preview .dropin-host {
   width: 100%;
@@ -486,7 +486,7 @@ body {
   transform: translateY(1px);
 }
 
-/* Confirms the click landed — the panel snapping back to defaults is otherwise
+/* Confirms the click landed, the panel snapping back to defaults is otherwise
    the only feedback, and on an untouched panel there is nothing to see at all.
    Green here because it reports success, not because it offers an action. */
 .styling-reset--success {
@@ -737,7 +737,7 @@ body {
 }
 
 /* Long option lists (address fields, 36 countries) fold behind a summary so
-   they never swamp the panel, and expand in the flow — a floating menu gets
+   they never swamp the panel, and expand in the flow, a floating menu gets
    clipped by .option-group's overflow and vanishes under the next section. */
 .checkbox-dropdown {
   display: flex;
@@ -820,7 +820,7 @@ body {
 }
 
 /* These live inside a .field, which sizes inputs as full-width 42px-tall text
-   boxes — right for a text field, four times too tall for a checkbox. */
+   boxes, right for a text field, four times too tall for a checkbox. */
 .checkbox-dropdown__item input {
   width: 14px;
   height: 14px;
@@ -944,7 +944,7 @@ body {
 }
 
 /* On a laptop the panel at its full 480px is what decides whether the checkout
-   and the dataset can share a row — and it wins that argument for space it
+   and the dataset can share a row, and it wins that argument for space it
    does not need. Narrower here, the pair fits side by side from ~1375px
    instead of ~1470px, which is most laptops. */
 @media (min-width: 1180px) and (max-width: 1699px) {
@@ -955,7 +955,7 @@ body {
 
 /* Past this width the preview column grows faster than a checkout should, and
    the pair ends up marooned in the middle of it. Handing the extra to the
-   options panel — which is genuinely cramped — keeps the composition tight
+   options panel, which is genuinely cramped, keeps the composition tight
    instead of banding it with empty space. */
 @media (min-width: 1700px) {
   .styling-layout {
@@ -990,7 +990,7 @@ body {
 
   /* Never below 372px: two tiles and a 19-digit PAN is what this column is
      for, and a card number broken across two lines is unreadable. Not sticky
-     either — the tiles belong to the page and stay where they were put.
+     either, the tiles belong to the page and stay where they were put.
    *
    * Ordered first so the Drop-in ends up against the options panel instead of
    * with the dataset between them. You change an option on the right and watch

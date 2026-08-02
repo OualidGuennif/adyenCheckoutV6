@@ -3,11 +3,11 @@
 An online checkout playground covering five integration paths against Adyen TEST, with a Back Office
 that correlates what each one produced.
 
-- **Sessions** — the recommended Drop-in flow
-- **Advanced** — `/paymentMethods` + `/payments` + `/payments/details`, driven by the component
-- **API only** — server-to-server with Adyen's encrypted card fields
-- **MIT** — merchant-initiated, using a stored payment method
-- **Pay by Link** — a hosted link, followed through to its webhook
+- **Sessions**: the recommended Drop-in flow
+- **Advanced**: `/paymentMethods` + `/payments` + `/payments/details`, driven by the component
+- **API only**: server-to-server with Adyen's encrypted card fields
+- **MIT**: merchant-initiated, using a stored payment method
+- **Pay by Link**: a hosted link, followed through to its webhook
 
 ## Quick start
 
@@ -63,8 +63,8 @@ Point a **TEST** standard webhook at `${PUBLIC_ORIGIN}/webhook` and copy its HMA
 `ADYEN_HMAC_KEY`.
 
 Locally that address is not reachable from Adyen, so use a tunnel (`cloudflared`, `ngrok`) and set
-`PUBLIC_ORIGIN` to the tunnel URL. Without a webhook the payment flows still work — you just will
-not see the asynchronous half: captures, refunds, chargebacks and Pay by Link completion.
+`PUBLIC_ORIGIN` to the tunnel URL. Without a webhook the payment flows still work, you just will not
+see the asynchronous half: captures, refunds, chargebacks and Pay by Link completion.
 
 Redelivery is safe. Webhooks are deduplicated and lifecycle actions are idempotent, both enforced by
 unique database constraints rather than by retry logic.
@@ -75,7 +75,7 @@ The side panel on the Drop-in and Component pages keeps callbacks, API calls and
 The Back Office shows the timeline and explains why a lifecycle action is unavailable rather than
 hiding it.
 
-Per-method capabilities — what can be captured, refunded, cancelled — live in
+Per-method capabilities, what can be captured, refunded, cancelled, live in
 [`packages/platform/payment-methods.ts`](../../packages/platform/payment-methods.ts) and are meant
 to be edited without touching flow code.
 
@@ -87,7 +87,7 @@ docker run --rm --env-file apps/adyen-digital/.env -p 8000:8000 adyen-digital:te
 ```
 
 The local `render.yaml` describes this service on its own; the one at the repository root deploys
-all four together. This app needs a persistent disk — it is the one that stores orders.
+all four together. This app needs a persistent disk, it is the one that stores orders.
 
 ## Disclaimer
 
@@ -95,7 +95,7 @@ A playground for exploring and testing Adyen against its **TEST** environment. N
 reference integration, and not intended to be deployed to production as-is. Not built or supported
 by Adyen.
 
-If you reuse any of this, you alone remain responsible for your own payment stack — PCI scope,
+If you reuse any of this, you alone remain responsible for your own payment stack, PCI scope,
 regulatory compliance, security review and the correctness of your flows. Provided as is, with no
 warranty and no liability, under the MIT Licence.
 

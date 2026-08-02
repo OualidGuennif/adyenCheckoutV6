@@ -90,7 +90,7 @@ export interface PublicProfile {
   missingFields: string[];
   capabilities: string[];
   updatedAt: string;
-  /** Not a secret — needed client-side for Google Pay's gatewayMerchantId. */
+  /** Not a secret, needed client-side for Google Pay's gatewayMerchantId. */
   merchantAccount?: string;
 }
 

@@ -1,5 +1,5 @@
 // The package is CommonJS and re-exports its classes through getters, which
-// Deno's CJS named-export detection cannot see — the default import is the
+// Deno's CJS named-export detection cannot see, the default import is the
 // whole `module.exports`, so reading the classes off it is the shape that
 // works. See `library()` for why nothing is read at module load.
 import adyenApiLibrary from "@adyen/api-library";
@@ -37,7 +37,7 @@ function library(): typeof adyenApiLibrary {
   const nested = direct?.default as typeof adyenApiLibrary | undefined;
   if (typeof nested?.HttpURLConnectionClient === "function") return nested;
   throw new Error(
-    "@adyen/api-library did not expose HttpURLConnectionClient — unexpected CommonJS interop shape.",
+    "@adyen/api-library did not expose HttpURLConnectionClient, unexpected CommonJS interop shape.",
   );
 }
 
@@ -81,7 +81,7 @@ type CreateRequest = (
  * pinned runtime is past that now, so neither workaround is load-bearing in
  * CI or in the images; both are no-ops on a runtime that already behaves,
  * and they keep the suite usable on an older local Deno. Neither has
- * anything to do with CORS, TLS or the endpoints — the misdiagnosis that led
+ * anything to do with CORS, TLS or the endpoints, the misdiagnosis that led
  * the suite to drop the library's transport in the first place.
  *
  * 1. `doRequest()` opens every call with `flushHeaders()`, purely to push
@@ -91,8 +91,8 @@ type CreateRequest = (
  *    and `end()` that follow flush the very same headers.
  *
  * 2. At the end of the response `doRequest()` rejects unless `res.complete`
- *    is true. Before 2.8.0 Deno never flipped that flag, so every call —
- *    including successful ones — failed with "The connection was terminated
+ *    is true. Before 2.8.0 Deno never flipped that flag, so every call ,
+ *    including successful ones, failed with "The connection was terminated
  *    while the message was still being sent". Setting it as the message ends
  *    restores Node's meaning; the listener is attached before the library's
  *    own so it wins the ordering, and it is skipped on runtimes that already
