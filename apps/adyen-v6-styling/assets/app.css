@@ -61,13 +61,6 @@ body {
   gap: 14px;
 }
 
-/* The shared menu anchors its dropdown to the right edge; here it is not the
-   rightmost element, so anchor it left to keep it inside the viewport. */
-.toolbar-markets .header-tools__menu {
-  right: auto;
-  left: 0;
-}
-
 .styling-layout {
   display: grid;
   min-height: calc(100vh - 102px);
@@ -1088,23 +1081,10 @@ body {
     gap: 8px;
   }
 
-  .toolbar-markets > .header-tools {
-    order: 1;
+  /* Three selects in a two-column grid strand the last one on the left. The
+     odd one out takes the whole row, the same way the tile grid handles it. */
+  .toolbar-markets > :last-child:nth-child(odd) {
     grid-column: 1 / -1;
-  }
-
-  .toolbar-markets .header-tools__toggle {
-    min-height: 40px;
-    justify-content: center;
-    border-radius: 999px;
-    background: var(--color-surface-muted);
-    font-size: 0.78rem;
-  }
-
-  .toolbar-markets .header-tools__menu {
-    right: 0;
-    left: 0;
-    min-width: 0;
   }
 
   .toolbar-country {
