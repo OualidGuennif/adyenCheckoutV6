@@ -57,6 +57,8 @@ import {
   SECURE_STATES,
   secureSetCount,
   storedCardConfigObject,
+  THEME_PRESETS,
+  themeSignature,
   walletConfigObjects,
   walletSetCount,
 } from "../components/adyenOptions.ts";
@@ -690,6 +692,29 @@ export default function StylingPlayground() {
     setCardOptions((current) => ({ ...current, [key]: value }));
   }
 
+  // Derived rather than stored: a theme is a set of values, so the honest way
+  // to know which one you are on is to compare. Edit anything afterwards and
+  // this falls to "custom" on its own, with no flag to keep in sync.
+  const activeTheme = useMemo(() => {
+    const current = themeSignature(secureStyles, cssTokens, walletOptions, showDonation);
+    return THEME_PRESETS.find((preset) =>
+      themeSignature(preset.secure, preset.tokens, preset.wallets, preset.showDonation) === current
+    )?.id ?? "custom";
+  }, [secureStyles, cssTokens, walletOptions, showDonation]);
+
+  /** Themes own the look only — Drop-in behaviour and card fields are left. */
+  function applyTheme(id: string) {
+    const preset = THEME_PRESETS.find((entry) => entry.id === id);
+    if (!preset) return;
+    setSecureStyles(preset.secure);
+    setCssTokens(preset.tokens);
+    // A preset never ships class-name rules, so any left over from before
+    // would quietly survive into a theme that does not want them.
+    setCssRules(DEFAULT_CSS_RULES);
+    setWalletOptions(preset.wallets);
+    setShowDonation(preset.showDonation);
+  }
+
   function updateWallet<K extends keyof WalletOptions>(key: K, value: WalletOptions[K]) {
     setWalletOptions((current) => ({ ...current, [key]: value }));
   }
@@ -834,6 +859,25 @@ export default function StylingPlayground() {
               {LOCALES.map(([code, name]) => (
                 <option key={code} value={code}>{name} ({code})</option>
               ))}
+            </select>
+          </div>
+          <div class="toolbar-country">
+            <select
+              id="preview-theme"
+              aria-label="Theme preset"
+              title={THEME_PRESETS.find((preset) => preset.id === activeTheme)?.description ??
+                "Your own combination."}
+              value={activeTheme}
+              onChange={(event) => applyTheme(event.currentTarget.value)}
+            >
+              {THEME_PRESETS.map((preset) => (
+                <option key={preset.id} value={preset.id}>{preset.label}</option>
+              ))}
+              {
+                /* Only offered once you have edited something: it is a state
+                  you can be in, not a theme you can pick. */
+              }
+              {activeTheme === "custom" ? <option value="custom">Custom</option> : null}
             </select>
           </div>
         </div>
