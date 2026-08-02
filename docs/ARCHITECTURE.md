@@ -11,11 +11,12 @@ deliberately do _not_ do, see [KNOWN_LIMITS.md](KNOWN_LIMITS.md); for the trust 
 
 ```
 adyenCheckoutV6/
-├── apps/                        four independent servers, one per playground
+├── apps/                        four independent servers, plus the landing page
 │   ├── adyen-digital/           online checkout: sessions, advanced, API-only, MIT, pay-by-link
 │   ├── adyen-ipp-endless-aisle/ in-person payments against a Cloud terminal
 │   ├── adyen-agentic-commerce/  agent-initiated purchases over a delegated-token flow
-│   └── adyen-v6-styling/        Drop-in theming workbench (no orders, no back office)
+│   ├── adyen-v6-styling/        Drop-in theming workbench (no orders, no back office)
+│   └── landing/                 static front door linking to the four (no build step)
 ├── packages/
 │   ├── platform/                everything server-side and shared: Adyen calls, SQLite, security
 │   └── ui/                      Preact components, design tokens, client-side payment-method setup
@@ -29,6 +30,19 @@ adyenCheckoutV6/
 `deno.json` at the root is the only place dependency versions are pinned. Apps inherit them through
 the workspace, so `@adyen/adyen-web` is one version everywhere — worth keeping that way, since the
 SDK version is baked into the UI copy and into the token audit test.
+
+## The landing page
+
+`apps/landing/` is plain HTML and CSS — no framework, no build, no server. It only lists the four
+playgrounds and says what they are, which is not work a runtime should be doing; keeping it static
+means it costs nothing to host and cannot quietly grow into a fifth app.
+
+The four destination URLs sit in one block at the top of `index.html`. Nothing links back from a
+playground to the landing: every brand link inside an app is `href="/"`, so a visitor on a subdomain
+stays on that subdomain.
+
+It carries its own wordmark rather than Adyen's — a logo is a claim of identity, and these
+playgrounds are not Adyen's.
 
 ## How one app is put together
 
@@ -157,6 +171,8 @@ and a mismatch surfaces as a 403 on every mutation rather than as a configuratio
 3. Mount `basePlatformApi` from `packages/platform/base-api.ts` so it inherits bootstrap, profile
    and health for free.
 4. Add a service block to `render.yaml`, with a disk only if it needs to persist anything.
+5. Add it to `apps/landing/index.html` and to the applications table in the root `README.md` — a
+   playground nobody can reach from the front door may as well not be deployed.
 
 Put anything a second app could plausibly want in `packages/platform`, not in the app. That rule is
 why markets, HMAC and the state machine each exist exactly once.

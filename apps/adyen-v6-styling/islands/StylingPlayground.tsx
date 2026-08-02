@@ -1,7 +1,7 @@
 import { AdyenCheckout, Dropin } from "@adyen/adyen-web";
 import type { Core } from "@adyen/adyen-web";
 import { apiFetch } from "@suite/ui/client.ts";
-import { AdyenWordmark, Field } from "@suite/ui/components.tsx";
+import { Field, PlaygroundWordmark } from "@suite/ui/components.tsx";
 import {
   detectCountryFromLanguages,
   FALLBACK_COUNTRY,
@@ -830,8 +830,7 @@ export default function StylingPlayground() {
       <style>{generatedCss}</style>
       <div class="styling-toolbar">
         <div class="styling-brand">
-          <AdyenWordmark />
-          <span class="brand-demo">DEMOS</span>
+          <PlaygroundWordmark label="Drop-in Styling" />
           <small class="styling-brand__sdk">Adyen Web SDK {ADYEN_WEB_VERSION}</small>
         </div>
         <div class="toolbar-markets">

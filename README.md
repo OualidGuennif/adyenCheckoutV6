@@ -25,6 +25,9 @@ integration.
 
 Dates are estimates for the end of the quarter, not commitments.
 
+A fifth entry, `apps/landing/`, is the static front door that links to the four. It is plain HTML
+with no build step and no server.
+
 ## Getting started
 
 Requires Deno 2.9.4 or later.

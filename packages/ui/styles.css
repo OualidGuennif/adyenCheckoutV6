@@ -123,22 +123,6 @@ a {
   text-decoration: none;
 }
 
-.adyen-wordmark {
-  width: 108px;
-  height: 35px;
-  flex: 0 0 auto;
-}
-
-.brand-demo {
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: var(--color-green-soft);
-  color: var(--color-green-dark);
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-
 .app-header__actions {
   display: flex;
   align-items: center;
@@ -1661,16 +1645,6 @@ details > summary {
     padding: 8px 14px;
   }
 
-  .adyen-wordmark {
-    width: 82px;
-    height: 28px;
-  }
-
-  .brand-demo {
-    padding: 3px 6px;
-    font-size: 0.6rem;
-  }
-
   /* Hidden only in the cramped header bar — pages that moved it next to their
      market selector keep it, since there it has room of its own. */
   .header-link,
@@ -1815,4 +1789,28 @@ details > summary {
   border-top: 1px solid var(--color-border);
   color: var(--color-ink-muted);
   font-size: 0.78rem;
+}
+
+/* The playgrounds' own mark: a green dot and the app's name. Deliberately
+   plain — it identifies the site without borrowing anyone's identity. */
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wordmark__dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 3px;
+  background: var(--color-green);
+}
+
+.wordmark__text {
+  color: var(--color-ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }

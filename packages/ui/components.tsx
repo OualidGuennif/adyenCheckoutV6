@@ -150,21 +150,22 @@ export function TestBanner() {
   );
 }
 
-export function AdyenWordmark() {
+/**
+ * The playgrounds' own mark, not Adyen's.
+ *
+ * A logo in a site's header is a claim of identity, not a description of what
+ * the site talks about — "Adyen" beside a "DEMOS" chip reads as an Adyen
+ * product line, which is exactly the impression these are not entitled to
+ * give. Adyen still appears wherever it is genuinely descriptive: the SDK
+ * version, links to their docs, and the payment-method logos the SDK renders
+ * itself.
+ */
+export function PlaygroundWordmark(props: { label: string }) {
   return (
-    <svg
-      class="adyen-wordmark"
-      viewBox="0 0 158 51"
-      role="img"
-      aria-label="Adyen"
-    >
-      <path
-        fill="currentColor"
-        fill-rule="evenodd"
-        d="M48.501 32.334h-3.018a1.594 1.594 0 0 1-1.59-1.589V11.56h-5.998c-3.058 0-5.56 2.503-5.56 5.561v16.604c0 3.06 2.502 5.562 5.56 5.562h22.166V0H48.5zM22.165 11.56H.397v6.912h14.181c.874 0 1.59.715 1.59 1.589v12.274h-3.02a1.594 1.594 0 0 1-1.589-1.589v-8.818H5.561C2.503 21.927 0 24.43 0 27.488v6.197c0 3.058 2.503 5.561 5.561 5.561h22.165V17.081c0-3.02-2.502-5.522-5.56-5.522m55.691 20.775h3.02V11.56h11.559v33.725c0 3.059-2.503 5.561-5.562 5.561H65.105v-8.103h15.77v-3.456H70.27c-3.058 0-5.56-2.503-5.56-5.561V11.559h11.558v19.186c0 .874.716 1.59 1.59 1.59m41.352-20.775H97.043v22.166c0 3.058 2.502 5.56 5.561 5.56h21.768v-6.91h-14.181a1.594 1.594 0 0 1-1.589-1.59V18.471h3.019c.874 0 1.589.715 1.589 1.589v8.819h5.998c3.058 0 5.561-2.503 5.561-5.562v-6.196c0-3.06-2.503-5.562-5.561-5.562m10.168 0h22.166c3.098 0 5.561 2.503 5.561 5.522v22.165h-11.56V20.06c0-.874-.715-1.589-1.588-1.589h-3.019v20.815h-11.56z"
-        clip-rule="evenodd"
-      />
-    </svg>
+    <span class="wordmark">
+      <span class="wordmark__dot" aria-hidden="true" />
+      <span class="wordmark__text">{props.label}</span>
+    </span>
   );
 }
 
@@ -190,8 +191,7 @@ export function AppShell(props: {
         <header class="app-header">
           <div class="app-header__top">
             <a class="brand" href="/" aria-label={props.title}>
-              <AdyenWordmark />
-              <span class="brand-demo">DEMOS</span>
+              <PlaygroundWordmark label={props.title} />
             </a>
             <nav class="app-nav-inline" aria-label="Main navigation">
               {PRIMARY_NAV.map((item) => (
