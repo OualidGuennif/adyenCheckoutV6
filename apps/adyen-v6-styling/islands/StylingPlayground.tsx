@@ -269,6 +269,7 @@ interface Persisted {
   nativeOptions: NativeOptions;
   cardOptions: CardOptions;
   walletOptions: WalletOptions;
+  showDonation: boolean;
 }
 
 // Read once per page load rather than per useState initialiser, and kept here
@@ -412,6 +413,9 @@ export default function StylingPlayground() {
   const [error, setError] = useState<string | null>(null);
   const [successFlash, setSuccessFlash] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
+  // Core-level, not a Dropin prop, so changing it rebuilds the Core rather
+  // than re-instantiating the element against the existing one.
+  const [showDonation, setShowDonation] = useState(() => stored()?.showDonation ?? true);
   // A session that has been paid on. Adyen's own final screen (and the
   // donation step after it, where the account has Adyen Giving on) tears its
   // container down when it ends, leaving an empty box with no way forward.
@@ -465,7 +469,7 @@ export default function StylingPlayground() {
       );
     }, 400);
     return () => clearTimeout(timeout);
-  }, [country, locale]);
+  }, [country, locale, showDonation]);
 
   // Written on every change rather than on unload: a tab closed from the OS,
   // or a crash, never gets an unload handler, and losing an afternoon of
@@ -486,6 +490,7 @@ export default function StylingPlayground() {
             nativeOptions,
             cardOptions,
             walletOptions,
+            showDonation,
           } satisfies Persisted,
         ),
       );
@@ -503,6 +508,7 @@ export default function StylingPlayground() {
     nativeOptions,
     cardOptions,
     walletOptions,
+    showDonation,
   ]);
 
   // Secure-field styles, native Drop-in options and card component options are
@@ -597,6 +603,14 @@ export default function StylingPlayground() {
         setCompleted(true);
       },
       onPaymentFailed: () => undefined,
+      // autoMount is what decides whether the Donation component appears after
+      // a payment at all; the two callbacks are required alongside it. Both
+      // outcomes leave the session spent, which the notice already says.
+      donation: {
+        autoMount: showDonation,
+        onDonationSuccess: () => undefined,
+        onDonationFailure: () => undefined,
+      },
       // Swapping the method list for a 3DS challenge changes the host's
       // height, and on a phone — where the dataset sits above the Drop-in —
       // that leaves the challenge scrolled off screen. Bring it back into
@@ -736,6 +750,7 @@ export default function StylingPlayground() {
     setNativeOptions(DEFAULT_NATIVE);
     setCardOptions(cardDefaultsFor(country));
     setWalletOptions(DEFAULT_WALLETS);
+    setShowDonation(true);
     setError(null);
     flashSuccess();
     // A fresh session, not a remount of the current one: an Adyen session is
@@ -1044,6 +1059,13 @@ export default function StylingPlayground() {
                       onChange={(value) => updateNative("disableFinalAnimation", value)}
                     />
                     <SwitchRow
+                      label="Adyen Giving"
+                      hint={"donation.autoMount — offers a donation once the payment is done, " +
+                        "when the account has Adyen Giving enabled. Rebuilds the session."}
+                      checked={showDonation}
+                      onChange={setShowDonation}
+                    />
+                    <SwitchRow
                       label="Apple Pay on top"
                       hint="instantPaymentTypes"
                       checked={nativeOptions.instantPaymentTypes.includes("applepay")}
@@ -1298,8 +1320,7 @@ export default function StylingPlayground() {
                     <SwitchRow
                       label="Hide Pay Later button"
                       hint={"blockPayPalPayLaterButton — PayPal adds a second, instalments " +
-                        "button when the amount and market qualify. This is the only way to " +
-                        "suppress it."}
+                        "button when the amount and market qualify."}
                       checked={walletOptions.paypalBlockPayLater}
                       onChange={(value) => updateWallet("paypalBlockPayLater", value)}
                     />
