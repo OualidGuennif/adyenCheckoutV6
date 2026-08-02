@@ -8,12 +8,18 @@ package.
 
 ## Applications
 
-| App                       | Covers                                                         | Dev port |
-| ------------------------- | -------------------------------------------------------------- | -------: |
-| `adyen-digital`           | Sessions, Advanced, Pay by Link, MIT, API Only and Back Office |     8001 |
-| `adyen-ipp-endless-aisle` | Endless Aisle cart and Terminal API Cloud Device               |     8002 |
-| `adyen-agentic-commerce`  | Agentic checkout, with mock and real paths kept distinct       |     8003 |
-| `adyen-v6-styling`        | Drop-in styling options and CSS overrides                      |     8004 |
+**Only the styling playground is ready to use.** The other three run and are worth exploring, but
+they are still being built — treat anything you see there as work in progress, not as a reference
+integration.
+
+| App                       | Covers                                                         | Status                     | Dev port |
+| ------------------------- | -------------------------------------------------------------- | -------------------------- | -------: |
+| `adyen-v6-styling`        | Drop-in styling options and CSS overrides                      | **Ready**                  |     8004 |
+| `adyen-digital`           | Sessions, Advanced, Pay by Link, MIT, API Only and Back Office | In progress — est. Q3 2026 |     8001 |
+| `adyen-ipp-endless-aisle` | Endless Aisle cart and Terminal API Cloud Device               | In progress — est. Q4 2026 |     8002 |
+| `adyen-agentic-commerce`  | Agentic checkout, with mock and real paths kept distinct       | In progress — est. Q1 2027 |     8003 |
+
+Dates are estimates for the end of the quarter, not commitments.
 
 ## Getting started
 
