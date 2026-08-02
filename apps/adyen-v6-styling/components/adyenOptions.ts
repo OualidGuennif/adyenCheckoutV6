@@ -707,8 +707,6 @@ const NOTHING_SET = "/* Nothing overridden yet — the Drop-in runs Adyen's own 
 
 const CSS_HEADER = `/* Adyen Web ${ADYEN_WEB_VERSION} — TEST playground overrides.
  * Import after @adyen/adyen-web/styles/adyen.css.
- * Design tokens are stable; the class-name rules are not — review them
- * after every Adyen Web upgrade.
  */
 `;
 
