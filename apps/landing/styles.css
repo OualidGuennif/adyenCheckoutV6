@@ -72,14 +72,6 @@ main {
   text-align: center;
 }
 
-.hero h1 {
-  margin: 0 auto 16px;
-  max-width: 18ch;
-  font-size: clamp(1.9rem, 4.4vw, 2.9rem);
-  letter-spacing: -0.025em;
-  line-height: 1.1;
-}
-
 .hero p {
   max-width: 58ch;
   margin: 0 auto;
