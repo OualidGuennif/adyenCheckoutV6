@@ -231,6 +231,59 @@ const RULES_HINT = "No design token covers these, so they are written against Ad
 const WALLET_HINT = "The provider draws this button itself, so neither the field styles nor " +
   "the CSS theme reach it — only its own options do.";
 
+/* -------------------------------------------------------------------------- */
+/* Persistence                                                                */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Everything the panel controls survives a reload. Building a theme takes
+ * dozens of small decisions and losing them to an accidental refresh is the
+ * kind of thing that stops people experimenting. Reset is the only way out,
+ * and it asks first.
+ *
+ * The key is versioned: a stored blob written by an older build may name
+ * options this one has dropped, and restoring it would resurrect them.
+ */
+const STORAGE_KEY = "adyen-v6-styling.panel.v1";
+
+interface Persisted {
+  country: string;
+  locale: string;
+  localeManual: boolean;
+  section: "styling" | "configuration" | "css";
+  secureStyles: SecureStyles;
+  cssTokens: CssTokens;
+  cssRules: CssRules;
+  nativeOptions: NativeOptions;
+  cardOptions: CardOptions;
+  walletOptions: WalletOptions;
+}
+
+// Read once per page load rather than per useState initialiser, and kept here
+// so clearing it on reset also clears what the initialisers would see.
+let storedCache: Partial<Persisted> | null | undefined;
+
+function stored(): Partial<Persisted> | null {
+  if (storedCache !== undefined) return storedCache;
+  try {
+    const raw = globalThis.localStorage?.getItem(STORAGE_KEY);
+    storedCache = raw ? JSON.parse(raw) as Partial<Persisted> : null;
+  } catch {
+    // Private mode, disabled storage, or a blob this build can't parse.
+    storedCache = null;
+  }
+  return storedCache;
+}
+
+function clearStored() {
+  storedCache = null;
+  try {
+    globalThis.localStorage?.removeItem(STORAGE_KEY);
+  } catch {
+    // Nothing to clear if it was never writable.
+  }
+}
+
 function download(name: string, content: string, type: string) {
   const link = document.createElement("a");
   link.href = URL.createObjectURL(new Blob([content], { type }));
@@ -307,28 +360,46 @@ function RawOutput(
 export default function StylingPlayground() {
   const [bootstrap, setBootstrap] = useState<Bootstrap | null>(null);
   const [session, setSession] = useState<SessionResponse | null>(null);
-  const [secureStyles, setSecureStyles] = useState(DEFAULT_SECURE);
+  // Each restores over its defaults rather than replacing them, so a blob
+  // written before an option existed still yields a complete object.
+  const [secureStyles, setSecureStyles] = useState<SecureStyles>(
+    () => ({ ...DEFAULT_SECURE, ...(stored()?.secureStyles ?? {}) }),
+  );
   const [secureState, setSecureState] = useState<SecureState>("base");
-  const [cssTokens, setCssTokens] = useState<CssTokens>({});
-  const [cssRules, setCssRules] = useState<CssRules>(DEFAULT_CSS_RULES);
-  const [nativeOptions, setNativeOptions] = useState<NativeOptions>(DEFAULT_NATIVE);
-  const [walletOptions, setWalletOptions] = useState<WalletOptions>(DEFAULT_WALLETS);
+  const [cssTokens, setCssTokens] = useState<CssTokens>(() => stored()?.cssTokens ?? {});
+  const [cssRules, setCssRules] = useState<CssRules>(
+    () => ({ ...DEFAULT_CSS_RULES, ...(stored()?.cssRules ?? {}) }),
+  );
+  const [nativeOptions, setNativeOptions] = useState<NativeOptions>(
+    () => ({ ...DEFAULT_NATIVE, ...(stored()?.nativeOptions ?? {}) }),
+  );
+  const [walletOptions, setWalletOptions] = useState<WalletOptions>(
+    () => ({ ...DEFAULT_WALLETS, ...(stored()?.walletOptions ?? {}) }),
+  );
   const [cardOptions, setCardOptions] = useState<CardOptions>(
-    () => cardDefaultsFor(detectInitialCountry()),
+    () => ({
+      ...cardDefaultsFor(stored()?.country ?? detectInitialCountry()),
+      ...(stored()?.cardOptions ?? {}),
+    }),
   );
   // Guessed from the browser's own language preferences on first render, so a
   // Dutch or Japanese visitor lands on their own market instead of a fixed
   // one. Server-side there is no navigator, so the shared European fallback
   // is rendered and the guess is applied on hydration.
-  const [country, setCountry] = useState(detectInitialCountry);
-  const [locale, setLocale] = useState(() => localeForCountry(detectInitialCountry()));
-  const [localeManual, setLocaleManual] = useState(false);
+  const [country, setCountry] = useState(() => stored()?.country ?? detectInitialCountry());
+  const [locale, setLocale] = useState(() =>
+    stored()?.locale ?? localeForCountry(stored()?.country ?? detectInitialCountry())
+  );
+  const [localeManual, setLocaleManual] = useState(() => stored()?.localeManual ?? false);
   const [availableMethods, setAvailableMethods] = useState<AvailableMethod[]>([]);
-  const [section, setSection] = useState<"styling" | "configuration" | "css">("configuration");
+  const [section, setSection] = useState<"styling" | "configuration" | "css">(
+    () => stored()?.section ?? "configuration",
+  );
   const [openGroups, setOpenGroups] = useState(DEFAULT_OPEN_GROUPS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successFlash, setSuccessFlash] = useState(false);
+  const [confirmingReset, setConfirmingReset] = useState(false);
   // A session that has been paid on. Adyen's own final screen (and the
   // donation step after it, where the account has Adyen Giving on) tears its
   // container down when it ends, leaving an empty box with no way forward.
@@ -377,6 +448,44 @@ export default function StylingPlayground() {
     }, 400);
     return () => clearTimeout(timeout);
   }, [country, locale]);
+
+  // Written on every change rather than on unload: a tab closed from the OS,
+  // or a crash, never gets an unload handler, and losing an afternoon of
+  // theming to that is exactly what this is for.
+  useEffect(() => {
+    try {
+      globalThis.localStorage?.setItem(
+        STORAGE_KEY,
+        JSON.stringify(
+          {
+            country,
+            locale,
+            localeManual,
+            section,
+            secureStyles,
+            cssTokens,
+            cssRules,
+            nativeOptions,
+            cardOptions,
+            walletOptions,
+          } satisfies Persisted,
+        ),
+      );
+    } catch {
+      // Storage can be unavailable or full; the playground still works.
+    }
+  }, [
+    country,
+    locale,
+    localeManual,
+    section,
+    secureStyles,
+    cssTokens,
+    cssRules,
+    nativeOptions,
+    cardOptions,
+    walletOptions,
+  ]);
 
   // Secure-field styles, native Drop-in options and card component options are
   // all Dropin-construction props — none of them need a new Core / /sessions
@@ -601,6 +710,8 @@ export default function StylingPlayground() {
   }
 
   function reset() {
+    setConfirmingReset(false);
+    clearStored();
     setSecureStyles(DEFAULT_SECURE);
     setCssTokens({});
     setCssRules(DEFAULT_CSS_RULES);
@@ -617,6 +728,17 @@ export default function StylingPlayground() {
       setError(cause instanceof Error ? cause.message : "Reset failed.")
     );
   }
+
+  // Escape closes the confirmation, which is what every dialog on the platform
+  // does and the only keyboard way out of one rendered outside <dialog>.
+  useEffect(() => {
+    if (!confirmingReset) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setConfirmingReset(false);
+    }
+    globalThis.addEventListener("keydown", onKey);
+    return () => globalThis.removeEventListener("keydown", onKey);
+  }, [confirmingReset]);
 
   /** Puts a payable checkout back after a completed payment. */
   function startNewPayment() {
@@ -698,13 +820,13 @@ export default function StylingPlayground() {
             {completed && !loading
               ? (
                 <div class="dropin-done" role="status">
-                  <strong>Payment completed</strong>
-                  <p>
-                    An Adyen session can only be paid once, so this one is spent — including the
-                    donation step after it, if your account has Adyen Giving enabled.
-                  </p>
+                  <span class="dropin-done__mark" aria-hidden="true">✓</span>
+                  <div class="dropin-done__text">
+                    <strong>Payment completed</strong>
+                    <span>Sessions are single-use.</span>
+                  </div>
                   <button type="button" class="button" onClick={startNewPayment}>
-                    Start a new payment
+                    New payment
                   </button>
                 </div>
               )
@@ -758,7 +880,7 @@ export default function StylingPlayground() {
               type="button"
               title="Reset every option to the Adyen default"
               aria-label="Reset every option to the Adyen default"
-              onClick={reset}
+              onClick={() => setConfirmingReset(true)}
             >
               <ResetIcon />
               <span class="styling-reset__text">{successFlash ? "Done" : "Reset"}</span>
@@ -1478,6 +1600,41 @@ export default function StylingPlayground() {
           </div>
         </aside>
       </div>
+      {confirmingReset
+        ? (
+          <div
+            class="confirm-backdrop"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) setConfirmingReset(false);
+            }}
+          >
+            <div
+              class="confirm-card"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="confirm-reset-title"
+            >
+              <strong id="confirm-reset-title">Reset every option?</strong>
+              <p>
+                Your styles, component options and theme go back to Adyen's defaults, here and on
+                your next visit. This can't be undone.
+              </p>
+              <div class="confirm-card__actions">
+                <button
+                  type="button"
+                  class="button button--quiet"
+                  onClick={() => setConfirmingReset(false)}
+                >
+                  Cancel
+                </button>
+                <button type="button" class="button button--danger" onClick={reset} autofocus>
+                  Reset everything
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+        : null}
     </>
   );
 }

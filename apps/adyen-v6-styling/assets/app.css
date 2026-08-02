@@ -319,22 +319,108 @@ body {
   min-height: 0;
 }
 
+/* A result and a way forward, on one line. The mechanics of single-use
+   sessions belong in the docs, not across three lines of a success notice. */
 .dropin-done {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 18px 20px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
   border: 1px solid var(--color-green);
   border-radius: var(--adyen-sdk-border-radius-m, 16px);
   background: var(--color-green-soft);
 }
 
-.dropin-done p {
+.dropin-done__mark {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-green);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.dropin-done__text {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.dropin-done__text strong {
+  font-size: 0.84rem;
+}
+
+.dropin-done__text span {
+  color: var(--color-ink-muted);
+  font-size: 0.72rem;
+}
+
+.dropin-done .button {
+  flex: 0 0 auto;
+}
+
+/* Reset throws away work that took a while to build, so it asks. Rendered
+   over the page rather than inside the panel: the panel scrolls, and a
+   confirmation you can scroll away from is not one. */
+.confirm-backdrop {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 17, 44, 0.32);
+  backdrop-filter: blur(2px);
+}
+
+.confirm-card {
+  display: flex;
+  width: 100%;
+  max-width: 380px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 22px;
+  border-radius: var(--radius-l);
+  background: white;
+  box-shadow: var(--shadow-raised);
+}
+
+.confirm-card strong {
+  font-size: 0.95rem;
+}
+
+.confirm-card p {
   margin: 0;
   color: var(--color-ink-muted);
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   line-height: 1.5;
+}
+
+.confirm-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Phones: stacked and full width, so the destructive one is never a mis-tap
+   away from Cancel. */
+@media (max-width: 420px) {
+  .confirm-card__actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-card__actions .button {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .styling-preview .dropin-host {
@@ -881,10 +967,16 @@ body {
     margin: 0;
   }
 
-  /* Never below 344px: two tiles and a 19-digit PAN is what this column is
+  /* Never below 372px: two tiles and a 19-digit PAN is what this column is
      for, and a card number broken across two lines is unreadable. Not sticky
-     either — the tiles belong to the page and stay where they were put. */
+     either — the tiles belong to the page and stay where they were put.
+   *
+   * Ordered first so the Drop-in ends up against the options panel instead of
+   * with the dataset between them. You change an option on the right and watch
+   * the checkout react immediately beside it; reference material sits on the
+   * outer edge, which is where reference material belongs. */
   .test-data {
+    order: -1;
     flex: 0 1 372px;
     width: auto;
     min-width: 372px;
