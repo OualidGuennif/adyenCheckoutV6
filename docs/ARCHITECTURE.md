@@ -137,13 +137,14 @@ but your panel settings in `localStorage`.
 
 ## Building and running
 
-| Task                    | Effect                                                      |
-| ----------------------- | ----------------------------------------------------------- |
-| `deno task dev:all`     | All four in watch mode, ports 8001–8004.                    |
-| `deno task dev:styling` | One app (`dev:digital`, `dev:ipp`, `dev:agentic` likewise). |
-| `deno task check`       | Format, lint, types, tests, build. What CI runs.            |
-| `deno task test`        | Tests only, in parallel.                                    |
-| `deno task verify`      | Build, then assert the SSR bundles are real.                |
+| Task                    | Effect                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| `deno task dev:all`     | All four in watch mode, ports 8001–8004.                                          |
+| `deno task dev:styling` | One app (`dev:digital`, `dev:ipp`, `dev:agentic` likewise).                       |
+| `deno task check`       | Format, lint, types, tests, build, SSR assertion. What CI runs.                   |
+| `deno task ssr:assert`  | Boots each built server and checks the page still renders and still names itself. |
+| `deno task test`        | Tests only, in parallel.                                                          |
+| `deno task verify`      | Build, then assert the SSR bundles are real.                                      |
 
 Ports are fixed per app so the four can run together: digital 8001, IPP 8002, agentic 8003,
 styling 8004.
@@ -172,6 +173,11 @@ and a mismatch surfaces as a 403 on every mutation rather than as a configuratio
 4. Add a service block to `render.yaml`, with a disk only if it needs to persist anything.
 5. Add it to `apps/landing/index.html` and to the applications table in the root `README.md`, a
    playground nobody can reach from the front door may as well not be deployed.
+6. Add its SSR assertion to the `ssr:assert` task and to its Dockerfile.
+
+**Renaming an app moves its SSR marker.** Each Dockerfile asserts the built page still contains that
+app's own name, which is what stops a broken build reaching a deploy. The same assertions run in
+`deno task ssr:assert`, so a rename fails locally instead of inside Docker.
 
 Put anything a second app could plausibly want in `packages/platform`, not in the app. That rule is
 why markets, HMAC and the state machine each exist exactly once.

@@ -10,7 +10,7 @@ COPY scripts ./scripts
 COPY apps ./apps
 
 RUN deno task build:styling
-RUN deno run -A scripts/assert-built-ssr.ts apps/adyen-v6-styling "V6 Styling"
+RUN deno run -A scripts/assert-built-ssr.ts apps/adyen-v6-styling "Drop-in Styling"
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

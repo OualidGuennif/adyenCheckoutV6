@@ -10,7 +10,7 @@ COPY scripts ./scripts
 COPY apps ./apps
 
 RUN deno task build:digital
-RUN deno run -A scripts/assert-built-ssr.ts apps/adyen-digital "Adyen Digital"
+RUN deno run -A scripts/assert-built-ssr.ts apps/adyen-digital "Digital Checkout"
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

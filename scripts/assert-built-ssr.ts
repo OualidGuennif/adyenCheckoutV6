@@ -24,14 +24,20 @@ const response = await server.fetch(
 );
 const html = await response.text();
 
-if (
-  response.status !== 200 ||
-  !html.includes("<main") ||
-  !html.includes("TEST") ||
-  !html.includes(expectedText)
-) {
+const failures = [
+  response.status !== 200 ? `expected status 200, got ${response.status}` : "",
+  !html.includes("<main") ? "no <main> element in the rendered HTML" : "",
+  !html.includes("TEST") ? "the TEST marker is missing" : "",
+  // The usual cause: an app was renamed and this argument still names the old
+  // title. Say so, rather than reporting a byte count that looks healthy.
+  !html.includes(expectedText) ? `the page never contains ${JSON.stringify(expectedText)}` : "",
+].filter(Boolean);
+
+if (failures.length > 0) {
   throw new Error(
-    `Invalid SSR output for ${appDirectory}: status=${response.status}, bytes=${html.length}`,
+    `Invalid SSR output for ${appDirectory} (${html.length} bytes):\n  - ${
+      failures.join("\n  - ")
+    }`,
   );
 }
 

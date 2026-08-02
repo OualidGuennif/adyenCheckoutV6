@@ -61,7 +61,8 @@
     "fmt:check": "deno fmt --check",
     "lint": "deno lint packages apps scripts",
     "types": "deno check packages/**/*.ts packages/**/*.tsx apps/**/*.ts apps/**/*.tsx scripts/**/*.ts",
-    "check": "deno task fmt:check && deno task lint && deno task types && deno task test && deno task build",
+    "ssr:assert": "deno run -A scripts/assert-built-ssr.ts apps/adyen-digital \"Digital Checkout\" && deno run -A scripts/assert-built-ssr.ts apps/adyen-ipp-endless-aisle \"Endless Aisle\" && deno run -A scripts/assert-built-ssr.ts apps/adyen-agentic-commerce \"Agentic Commerce\" && deno run -A scripts/assert-built-ssr.ts apps/adyen-v6-styling \"Drop-in Styling\"",
+    "check": "deno task fmt:check && deno task lint && deno task types && deno task test && deno task build && deno task ssr:assert",
     "verify": "deno task build && deno run -A scripts/verify.ts"
   },
   "fmt": {
