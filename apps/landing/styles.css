@@ -1,0 +1,192 @@
+/* The front door. Deliberately quiet: the playgrounds themselves are the
+   colourful part, and this page only has to say what they are and let people
+   through. Self-contained — no build step, no framework, no fonts to fetch. */
+
+:root {
+  --ink: #00112c;
+  --ink-muted: #5c687c;
+  --ink-subtle: #8d95a3;
+  --surface: #ffffff;
+  --surface-muted: #f7f8fa;
+  --border: #e1e5e9;
+  --green: #0abf53;
+  --green-dark: #07883b;
+  --green-soft: #e9f9ef;
+  --radius: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-muted);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px clamp(20px, 5vw, 56px);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* A wordmark of its own, not a borrowed one: this page is the first thing a
+   merchant sees, and it must not read as an official Adyen property. */
+.mark {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.badge {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green-dark);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+main {
+  width: min(940px, 100%);
+  margin: 0 auto;
+  padding: clamp(36px, 6vw, 72px) clamp(20px, 5vw, 56px) 48px;
+}
+
+.hero h1 {
+  margin: 0 0 14px;
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.hero p {
+  max-width: 62ch;
+  margin: 0 0 12px;
+  color: var(--ink-muted);
+  font-size: 0.98rem;
+}
+
+.hero__note {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 0.86rem !important;
+}
+
+.apps {
+  display: grid;
+  gap: 16px;
+  margin: 40px 0 56px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-decoration: none;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.app:hover {
+  border-color: var(--green);
+  box-shadow: 0 10px 28px rgba(0, 17, 44, 0.09);
+  transform: translateY(-2px);
+}
+
+.app h2 {
+  margin: 10px 0 8px;
+  font-size: 1.06rem;
+  letter-spacing: -0.01em;
+}
+
+.app p {
+  flex: 1 1 auto;
+  margin: 0 0 16px;
+  color: var(--ink-muted);
+  font-size: 0.86rem;
+}
+
+.app__status {
+  align-self: flex-start;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  color: var(--ink-subtle);
+  font-size: 0.63rem;
+  font-weight: 700;
+}
+
+.app__status--ready {
+  background: var(--green-soft);
+  color: var(--green-dark);
+}
+
+.app__go {
+  color: var(--green-dark);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+/* The one ready to use leads, so the eye lands on it before the roadmap. */
+.app--ready {
+  border-color: var(--green);
+}
+
+.legal {
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+.legal h2 {
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.legal p {
+  max-width: 76ch;
+  margin: 0 0 10px;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: min(940px, 100%);
+  margin: 0 auto;
+  padding: 20px clamp(20px, 5vw, 56px) 40px;
+  color: var(--ink-subtle);
+  font-size: 0.72rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app {
+    transition: none;
+  }
+
+  .app:hover {
+    transform: none;
+  }
+}

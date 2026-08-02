@@ -1,4 +1,21 @@
 services:
+  # The front door. A static site: it has no server work to do, costs nothing
+  # on Render, and cannot quietly become a fifth app to maintain.
+  - type: web
+    name: payments-playground-landing
+    runtime: static
+    staticPublishPath: ./apps/landing
+    buildCommand: ""
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
   - type: web
     name: adyen-digital
     runtime: docker

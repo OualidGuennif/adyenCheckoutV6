@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Payments Playground — Adyen TEST sandboxes</title>
+    <meta
+      name="description"
+      content="Four TEST playgrounds for exploring Adyen integrations. Not a product, not a reference integration."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>"
+    />
+  </head>
+  <body>
+    <!--
+      The four destinations. Swap these for the subdomains once the domain is
+      live; they point at the current Render URLs so the page works today.
+      Nothing else in this file needs to change.
+    -->
+    <header class="top">
+      <span class="mark">Payments Playground</span>
+      <span class="badge">TEST</span>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1>Four sandboxes for Adyen integrations.</h1>
+        <p>
+          Live checkouts running against the Adyen <strong>TEST</strong> environment — to explore,
+          demo and pull configuration out of. No real money moves, and no card details ever reach
+          these applications.
+        </p>
+        <p class="hero__note">
+          These are playgrounds and proofs of concept. None of them is a product, a reference
+          integration, or meant to be deployed to production as it stands.
+        </p>
+      </section>
+
+      <section class="apps" aria-label="Playgrounds">
+        <a class="app app--ready" href="https://adyen-v6-styling.onrender.com">
+          <span class="app__status app__status--ready">Ready</span>
+          <h2>Drop-in Styling</h2>
+          <p>
+            Theme the Adyen Web Drop-in live: secured-field styles, component options, design tokens
+            and wallet buttons. Export the result as JSON or CSS.
+          </p>
+          <span class="app__go">Open<span aria-hidden="true"> →</span></span>
+        </a>
+
+        <a class="app" href="https://adyen-digital.onrender.com">
+          <span class="app__status">In progress · est. Q3 2026</span>
+          <h2>Digital Checkout</h2>
+          <p>
+            Sessions, Advanced, API-only, MIT and Pay by Link, with a back office that correlates
+            what each one produced.
+          </p>
+          <span class="app__go">Open<span aria-hidden="true"> →</span></span>
+        </a>
+
+        <a class="app" href="https://ipp-endless-aisle.onrender.com">
+          <span class="app__status">In progress · est. Q4 2026</span>
+          <h2>In-Person · Endless Aisle</h2>
+          <p>
+            Shop-floor basket, terminal pairing and a Cloud Device payment. Runs as a local
+            simulation unless a real TEST terminal is online.
+          </p>
+          <span class="app__go">Open<span aria-hidden="true"> →</span></span>
+        </a>
+
+        <a class="app" href="https://adyen-agentic-commerce.onrender.com">
+          <span class="app__status">In progress · est. Q1 2027</span>
+          <h2>Agentic Commerce</h2>
+          <p>
+            Agent-initiated purchases, with every step labelled as executed, simulated or
+            unavailable. Nothing is dressed up as a real provider response.
+          </p>
+          <span class="app__go">Open<span aria-hidden="true"> →</span></span>
+        </a>
+      </section>
+
+      <section class="legal" id="disclaimer">
+        <h2>Disclaimer</h2>
+        <p>
+          These playgrounds are an independent project. They are <strong>not</strong> built,
+          reviewed, endorsed or supported by Adyen, and are covered by no support agreement or
+          service level. Adyen's own documentation and Customer Area are the authoritative sources.
+        </p>
+        <p>
+          If you reuse any of this, you alone remain responsible for your own payment stack — PCI
+          DSS scope, regulatory compliance including PSD2/SCA, security review, data protection, and
+          the correctness of your own flows. Nothing here reduces those obligations, and no control
+          in this code should be relied on as a compliance measure.
+        </p>
+        <p>
+          Provided <strong>as is</strong>, without warranty of any kind, under the MIT Licence. The
+          authors accept no liability for any claim, damage, financial loss, chargeback, outage or
+          regulatory penalty arising from its use.
+        </p>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span>© 2026 · TEST environment only</span>
+      <a href="https://github.com/OualidGuennif/adyenCheckoutV6">Source</a>
+    </footer>
+  </body>
+</html>
