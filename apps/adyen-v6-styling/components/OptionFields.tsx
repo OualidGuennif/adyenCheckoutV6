@@ -19,6 +19,9 @@ export function OptionGroup(props: {
   return (
     <details
       class="option-group"
+      // Lets a closed panel show which sections you have actually touched. The
+      // count badge alone only says so once you have found the right row.
+      data-changed={props.count ? "true" : "false"}
       open={props.open}
       onToggle={(event) => props.onToggle(event.currentTarget.open)}
     >

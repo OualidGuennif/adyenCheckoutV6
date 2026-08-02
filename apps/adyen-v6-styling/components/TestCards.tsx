@@ -74,7 +74,7 @@ const ALT_METHODS: AltMethod[] = [
 ];
 
 const KLARNA_DOCS =
-  "https://docs.klarna.com/resources/developer-tools/sample-data/sample-customer-data/#all-countries";
+  "https://docs.klarna.com/acquirer/adyen/resources/developer-tools/sample-data/sample-customer-data/#all-countries";
 
 function useCopy() {
   const [copied, setCopied] = useState<string | null>(null);

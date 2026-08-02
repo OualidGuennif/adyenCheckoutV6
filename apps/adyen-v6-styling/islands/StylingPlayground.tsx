@@ -25,6 +25,8 @@ import {
   ADDRESS_FIELDS,
   ADYEN_CSS_URL,
   ADYEN_WEB_VERSION,
+  APPLE_PAY_BUTTON_COLORS,
+  APPLE_PAY_BUTTON_TYPES,
   cardConfigObject,
   CSS_RULE_SPECS,
   CSS_TOKEN_GROUPS,
@@ -38,9 +40,15 @@ import {
   DEFAULT_CSS_RULES,
   DEFAULT_NATIVE,
   DEFAULT_SECURE,
+  DEFAULT_WALLETS,
   dropinProps,
+  GOOGLE_PAY_BUTTON_COLORS,
+  GOOGLE_PAY_BUTTON_TYPES,
   isValidExpiryDate,
   isValidHttpUrl,
+  PAYPAL_COLORS,
+  PAYPAL_LABELS,
+  PAYPAL_SHAPES,
   PLACEHOLDER_FIELDS,
   SECURE_GROUPS,
   SECURE_PROPERTY_SPECS,
@@ -48,6 +56,8 @@ import {
   SECURE_STATES,
   secureSetCount,
   storedCardConfigObject,
+  walletConfigObjects,
+  walletSetCount,
 } from "../components/adyenOptions.ts";
 import type {
   BillingAddressMode,
@@ -60,6 +70,7 @@ import type {
   SecureProperty,
   SecureState,
   SocialSecurityNumberMode,
+  WalletOptions,
 } from "../components/adyenOptions.ts";
 
 // Roughly most-used first (FR, NL, US fixed as requested), then the rest of
@@ -217,6 +228,9 @@ const PLACEHOLDERS_HINT = "placeholders — Adyen ships localised placeholders; 
 const RULES_HINT = "No design token covers these, so they are written against Adyen's own " +
   "class names — review them after every SDK upgrade.";
 
+const WALLET_HINT = "The provider draws this button itself, so neither the field styles nor " +
+  "the CSS theme reach it — only its own options do.";
+
 function download(name: string, content: string, type: string) {
   const link = document.createElement("a");
   link.href = URL.createObjectURL(new Blob([content], { type }));
@@ -298,6 +312,7 @@ export default function StylingPlayground() {
   const [cssTokens, setCssTokens] = useState<CssTokens>({});
   const [cssRules, setCssRules] = useState<CssRules>(DEFAULT_CSS_RULES);
   const [nativeOptions, setNativeOptions] = useState<NativeOptions>(DEFAULT_NATIVE);
+  const [walletOptions, setWalletOptions] = useState<WalletOptions>(DEFAULT_WALLETS);
   const [cardOptions, setCardOptions] = useState<CardOptions>(
     () => cardDefaultsFor(detectInitialCountry()),
   );
@@ -379,7 +394,7 @@ export default function StylingPlayground() {
       );
     }, 400);
     return () => clearTimeout(timeout);
-  }, [secureStyles, nativeOptions, cardOptions]);
+  }, [secureStyles, nativeOptions, cardOptions, walletOptions]);
 
   // Side lookup only — populates the pre-select dropdown with this
   // merchant's real payment methods for the chosen country. Independent of
@@ -486,11 +501,12 @@ export default function StylingPlayground() {
     styles = secureStyles,
     card = cardOptions,
     countryCode = country,
+    wallets = walletOptions,
   ) {
     if (!host.current || mountToken.current !== token) return;
     mounted.current?.unmount();
     host.current.replaceChildren();
-    const dropin = new Dropin(checkout, dropinProps(native, styles, card, countryCode));
+    const dropin = new Dropin(checkout, dropinProps(native, styles, card, countryCode, wallets));
     dropin.mount(host.current);
     mounted.current = dropin;
   }
@@ -527,6 +543,10 @@ export default function StylingPlayground() {
 
   function updateCard<K extends keyof CardOptions>(key: K, value: CardOptions[K]) {
     setCardOptions((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateWallet<K extends keyof WalletOptions>(key: K, value: WalletOptions[K]) {
+    setWalletOptions((current) => ({ ...current, [key]: value }));
   }
 
   function updatePlaceholder(key: PlaceholderKey, value: string) {
@@ -586,6 +606,7 @@ export default function StylingPlayground() {
     setCssRules(DEFAULT_CSS_RULES);
     setNativeOptions(DEFAULT_NATIVE);
     setCardOptions(cardDefaultsFor(country));
+    setWalletOptions(DEFAULT_WALLETS);
     setError(null);
     flashSuccess();
     // A fresh session, not a remount of the current one: an Adyen session is
@@ -713,7 +734,7 @@ export default function StylingPlayground() {
                 aria-selected={section === "styling"}
                 onClick={() => selectSection("styling")}
               >
-                Native Styling
+                Field styles
               </button>
               <button
                 type="button"
@@ -721,7 +742,7 @@ export default function StylingPlayground() {
                 aria-selected={section === "configuration"}
                 onClick={() => selectSection("configuration")}
               >
-                Configuration
+                Components
               </button>
               <button
                 type="button"
@@ -729,7 +750,7 @@ export default function StylingPlayground() {
                 aria-selected={section === "css"}
                 onClick={() => selectSection("css")}
               >
-                CSS{tokenOverrides ? ` (${tokenOverrides})` : ""}
+                Theme{tokenOverrides ? ` (${tokenOverrides})` : ""}
               </button>
             </div>
             <button
@@ -743,22 +764,31 @@ export default function StylingPlayground() {
               <span class="styling-reset__text">{successFlash ? "Done" : "Reset"}</span>
             </button>
           </div>
-          <div class="styling-controls styling-controls--shape">
-            <OptionRow
-              id="shape-radius-s"
-              label="Small radius"
-              spec={cssTokenSpec("border-radius-s")}
-              value={cssTokens["border-radius-s"] ?? ""}
-              onChange={(value) => updateToken("border-radius-s", value)}
-            />
-            <OptionRow
-              id="shape-radius-m"
-              label="Medium radius"
-              spec={cssTokenSpec("border-radius-m")}
-              value={cssTokens["border-radius-m"] ?? ""}
-              onChange={(value) => updateToken("border-radius-m", value)}
-            />
-          </div>
+          {
+            /* Both write CSS custom properties, so they live with the rest of
+              the theme rather than standing above all three tabs — where they
+              read as global controls and applied to none of the other two. */
+          }
+          {section === "css"
+            ? (
+              <div class="styling-controls styling-controls--shape">
+                <OptionRow
+                  id="shape-radius-s"
+                  label="Small radius"
+                  spec={cssTokenSpec("border-radius-s")}
+                  value={cssTokens["border-radius-s"] ?? ""}
+                  onChange={(value) => updateToken("border-radius-s", value)}
+                />
+                <OptionRow
+                  id="shape-radius-m"
+                  label="Medium radius"
+                  spec={cssTokenSpec("border-radius-m")}
+                  value={cssTokens["border-radius-m"] ?? ""}
+                  onChange={(value) => updateToken("border-radius-m", value)}
+                />
+              </div>
+            )
+            : null}
           <div class="styling-controls">
             {section === "styling"
               ? (
@@ -950,6 +980,151 @@ export default function StylingPlayground() {
                       checked={cardOptions.maskSecurityCode}
                       onChange={(value) => updateCard("maskSecurityCode", value)}
                     />
+                  </OptionGroup>
+                  <OptionGroup
+                    title="Apple Pay"
+                    hint={WALLET_HINT}
+                    count={walletSetCount(walletOptions, "applePay")}
+                    open={groupOpen("config:Apple Pay")}
+                    onToggle={(open) => setGroupOpen("config:Apple Pay", open)}
+                  >
+                    <Field label="Button type" htmlFor="applepay-type">
+                      <select
+                        id="applepay-type"
+                        value={walletOptions.applePayButtonType}
+                        onChange={(event) =>
+                          updateWallet("applePayButtonType", event.currentTarget.value)}
+                      >
+                        <option value="">Adyen default (buy)</option>
+                        {APPLE_PAY_BUTTON_TYPES.map((value) => (
+                          <option key={value} value={value}>{value}</option>
+                        ))}
+                      </select>
+                      <small>applepay.buttonType — the wording Apple prints on the button.</small>
+                    </Field>
+                    <Field label="Button colour" htmlFor="applepay-color">
+                      <select
+                        id="applepay-color"
+                        value={walletOptions.applePayButtonColor}
+                        onChange={(event) =>
+                          updateWallet("applePayButtonColor", event.currentTarget.value)}
+                      >
+                        <option value="">Adyen default (black)</option>
+                        {APPLE_PAY_BUTTON_COLORS.map((value) => (
+                          <option key={value} value={value}>{value}</option>
+                        ))}
+                      </select>
+                      <small>applepay.buttonColor</small>
+                    </Field>
+                    <Field label="Total price label" htmlFor="applepay-total-label">
+                      <input
+                        id="applepay-total-label"
+                        type="text"
+                        value={walletOptions.applePayTotalPriceLabel}
+                        placeholder="Your store name"
+                        onInput={(event) =>
+                          updateWallet("applePayTotalPriceLabel", event.currentTarget.value)}
+                      />
+                      <small>
+                        applepay.totalPriceLabel — the name shown beside the total on the Apple Pay
+                        sheet.
+                      </small>
+                    </Field>
+                  </OptionGroup>
+                  <OptionGroup
+                    title="Google Pay"
+                    hint={WALLET_HINT}
+                    count={walletSetCount(walletOptions, "googlePay")}
+                    open={groupOpen("config:Google Pay")}
+                    onToggle={(open) => setGroupOpen("config:Google Pay", open)}
+                  >
+                    <Field label="Button type" htmlFor="googlepay-type">
+                      <select
+                        id="googlepay-type"
+                        value={walletOptions.googlePayButtonType}
+                        onChange={(event) =>
+                          updateWallet("googlePayButtonType", event.currentTarget.value)}
+                      >
+                        <option value="">Adyen default (buy)</option>
+                        {GOOGLE_PAY_BUTTON_TYPES.map((value) => (
+                          <option key={value} value={value}>{value}</option>
+                        ))}
+                      </select>
+                      <small>googlepay.buttonType</small>
+                    </Field>
+                    <Field label="Button colour" htmlFor="googlepay-color">
+                      <select
+                        id="googlepay-color"
+                        value={walletOptions.googlePayButtonColor}
+                        onChange={(event) =>
+                          updateWallet("googlePayButtonColor", event.currentTarget.value)}
+                      >
+                        <option value="">Adyen default (default)</option>
+                        {GOOGLE_PAY_BUTTON_COLORS.map((value) => (
+                          <option key={value} value={value}>{value}</option>
+                        ))}
+                      </select>
+                      <small>googlepay.buttonColor — "default" follows the shopper's theme.</small>
+                    </Field>
+                    <Field label="Corner radius" htmlFor="googlepay-radius">
+                      <input
+                        id="googlepay-radius"
+                        type="text"
+                        inputMode="numeric"
+                        value={walletOptions.googlePayButtonRadius}
+                        placeholder="4"
+                        onInput={(event) =>
+                          updateWallet("googlePayButtonRadius", event.currentTarget.value)}
+                      />
+                      <small>googlepay.buttonRadius — in pixels.</small>
+                    </Field>
+                  </OptionGroup>
+                  <OptionGroup
+                    title="PayPal"
+                    hint={WALLET_HINT}
+                    count={walletSetCount(walletOptions, "paypal")}
+                    open={groupOpen("config:PayPal")}
+                    onToggle={(open) => setGroupOpen("config:PayPal", open)}
+                  >
+                    <Field label="Button colour" htmlFor="paypal-color">
+                      <select
+                        id="paypal-color"
+                        value={walletOptions.paypalColor}
+                        onChange={(event) => updateWallet("paypalColor", event.currentTarget.value)}
+                      >
+                        <option value="">Adyen default (gold)</option>
+                        {PAYPAL_COLORS.map((value) => (
+                          <option key={value} value={value}>{value}</option>
+                        ))}
+                      </select>
+                      <small>paypal.style.color</small>
+                    </Field>
+                    <Field label="Button shape" htmlFor="paypal-shape">
+                      <select
+                        id="paypal-shape"
+                        value={walletOptions.paypalShape}
+                        onChange={(event) => updateWallet("paypalShape", event.currentTarget.value)}
+                      >
+                        <option value="">Adyen default (rect)</option>
+                        {PAYPAL_SHAPES.map((value) => (
+                          <option key={value} value={value}>{value}</option>
+                        ))}
+                      </select>
+                      <small>paypal.style.shape</small>
+                    </Field>
+                    <Field label="Button label" htmlFor="paypal-label">
+                      <select
+                        id="paypal-label"
+                        value={walletOptions.paypalLabel}
+                        onChange={(event) => updateWallet("paypalLabel", event.currentTarget.value)}
+                      >
+                        <option value="">Adyen default (paypal)</option>
+                        {PAYPAL_LABELS.map((value) => (
+                          <option key={value} value={value}>{value}</option>
+                        ))}
+                      </select>
+                      <small>paypal.style.label</small>
+                    </Field>
                   </OptionGroup>
                   <OptionGroup
                     title="Placeholders"
@@ -1199,7 +1374,10 @@ export default function StylingPlayground() {
                   </OptionGroup>
                   <RawOutput
                     content={JSON.stringify(
-                      { card: cardConfigObject(secureStyles, cardOptions, country) },
+                      {
+                        card: cardConfigObject(secureStyles, cardOptions, country),
+                        ...walletConfigObjects(walletOptions),
+                      },
                       null,
                       2,
                     )}

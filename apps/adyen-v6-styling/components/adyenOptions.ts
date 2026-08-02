@@ -970,11 +970,124 @@ export function storedCardConfigObject(styles: SecureStyles, card: CardOptions) 
   return sharedFieldOptions(styles, card);
 }
 
+/* -------------------------------------------------------------------------- */
+/* Wallets: the buttons Apple, Google and PayPal render themselves            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A wallet button is drawn by the provider, not by Adyen, so none of the CSS
+ * or the secured-field styles above reach it. Each vendor exposes its own
+ * small set of knobs instead, and these are the ones that change what you can
+ * see — the rest are merchant identifiers and flow callbacks.
+ *
+ * Values come from ApplePayConfiguration / GooglePayConfiguration /
+ * PayPalConfiguration in @adyen/adyen-web 6.41.0.
+ */
+export const APPLE_PAY_BUTTON_TYPES = [
+  "add-money",
+  "book",
+  "buy",
+  "check-out",
+  "continue",
+  "contribute",
+  "donate",
+  "order",
+  "pay",
+  "plain",
+  "reload",
+  "rent",
+  "set-up",
+  "subscribe",
+  "support",
+  "tip",
+  "top-up",
+];
+export const APPLE_PAY_BUTTON_COLORS = ["black", "white", "white-outline"];
+
+export const GOOGLE_PAY_BUTTON_TYPES = [
+  "book",
+  "buy",
+  "checkout",
+  "donate",
+  "order",
+  "pay",
+  "plain",
+  "subscribe",
+];
+export const GOOGLE_PAY_BUTTON_COLORS = ["default", "black", "white"];
+
+export const PAYPAL_COLORS = ["gold", "blue", "silver", "white", "black"];
+export const PAYPAL_SHAPES = ["rect", "pill"];
+export const PAYPAL_LABELS = ["paypal", "checkout", "buynow", "pay"];
+
+export interface WalletOptions {
+  applePayButtonType: string;
+  applePayButtonColor: string;
+  applePayTotalPriceLabel: string;
+  googlePayButtonType: string;
+  googlePayButtonColor: string;
+  googlePayButtonRadius: string;
+  paypalColor: string;
+  paypalShape: string;
+  paypalLabel: string;
+}
+
+/** Empty everywhere: unset means the vendor's own default is left alone. */
+export const DEFAULT_WALLETS: WalletOptions = {
+  applePayButtonType: "",
+  applePayButtonColor: "",
+  applePayTotalPriceLabel: "",
+  googlePayButtonType: "",
+  googlePayButtonColor: "",
+  googlePayButtonRadius: "",
+  paypalColor: "",
+  paypalShape: "",
+  paypalLabel: "",
+};
+
+export function walletSetCount(wallets: WalletOptions, prefix: string): number {
+  return Object.entries(wallets)
+    .filter(([key, value]) => key.startsWith(prefix) && value !== "")
+    .length;
+}
+
+/**
+ * Only what was actually changed. Sending a wallet an explicit copy of its own
+ * default is noise in the config you copy out, and for Apple Pay an empty
+ * string would be rendered as a blank line on the payment sheet.
+ */
+export function walletConfigObjects(wallets: WalletOptions) {
+  const applepay = {
+    ...(wallets.applePayButtonType ? { buttonType: wallets.applePayButtonType } : {}),
+    ...(wallets.applePayButtonColor ? { buttonColor: wallets.applePayButtonColor } : {}),
+    ...(wallets.applePayTotalPriceLabel
+      ? { totalPriceLabel: wallets.applePayTotalPriceLabel }
+      : {}),
+  };
+  const radius = Number.parseInt(wallets.googlePayButtonRadius, 10);
+  const googlepay = {
+    ...(wallets.googlePayButtonType ? { buttonType: wallets.googlePayButtonType } : {}),
+    ...(wallets.googlePayButtonColor ? { buttonColor: wallets.googlePayButtonColor } : {}),
+    ...(Number.isFinite(radius) ? { buttonRadius: radius } : {}),
+  };
+  const paypalStyle = {
+    ...(wallets.paypalColor ? { color: wallets.paypalColor } : {}),
+    ...(wallets.paypalShape ? { shape: wallets.paypalShape } : {}),
+    ...(wallets.paypalLabel ? { label: wallets.paypalLabel } : {}),
+  };
+  return {
+    ...(Object.keys(applepay).length > 0 ? { applepay } : {}),
+    ...(Object.keys(googlepay).length > 0 ? { googlepay } : {}),
+    ...(Object.keys(paypalStyle).length > 0 ? { paypal: { style: paypalStyle } } : {}),
+  };
+}
+
 export function dropinProps(
   native: NativeOptions,
   styles: SecureStyles,
   card: CardOptions,
   country: string,
+  wallets: WalletOptions,
 ) {
   return {
     openFirstPaymentMethod: native.openFirstPaymentMethod,
@@ -990,6 +1103,7 @@ export function dropinProps(
     paymentMethodsConfiguration: {
       card: cardConfigObject(styles, card, country),
       storedCard: storedCardConfigObject(styles, card),
+      ...walletConfigObjects(wallets),
     },
   };
 }

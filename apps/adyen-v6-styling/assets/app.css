@@ -503,11 +503,18 @@ body {
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
+  border-left: 3px solid transparent;
   background: var(--color-surface-muted);
   cursor: pointer;
   font-size: 0.73rem;
   font-weight: 800;
   list-style: none;
+}
+
+/* Nine collapsed sections look identical; this is the only thing that says
+   which ones you have changed without opening them one by one. */
+.option-group[data-changed="true"] .option-group__summary {
+  border-left-color: var(--color-green);
 }
 
 .option-group__summary::-webkit-details-marker {
