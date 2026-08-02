@@ -246,12 +246,23 @@ body {
   white-space: nowrap;
 }
 
+/* Sized so the longest number still sits on one line in the narrowest tile —
+   the extra tracking and the larger size were costing about ten pixels, which
+   was the whole margin. A wrapped PAN is worse than a slightly smaller one:
+   you can't read a card number that has been cut in half. */
 .test-card__pan {
   font-family: var(--font-mono);
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 650;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   overflow-wrap: anywhere;
+}
+
+/* The gift card number is 23 digits — four more than a PAN, and past what the
+   tile holds at any size the card numbers are comfortable at. It takes the
+   step down rather than making every tile smaller for the one outlier. */
+.test-card__pan--long {
+  font-size: 0.64rem;
 }
 
 .test-card__bottom {
@@ -818,6 +829,16 @@ body {
   max-height: 220px;
 }
 
+/* On a laptop the panel at its full 480px is what decides whether the checkout
+   and the dataset can share a row — and it wins that argument for space it
+   does not need. Narrower here, the pair fits side by side from ~1375px
+   instead of ~1470px, which is most laptops. */
+@media (min-width: 1180px) and (max-width: 1699px) {
+  .styling-layout {
+    grid-template-columns: minmax(420px, 1fr) minmax(340px, 400px);
+  }
+}
+
 /* Past this width the preview column grows faster than a checkout should, and
    the pair ends up marooned in the middle of it. Handing the extra to the
    options panel — which is genuinely cramped — keeps the composition tight
@@ -830,30 +851,37 @@ body {
 
 /* The Drop-in and the dataset stand side by side as one centred pair, so the
    preview column reads as a composition instead of two blocks pushed left
-   with dead space beside them. 1180px is where both still fit at full width. */
+   with dead space beside them.
+ *
+ * Whether they fit is decided by wrapping, not by a guessed breakpoint. A
+ * fixed threshold has to assume how much of the window the options panel took,
+ * and at the low end of the old one the Drop-in was being crushed to ~190px
+ * while the dataset refused to shrink. With min widths on both and wrap on the
+ * row, they sit together while there is room for both and the dataset drops
+ * below the moment there isn't. */
 @media (min-width: 1180px) {
   .styling-preview {
-    flex-direction: row;
+    flex-flow: row wrap;
     align-items: flex-start;
     justify-content: center;
     gap: 28px;
   }
 
   .styling-preview .dropin-column {
-    flex: 1 1 620px;
-    min-width: 0;
+    flex: 1 1 460px;
+    min-width: 440px;
     max-width: 650px;
     margin: 0;
   }
 
-  /* Fixed, not flexible: shrinking this column wraps the card numbers, and a
-     PAN broken across two lines is unreadable. The Drop-in absorbs the
-     difference instead. Not sticky either — the tiles belong to the page and
-     stay where they were put. */
+  /* Never below 344px: two tiles and a 19-digit PAN is what this column is
+     for, and a card number broken across two lines is unreadable. Not sticky
+     either — the tiles belong to the page and stay where they were put. */
   .test-data {
-    flex: 0 0 344px;
-    width: 344px;
-    max-width: none;
+    flex: 0 1 372px;
+    width: auto;
+    min-width: 372px;
+    max-width: 400px;
   }
 
   /* The bar earns its place on a phone, where it keeps the checkout above the

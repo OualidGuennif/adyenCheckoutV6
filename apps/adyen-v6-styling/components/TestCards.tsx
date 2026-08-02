@@ -181,7 +181,17 @@ export function TestCards() {
                     <span class="test-card__scheme">{method.name}</span>
                     {method.note ? <span class="test-card__note">{method.note}</span> : null}
                   </span>
-                  {method.value ? <span class="test-card__pan">{method.value}</span> : null}
+                  {method.value
+                    ? (
+                      <span
+                        class={`test-card__pan${
+                          method.value.length > 20 ? " test-card__pan--long" : ""
+                        }`}
+                      >
+                        {method.value}
+                      </span>
+                    )
+                    : null}
                   {method.disclaimer
                     ? (
                       <span class="test-card__disclaimer">
