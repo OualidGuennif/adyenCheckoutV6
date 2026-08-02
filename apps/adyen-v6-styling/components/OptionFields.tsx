@@ -11,6 +11,8 @@ const HEX_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 export function OptionGroup(props: {
   title: string;
   hint?: string;
+  /** Renders the hint as a warning — for options that are not safe defaults. */
+  hintTone?: "danger";
   count?: number;
   open: boolean;
   onToggle: (open: boolean) => void;
@@ -29,7 +31,17 @@ export function OptionGroup(props: {
         <span class="option-group__title">{props.title}</span>
         {props.count ? <span class="option-group__count">{props.count} set</span> : null}
       </summary>
-      {props.hint ? <p class="option-group__hint">{props.hint}</p> : null}
+      {props.hint
+        ? (
+          <p
+            class={`option-group__hint${
+              props.hintTone === "danger" ? " option-group__hint--danger" : ""
+            }`}
+          >
+            {props.hint}
+          </p>
+        )
+        : null}
       <div class="option-group__body">{props.children}</div>
     </details>
   );

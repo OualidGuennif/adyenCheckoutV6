@@ -712,11 +712,17 @@ const CSS_HEADER = `/* Adyen Web ${ADYEN_WEB_VERSION} — TEST playground overri
  */
 `;
 
-export function cssText(tokens: CssTokens, rules: CssRules): string {
+export function cssText(tokens: CssTokens, rules: CssRules, wallets?: WalletOptions): string {
   const blocks: string[] = [];
-  const overrides = CSS_TOKEN_SPECS
-    .filter((spec) => tokens[spec.token])
-    .map((spec) => `  --adyen-sdk-${spec.token}: ${tokens[spec.token]};`);
+  const overrides = [
+    ...CSS_TOKEN_SPECS
+      .filter((spec) => tokens[spec.token])
+      .map((spec) => `  --adyen-sdk-${spec.token}: ${tokens[spec.token]};`),
+    // Apple's own property, so it carries no adyen-sdk prefix.
+    ...(wallets?.applePayButtonRadius
+      ? [`  ${APPLE_PAY_RADIUS_VARIABLE}: ${wallets.applePayButtonRadius};`]
+      : []),
+  ];
   if (overrides.length > 0) blocks.push(`.adyen-checkout {\n${overrides.join("\n")}\n}`);
 
   const button = [
@@ -983,7 +989,42 @@ export function storedCardConfigObject(styles: SecureStyles, card: CardOptions) 
  * Values come from ApplePayConfiguration / GooglePayConfiguration /
  * PayPalConfiguration in @adyen/adyen-web 6.41.0.
  */
-export const APPLE_PAY_BUTTON_TYPES = [
+// Spelled out as unions rather than string[]: Adyen's own configuration types
+// are unions, and a plain string here is rejected at the Dropin boundary.
+export type ApplePayButtonType =
+  | "add-money"
+  | "book"
+  | "buy"
+  | "check-out"
+  | "continue"
+  | "contribute"
+  | "donate"
+  | "order"
+  | "pay"
+  | "plain"
+  | "reload"
+  | "rent"
+  | "set-up"
+  | "subscribe"
+  | "support"
+  | "tip"
+  | "top-up";
+export type ApplePayButtonColor = "black" | "white" | "white-outline";
+export type GooglePayButtonType =
+  | "book"
+  | "buy"
+  | "checkout"
+  | "donate"
+  | "order"
+  | "pay"
+  | "plain"
+  | "subscribe";
+export type GooglePayButtonColor = "default" | "black" | "white";
+export type PayPalColor = "gold" | "blue" | "silver" | "white" | "black";
+export type PayPalShape = "rect" | "pill";
+export type PayPalLabel = "paypal" | "checkout" | "buynow" | "pay";
+
+export const APPLE_PAY_BUTTON_TYPES: ApplePayButtonType[] = [
   "add-money",
   "book",
   "buy",
@@ -1002,9 +1043,13 @@ export const APPLE_PAY_BUTTON_TYPES = [
   "tip",
   "top-up",
 ];
-export const APPLE_PAY_BUTTON_COLORS = ["black", "white", "white-outline"];
+export const APPLE_PAY_BUTTON_COLORS: ApplePayButtonColor[] = [
+  "black",
+  "white",
+  "white-outline",
+];
 
-export const GOOGLE_PAY_BUTTON_TYPES = [
+export const GOOGLE_PAY_BUTTON_TYPES: GooglePayButtonType[] = [
   "book",
   "buy",
   "checkout",
@@ -1014,22 +1059,35 @@ export const GOOGLE_PAY_BUTTON_TYPES = [
   "plain",
   "subscribe",
 ];
-export const GOOGLE_PAY_BUTTON_COLORS = ["default", "black", "white"];
+export const GOOGLE_PAY_BUTTON_COLORS: GooglePayButtonColor[] = ["default", "black", "white"];
 
-export const PAYPAL_COLORS = ["gold", "blue", "silver", "white", "black"];
-export const PAYPAL_SHAPES = ["rect", "pill"];
-export const PAYPAL_LABELS = ["paypal", "checkout", "buynow", "pay"];
+export const PAYPAL_COLORS: PayPalColor[] = ["gold", "blue", "silver", "white", "black"];
+export const PAYPAL_SHAPES: PayPalShape[] = ["rect", "pill"];
+export const PAYPAL_LABELS: PayPalLabel[] = ["paypal", "checkout", "buynow", "pay"];
+
+/**
+ * Apple ships the Pay button as a web component and Adyen has no config option
+ * for its shape — the corner radius is reachable only through Apple's own
+ * custom property, which adyen.css sets to 4px. So this one is a CSS variable
+ * rather than a config key, and travels with the generated stylesheet instead
+ * of the JSON.
+ */
+export const APPLE_PAY_RADIUS_VARIABLE = "--apple-pay-button-border-radius";
 
 export interface WalletOptions {
-  applePayButtonType: string;
-  applePayButtonColor: string;
+  applePayButtonType: ApplePayButtonType | "";
+  applePayButtonColor: ApplePayButtonColor | "";
   applePayTotalPriceLabel: string;
-  googlePayButtonType: string;
-  googlePayButtonColor: string;
+  /** CSS, not configuration — see APPLE_PAY_RADIUS_VARIABLE. */
+  applePayButtonRadius: string;
+  googlePayButtonType: GooglePayButtonType | "";
+  googlePayButtonColor: GooglePayButtonColor | "";
   googlePayButtonRadius: string;
-  paypalColor: string;
-  paypalShape: string;
-  paypalLabel: string;
+  paypalColor: PayPalColor | "";
+  paypalShape: PayPalShape | "";
+  paypalLabel: PayPalLabel | "";
+  /** PayPal renders an extra instalments button; this is how you suppress it. */
+  paypalBlockPayLater: boolean;
 }
 
 /** Empty everywhere: unset means the vendor's own default is left alone. */
@@ -1037,17 +1095,26 @@ export const DEFAULT_WALLETS: WalletOptions = {
   applePayButtonType: "",
   applePayButtonColor: "",
   applePayTotalPriceLabel: "",
+  applePayButtonRadius: "",
   googlePayButtonType: "",
   googlePayButtonColor: "",
   googlePayButtonRadius: "",
   paypalColor: "",
   paypalShape: "",
   paypalLabel: "",
+  paypalBlockPayLater: false,
 };
+
+/** The Apple Pay corner radius, ready to apply to the preview and to emit. */
+export function walletCssVariables(wallets: WalletOptions): Record<`--${string}`, string> {
+  return wallets.applePayButtonRadius
+    ? { [APPLE_PAY_RADIUS_VARIABLE]: wallets.applePayButtonRadius }
+    : {};
+}
 
 export function walletSetCount(wallets: WalletOptions, prefix: string): number {
   return Object.entries(wallets)
-    .filter(([key, value]) => key.startsWith(prefix) && value !== "")
+    .filter(([key, value]) => key.startsWith(prefix) && value !== "" && value !== false)
     .length;
 }
 
@@ -1075,10 +1142,17 @@ export function walletConfigObjects(wallets: WalletOptions) {
     ...(wallets.paypalShape ? { shape: wallets.paypalShape } : {}),
     ...(wallets.paypalLabel ? { label: wallets.paypalLabel } : {}),
   };
+  const paypal = {
+    ...(Object.keys(paypalStyle).length > 0 ? { style: paypalStyle } : {}),
+    // Only sent when on: PayPal decides on its own whether Pay Later is
+    // eligible for the amount and market, and an explicit false is the one
+    // thing that overrules it.
+    ...(wallets.paypalBlockPayLater ? { blockPayPalPayLaterButton: true } : {}),
+  };
   return {
     ...(Object.keys(applepay).length > 0 ? { applepay } : {}),
     ...(Object.keys(googlepay).length > 0 ? { googlepay } : {}),
-    ...(Object.keys(paypalStyle).length > 0 ? { paypal: { style: paypalStyle } } : {}),
+    ...(Object.keys(paypal).length > 0 ? { paypal } : {}),
   };
 }
 

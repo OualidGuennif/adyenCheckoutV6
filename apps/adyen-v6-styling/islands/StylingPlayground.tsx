@@ -27,6 +27,7 @@ import {
   ADYEN_WEB_VERSION,
   APPLE_PAY_BUTTON_COLORS,
   APPLE_PAY_BUTTON_TYPES,
+  APPLE_PAY_RADIUS_VARIABLE,
   cardConfigObject,
   CSS_RULE_SPECS,
   CSS_TOKEN_GROUPS,
@@ -57,18 +58,27 @@ import {
   secureSetCount,
   storedCardConfigObject,
   walletConfigObjects,
+  walletCssVariables,
   walletSetCount,
 } from "../components/adyenOptions.ts";
 import type {
+  ApplePayButtonColor,
+  ApplePayButtonType,
   BillingAddressMode,
   CardOptions,
   CssRules,
   CssTokens,
+  GooglePayButtonColor,
+  GooglePayButtonType,
   InstantPaymentType,
   NativeOptions,
+  PayPalColor,
+  PayPalLabel,
+  PayPalShape,
   PlaceholderKey,
   SecureProperty,
   SecureState,
+  SecureStyles,
   SocialSecurityNumberMode,
   WalletOptions,
 } from "../components/adyenOptions.ts";
@@ -225,8 +235,10 @@ const DEFAULT_OPEN_GROUPS: Record<string, boolean> = {};
 const PLACEHOLDERS_HINT = "placeholders — Adyen ships localised placeholders; anything " +
   "set here replaces them.";
 
-const RULES_HINT = "No design token covers these, so they are written against Adyen's own " +
-  "class names — review them after every SDK upgrade.";
+const RULES_HINT = "Not recommended. No design token covers these, so they reach into " +
+  "Adyen's own class names — private API that can be renamed in any release, with no " +
+  "warning and no deprecation. A checkout styled this way can break on an SDK upgrade. " +
+  "Use the theme tokens above wherever one exists.";
 
 const WALLET_HINT = "The provider draws this button itself, so neither the field styles nor " +
   "the CSS theme reach it — only its own options do.";
@@ -419,8 +431,14 @@ export default function StylingPlayground() {
   // Adyen sessions are single-use: once a payment completes on one, mounting
   // it again fails with "The provided session identifier or data is invalid".
   const sessionSpent = useRef(false);
-  const generatedCss = useMemo(() => cssText(cssTokens, cssRules), [cssTokens, cssRules]);
-  const previewVariables = useMemo(() => cssPreviewVariables(cssTokens), [cssTokens]);
+  const generatedCss = useMemo(
+    () => cssText(cssTokens, cssRules, walletOptions),
+    [cssTokens, cssRules, walletOptions],
+  );
+  const previewVariables = useMemo(
+    () => ({ ...cssPreviewVariables(cssTokens), ...walletCssVariables(walletOptions) }),
+    [cssTokens, walletOptions],
+  );
   const tokenOverrides = cssTokenSetCount(cssTokens);
 
   useEffect(() => {
@@ -1115,7 +1133,10 @@ export default function StylingPlayground() {
                         id="applepay-type"
                         value={walletOptions.applePayButtonType}
                         onChange={(event) =>
-                          updateWallet("applePayButtonType", event.currentTarget.value)}
+                          updateWallet(
+                            "applePayButtonType",
+                            event.currentTarget.value as ApplePayButtonType,
+                          )}
                       >
                         <option value="">Adyen default (buy)</option>
                         {APPLE_PAY_BUTTON_TYPES.map((value) => (
@@ -1129,7 +1150,10 @@ export default function StylingPlayground() {
                         id="applepay-color"
                         value={walletOptions.applePayButtonColor}
                         onChange={(event) =>
-                          updateWallet("applePayButtonColor", event.currentTarget.value)}
+                          updateWallet(
+                            "applePayButtonColor",
+                            event.currentTarget.value as ApplePayButtonColor,
+                          )}
                       >
                         <option value="">Adyen default (black)</option>
                         {APPLE_PAY_BUTTON_COLORS.map((value) => (
@@ -1152,6 +1176,21 @@ export default function StylingPlayground() {
                         sheet.
                       </small>
                     </Field>
+                    <Field label="Corner radius" htmlFor="applepay-radius">
+                      <input
+                        id="applepay-radius"
+                        type="text"
+                        value={walletOptions.applePayButtonRadius}
+                        placeholder="4px"
+                        onInput={(event) =>
+                          updateWallet("applePayButtonRadius", event.currentTarget.value)}
+                      />
+                      <small>
+                        {APPLE_PAY_RADIUS_VARIABLE}{" "}
+                        — Apple ships the button as a web component and Adyen exposes no option for
+                        its shape, so this one is CSS: it ships in the stylesheet, not the config.
+                      </small>
+                    </Field>
                   </OptionGroup>
                   <OptionGroup
                     title="Google Pay"
@@ -1165,7 +1204,10 @@ export default function StylingPlayground() {
                         id="googlepay-type"
                         value={walletOptions.googlePayButtonType}
                         onChange={(event) =>
-                          updateWallet("googlePayButtonType", event.currentTarget.value)}
+                          updateWallet(
+                            "googlePayButtonType",
+                            event.currentTarget.value as GooglePayButtonType,
+                          )}
                       >
                         <option value="">Adyen default (buy)</option>
                         {GOOGLE_PAY_BUTTON_TYPES.map((value) => (
@@ -1179,7 +1221,10 @@ export default function StylingPlayground() {
                         id="googlepay-color"
                         value={walletOptions.googlePayButtonColor}
                         onChange={(event) =>
-                          updateWallet("googlePayButtonColor", event.currentTarget.value)}
+                          updateWallet(
+                            "googlePayButtonColor",
+                            event.currentTarget.value as GooglePayButtonColor,
+                          )}
                       >
                         <option value="">Adyen default (default)</option>
                         {GOOGLE_PAY_BUTTON_COLORS.map((value) => (
@@ -1212,7 +1257,8 @@ export default function StylingPlayground() {
                       <select
                         id="paypal-color"
                         value={walletOptions.paypalColor}
-                        onChange={(event) => updateWallet("paypalColor", event.currentTarget.value)}
+                        onChange={(event) =>
+                          updateWallet("paypalColor", event.currentTarget.value as PayPalColor)}
                       >
                         <option value="">Adyen default (gold)</option>
                         {PAYPAL_COLORS.map((value) => (
@@ -1225,7 +1271,8 @@ export default function StylingPlayground() {
                       <select
                         id="paypal-shape"
                         value={walletOptions.paypalShape}
-                        onChange={(event) => updateWallet("paypalShape", event.currentTarget.value)}
+                        onChange={(event) =>
+                          updateWallet("paypalShape", event.currentTarget.value as PayPalShape)}
                       >
                         <option value="">Adyen default (rect)</option>
                         {PAYPAL_SHAPES.map((value) => (
@@ -1238,7 +1285,8 @@ export default function StylingPlayground() {
                       <select
                         id="paypal-label"
                         value={walletOptions.paypalLabel}
-                        onChange={(event) => updateWallet("paypalLabel", event.currentTarget.value)}
+                        onChange={(event) =>
+                          updateWallet("paypalLabel", event.currentTarget.value as PayPalLabel)}
                       >
                         <option value="">Adyen default (paypal)</option>
                         {PAYPAL_LABELS.map((value) => (
@@ -1247,6 +1295,14 @@ export default function StylingPlayground() {
                       </select>
                       <small>paypal.style.label</small>
                     </Field>
+                    <SwitchRow
+                      label="Hide Pay Later button"
+                      hint={"blockPayPalPayLaterButton — PayPal adds a second, instalments " +
+                        "button when the amount and market qualify. This is the only way to " +
+                        "suppress it."}
+                      checked={walletOptions.paypalBlockPayLater}
+                      onChange={(value) => updateWallet("paypalBlockPayLater", value)}
+                    />
                   </OptionGroup>
                   <OptionGroup
                     title="Placeholders"
@@ -1564,6 +1620,7 @@ export default function StylingPlayground() {
                   <OptionGroup
                     title="Class-name rules"
                     hint={RULES_HINT}
+                    hintTone="danger"
                     count={cssRuleSetCount(cssRules)}
                     open={groupOpen("css:Rules")}
                     onToggle={(open) => setGroupOpen("css:Rules", open)}
