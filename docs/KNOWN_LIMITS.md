@@ -1,41 +1,64 @@
-# Limites connues et simulations
+# Known limits and simulations
 
-## Intégrations non confirmées
+What these playgrounds do not do, and where something is simulated rather than real. Read this
+before concluding that an integration is proven.
 
-Aucun paiement réel n’est déclaré comme validé sans credentials, méthodes, origins et webhooks Adyen
-TEST actifs. Les builds, contrats locaux, validations de sécurité et mocks sont vérifiables sans
-effectuer de transaction.
+## What "verified" means here
+
+No payment path is described as working without live Adyen TEST credentials, enabled payment
+methods, an allow-listed origin and an active webhook. Builds, local contracts, security checks and
+mocks are all verifiable without ever taking a transaction — but they prove the code runs, not that
+your Adyen account is configured.
 
 ## Agentic Commerce
 
-Le mode mock est une simulation locale déterministe et chaque étape porte son statut. Aucun contenu
-n’est présenté comme une réponse OpenAI, Copilot, Google ou Adyen. Les supports publics Adyen
-décrivent les intégrations agentiques comme un pilote ; aucun contrat API TEST public vérifiable n’a
-été utilisé. Le mode réel répond donc `501` et ne contacte aucun endpoint. Le paiement
-human-confirmed est une session Checkout TEST standard, pas une API Agentic Commerce.
+Mock mode is a deterministic local simulation, and every step carries its own status. **No output is
+presented as a response from OpenAI, Copilot, Google or Adyen.**
 
-## IPP
+Adyen's public material describes agentic integrations as a pilot, and no publicly verifiable TEST
+contract was available to build against. Real mode therefore answers `501` and contacts no endpoint,
+rather than shipping a convincing fake.
 
-Le mode mock n’appelle pas Adyen. Le mode Real TEST requiert une credential Cloud Device autorisée,
-un terminal TEST en ligne, le bon merchant account et le POIID correct. Un hébergement Render ne
-peut ni connecter ni réveiller un terminal hors ligne. Le suivi asynchrone dépend de la
-configuration du webhook Terminal API.
+The human-confirmed payment is a standard Adyen Checkout TEST session. It is not an Agentic Commerce
+API call, and the UI does not claim otherwise.
 
-## Paiements
+## In-person payments (IPP)
 
-Les capacités varient selon le pays, le contrat marchand, le moyen de paiement et sa configuration.
-Les valeurs `iDEAL`, `MB WAY` et le défaut PayPal settlement-only sont documentées, mais le Back
-Office ne remplace pas la réponse Adyen ou le Customer Area. Les remboursements/captures réels
-restent à confirmer avec un profil TEST autorisé.
+Mock mode calls Adyen not at all.
 
-## Persistance et exploitation
+Real TEST mode needs more than credentials: a Cloud Device credential authorised for your terminal,
+a TEST terminal that is powered on and online, the merchant account that terminal is assigned to,
+and the exact POIID. Cloud mode reaches the terminal through Adyen, so a terminal that is asleep or
+off the network simply does not answer — and no hosting platform can wake it for you.
 
-SQLite est adapté au développement et à un service Render mono-instance avec disque persistant. La
-mise à l’échelle horizontale requiert PostgreSQL, un verrouillage distribué, une file de webhooks et
-un rate limit partagé. Les sauvegardes et politiques de rétention ne sont pas automatisées.
+Asynchronous follow-up depends on your Terminal API webhook configuration.
+
+## Payments
+
+What a payment method can do varies by country, merchant contract, the method itself and how it is
+configured. iDEAL, MB WAY and PayPal's settlement-only default are documented in
+`packages/platform/payment-methods.ts`, but that file is this repo's model of Adyen's behaviour —
+not Adyen's answer. The Back Office does not replace the API response or the Customer Area.
+
+Real captures and refunds still need confirming against an authorised TEST profile.
 
 ## Styling
 
-Le bloc `styles` vise les secured fields rendus en iframe. Les overrides CSS ne peuvent pas modifier
-le contenu sécurisé des iframes et les sélecteurs internes peuvent évoluer entre versions. Les
-exports doivent être revus après toute montée de version Adyen Web.
+The `styles` object reaches the secured fields, which render in Adyen-hosted iframes. **CSS cannot
+cross into those iframes** — nothing in your stylesheet will change the card number field.
+
+Design tokens (`--adyen-sdk-*`) are the supported way to theme everything else. The class-name rules
+the panel also offers target Adyen's internal selectors, which are private API and can be renamed in
+any release. A checkout styled that way can break on an upgrade; the panel marks it in red for that
+reason.
+
+Exports should be reviewed after every Adyen Web version bump. The token audit test enforces the
+part that can be automated — it fails if the panel's catalogue and the shipped `adyen.css` disagree.
+
+## Persistence and operations
+
+SQLite fits development and a single-instance deployment with a persistent disk. Scaling out needs
+PostgreSQL, distributed locking, a webhook queue and a shared rate limiter — none of which are here.
+
+Backups and retention are not automated. See [SECURITY.md](SECURITY.md) for the rest of what is left
+to your host.
