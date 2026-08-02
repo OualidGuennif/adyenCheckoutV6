@@ -1767,3 +1767,52 @@ details > summary {
     gap: 6px;
   }
 }
+
+/* The disclaimer page. Deliberately plain prose: it is the one page here that
+   has to be read rather than played with. */
+.legal {
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 48px) 0;
+  color: var(--color-ink);
+  font-size: 0.86rem;
+  line-height: 1.65;
+}
+
+.legal h1 {
+  margin: 0 0 14px;
+  font-size: 1.5rem;
+}
+
+.legal h2 {
+  margin: 30px 0 8px;
+  font-size: 0.95rem;
+}
+
+.legal p,
+.legal ul {
+  margin: 0 0 12px;
+}
+
+.legal ul {
+  padding-left: 20px;
+}
+
+.legal li {
+  margin-bottom: 4px;
+}
+
+.legal__lede {
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-s);
+  background: var(--color-surface-muted);
+}
+
+.legal__source {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-ink-muted);
+  font-size: 0.78rem;
+}

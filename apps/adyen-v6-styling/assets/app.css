@@ -1143,3 +1143,20 @@ body {
     font-size: 0.72rem;
   }
 }
+
+.styling-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px clamp(20px, 5vw, 68px);
+  border-top: 1px solid var(--color-border);
+  background: white;
+  color: var(--color-ink-subtle);
+  font-size: 0.68rem;
+}
+
+.legal-shell {
+  padding: 0 clamp(20px, 5vw, 68px) 48px;
+}

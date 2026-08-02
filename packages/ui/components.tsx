@@ -64,6 +64,81 @@ export function TestDataAndTools() {
   );
 }
 
+/**
+ * The same text as the repository's disclaimer, served by the site itself.
+ *
+ * Anyone who reaches a deployed playground sees a working checkout, real
+ * payment methods and an Adyen wordmark; nothing on screen otherwise says it is
+ * a test harness rather than a product, or who carries the obligations if they
+ * copy it. A link in a README does not reach them — this page does. Every app
+ * mounts it at /disclaimer.
+ */
+export function DisclaimerPage(props: { appName: string; repositoryUrl?: string }) {
+  return (
+    <article class="legal">
+      <h1>Disclaimer</h1>
+      <p class="legal__lede">
+        <strong>{props.appName}</strong>{" "}
+        is a playground for exploring and testing Adyen integrations against the Adyen{" "}
+        <strong>TEST</strong>{" "}
+        environment. It is not a product, not a reference or certified integration, and it is not
+        intended to be deployed to production as it stands.
+      </p>
+
+      <h2>No real money, no real cards</h2>
+      <p>
+        Every endpoint and credential here targets Adyen TEST. No payment made in this playground
+        moves money, and no real card details are collected: card fields are rendered by Adyen
+        inside their own iframes and never reach this application.
+      </p>
+
+      <h2>Not an Adyen product</h2>
+      <p>
+        This is an independent project. It is not built, reviewed, endorsed or supported by Adyen,
+        and it is not covered by any Adyen support agreement or service level. Adyen's own
+        documentation and Customer Area are the authoritative sources; wherever they and this
+        application disagree, Adyen is right.
+      </p>
+
+      <h2>If you reuse any of it</h2>
+      <p>
+        You alone remain responsible for your own payment stack. That includes, without limitation:
+      </p>
+      <ul>
+        <li>PCI DSS scope, obligations and validation for your integration</li>
+        <li>regulatory compliance, including PSD2/SCA, consumer protection, tax and local rules</li>
+        <li>security review, penetration testing, secret management, access control, monitoring</li>
+        <li>data protection and privacy, including GDPR for any personal data you process</li>
+        <li>correctness, availability and error handling of your own payment flows</li>
+        <li>your agreements with Adyen and with every payment method you enable</li>
+      </ul>
+      <p>
+        Nothing in this application reduces those obligations, and no control in its code should be
+        relied on as a compliance measure.
+      </p>
+
+      <h2>No warranty, no liability</h2>
+      <p>
+        Provided{" "}
+        <strong>as is</strong>, without warranty of any kind, under the MIT Licence. The authors
+        accept no liability for any claim, damage, financial loss, chargeback, outage, regulatory
+        penalty or other consequence arising from its use, in test or in production.
+      </p>
+
+      {props.repositoryUrl
+        ? (
+          <p class="legal__source">
+            Source and full terms:{" "}
+            <a href={props.repositoryUrl} target="_blank" rel="noopener noreferrer">
+              {props.repositoryUrl.replace(/^https?:\/\//, "")}
+            </a>
+          </p>
+        )
+        : null}
+    </article>
+  );
+}
+
 export function TestBanner() {
   return (
     <div class="test-banner" role="note" aria-label="Test environment warning">
@@ -153,7 +228,10 @@ export function AppShell(props: {
           <main id="main-content" tabindex={-1}>{props.children}</main>
           <footer class="app-footer">
             <span>© 2026 Adyen TEST playgrounds</span>
-            <span>{props.subtitle} · Adyen Web 6.41.0 · Checkout API v72</span>
+            <span>
+              {props.subtitle} · Adyen Web 6.41.0 · Checkout API v72 ·{" "}
+              <a href="/disclaimer">Disclaimer</a>
+            </span>
           </footer>
         </div>
       </div>
