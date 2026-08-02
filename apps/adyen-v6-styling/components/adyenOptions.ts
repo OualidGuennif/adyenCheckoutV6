@@ -714,16 +714,12 @@ const CSS_HEADER = `/* Adyen Web ${ADYEN_WEB_VERSION} — TEST playground overri
 
 export function cssText(tokens: CssTokens, rules: CssRules, wallets?: WalletOptions): string {
   const blocks: string[] = [];
-  const overrides = [
-    ...CSS_TOKEN_SPECS
-      .filter((spec) => tokens[spec.token])
-      .map((spec) => `  --adyen-sdk-${spec.token}: ${tokens[spec.token]};`),
-    // Apple's own property, so it carries no adyen-sdk prefix.
-    ...(wallets?.applePayButtonRadius
-      ? [`  ${APPLE_PAY_RADIUS_VARIABLE}: ${wallets.applePayButtonRadius};`]
-      : []),
-  ];
+  const overrides = CSS_TOKEN_SPECS
+    .filter((spec) => tokens[spec.token])
+    .map((spec) => `  --adyen-sdk-${spec.token}: ${tokens[spec.token]};`);
   if (overrides.length > 0) blocks.push(`.adyen-checkout {\n${overrides.join("\n")}\n}`);
+  const applePay = wallets ? applePayCssBlock(wallets) : null;
+  if (applePay) blocks.push(applePay);
 
   const button = [
     rules.payButtonBackground ? `  background: ${rules.payButtonBackground};` : "",
@@ -1067,12 +1063,28 @@ export const PAYPAL_LABELS: PayPalLabel[] = ["paypal", "checkout", "buynow", "pa
 
 /**
  * Apple ships the Pay button as a web component and Adyen has no config option
- * for its shape — the corner radius is reachable only through Apple's own
- * custom property, which adyen.css sets to 4px. So this one is a CSS variable
- * rather than a config key, and travels with the generated stylesheet instead
- * of the JSON.
+ * for its shape. Apple's own component reads
+ * `border-radius: var(--apple-pay-button-border-radius, 4px)`, so the variable
+ * is the way in — but it has to be set *on the element*: adyen.css declares
+ *
+ *   apple-pay-button { --apple-pay-button-border-radius: 4px }
+ *
+ * and a custom property declared on the element always beats one inherited
+ * from an ancestor. Setting it on a wrapper does nothing at all.
+ *
+ * So the rule targets the element too, with the same specificity as Adyen's —
+ * source order settles it, and this stylesheet is meant to load after
+ * adyen.css. It is also the plain thing a merchant would write, rather than a
+ * selector engineered around a container class the Drop-in may not render.
  */
 export const APPLE_PAY_RADIUS_VARIABLE = "--apple-pay-button-border-radius";
+export const APPLE_PAY_BUTTON_SELECTOR = "apple-pay-button";
+
+/** A bare number is the natural thing to type; CSS needs the unit. */
+export function cssLength(value: string): string {
+  const trimmed = value.trim();
+  return /^\d*\.?\d+$/.test(trimmed) ? `${trimmed}px` : trimmed;
+}
 
 export interface WalletOptions {
   applePayButtonType: ApplePayButtonType | "";
@@ -1105,11 +1117,14 @@ export const DEFAULT_WALLETS: WalletOptions = {
   paypalBlockPayLater: false,
 };
 
-/** The Apple Pay corner radius, ready to apply to the preview and to emit. */
-export function walletCssVariables(wallets: WalletOptions): Record<`--${string}`, string> {
-  return wallets.applePayButtonRadius
-    ? { [APPLE_PAY_RADIUS_VARIABLE]: wallets.applePayButtonRadius }
-    : {};
+/**
+ * The Apple Pay rule, as a stylesheet block. Not an inline variable on the
+ * preview wrapper: that is exactly the ancestor case adyen.css overrides.
+ */
+export function applePayCssBlock(wallets: WalletOptions): string | null {
+  if (!wallets.applePayButtonRadius) return null;
+  const radius = cssLength(wallets.applePayButtonRadius);
+  return `${APPLE_PAY_BUTTON_SELECTOR} {\n  ${APPLE_PAY_RADIUS_VARIABLE}: ${radius};\n}`;
 }
 
 export function walletSetCount(wallets: WalletOptions, prefix: string): number {

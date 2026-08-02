@@ -58,7 +58,6 @@ import {
   secureSetCount,
   storedCardConfigObject,
   walletConfigObjects,
-  walletCssVariables,
   walletSetCount,
 } from "../components/adyenOptions.ts";
 import type {
@@ -443,10 +442,7 @@ export default function StylingPlayground() {
     () => cssText(cssTokens, cssRules, walletOptions),
     [cssTokens, cssRules, walletOptions],
   );
-  const previewVariables = useMemo(
-    () => ({ ...cssPreviewVariables(cssTokens), ...walletCssVariables(walletOptions) }),
-    [cssTokens, walletOptions],
-  );
+  const previewVariables = useMemo(() => cssPreviewVariables(cssTokens), [cssTokens]);
   const tokenOverrides = cssTokenSetCount(cssTokens);
 
   useEffect(() => {
@@ -1225,8 +1221,8 @@ export default function StylingPlayground() {
                       />
                       <small>
                         {APPLE_PAY_RADIUS_VARIABLE}{" "}
-                        — Apple ships the button as a web component and Adyen exposes no option for
-                        its shape, so this one is CSS: it ships in the stylesheet, not the config.
+                        — Apple's own property, so this one ships in the stylesheet rather than the
+                        config. A bare number is read as pixels; 9999px gives a pill.
                       </small>
                     </Field>
                   </OptionGroup>

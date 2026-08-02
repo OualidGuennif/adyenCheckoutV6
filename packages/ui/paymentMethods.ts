@@ -3,7 +3,9 @@
 // top-level onError as a real payment failure. Those are expected and
 // shouldn't stop the whole Drop-in — only genuine payment/session errors
 // should.
-const NON_FATAL_ERROR_NAMES = new Set(["SCRIPT_ERROR", "SDK_ERROR"]);
+// CANCEL is the shopper closing a wallet sheet ("ApplePay UI dismissed") —
+// a normal thing to do, and never something to show as an error.
+const NON_FATAL_ERROR_NAMES = new Set(["SCRIPT_ERROR", "SDK_ERROR", "CANCEL"]);
 
 export function isNonFatalWalletError(cause: unknown): boolean {
   const name = (cause as { name?: unknown } | null)?.name;
