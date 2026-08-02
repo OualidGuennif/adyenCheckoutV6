@@ -420,6 +420,10 @@ export default function StylingPlayground() {
   // donation step after it, where the account has Adyen Giving on) tears its
   // container down when it ends, leaving an empty box with no way forward.
   const [completed, setCompleted] = useState(false);
+  // What Adyen Giving reported, when the account has it on. Null until the
+  // donation step actually resolves — the two outcomes look identical from
+  // the checkout otherwise, and a failed donation is easy to miss entirely.
+  const [donation, setDonation] = useState<"donated" | "skipped" | "failed" | null>(null);
   const host = useRef<HTMLDivElement>(null);
   const mounted = useRef<Mounted | null>(null);
   // Persisted so most option changes can be applied by re-instantiating just
@@ -608,8 +612,11 @@ export default function StylingPlayground() {
       // outcomes leave the session spent, which the notice already says.
       donation: {
         autoMount: showDonation,
-        onDonationSuccess: () => undefined,
-        onDonationFailure: () => undefined,
+        onDonationSuccess: ({ didDonate }: { didDonate: boolean }) =>
+          setDonation(didDonate ? "donated" : "skipped"),
+        // Not fatal — the payment already went through, so this reports rather
+        // than raising the error banner over a completed checkout.
+        onDonationFailure: () => setDonation("failed"),
       },
       // Swapping the method list for a 3DS challenge changes the host's
       // height, and on a phone — where the dataset sits above the Drop-in —
@@ -632,6 +639,7 @@ export default function StylingPlayground() {
     // fresh Core discard itself — a reset that visibly did nothing.
     sessionSpent.current = false;
     setCompleted(false);
+    setDonation(null);
     mountDropinElement(checkout as Core, token);
   }
 
@@ -856,7 +864,15 @@ export default function StylingPlayground() {
                   <span class="dropin-done__mark" aria-hidden="true">✓</span>
                   <div class="dropin-done__text">
                     <strong>Payment completed</strong>
-                    <span>Sessions are single-use.</span>
+                    <span>
+                      {donation === "donated"
+                        ? "Donation sent."
+                        : donation === "skipped"
+                        ? "Donation declined."
+                        : donation === "failed"
+                        ? "Donation failed — the payment itself went through."
+                        : "Sessions are single-use."}
+                    </span>
                   </div>
                   <button type="button" class="button" onClick={startNewPayment}>
                     New payment
@@ -1667,6 +1683,25 @@ export default function StylingPlayground() {
                       checked={cssRules.compactMethods}
                       onChange={(value) => updateRule("compactMethods", value)}
                     />
+                    {
+                      /* A slider commits as soon as it is touched, and these
+                        now persist — so brushing one leaves a rule we advise
+                        against in the stylesheet until it is cleared. One
+                        click drops all of them. */
+                    }
+                    {cssRuleSetCount(cssRules) > 0
+                      ? (
+                        <div class="option-group__actions">
+                          <button
+                            type="button"
+                            class="button button--quiet button--small"
+                            onClick={() => setCssRules(DEFAULT_CSS_RULES)}
+                          >
+                            Remove all class-name rules
+                          </button>
+                        </div>
+                      )
+                      : null}
                   </OptionGroup>
                   <RawOutput
                     content={generatedCss}
