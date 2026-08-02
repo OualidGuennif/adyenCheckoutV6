@@ -1,4 +1,4 @@
-# IPP Endless Aisle
+# Endless Aisle
 
 In-person payments: a shop-floor basket, terminal pairing, a Cloud Device payment, history and a
 Back Office, the "endless aisle" case where a colleague finishes a sale on a terminal.

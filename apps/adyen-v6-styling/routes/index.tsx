@@ -10,7 +10,7 @@ export default define.page(function Home() {
           carries the obligations if someone copies it. */
       }
       <footer class="styling-footer">
-        <span>© 2026 Adyen TEST playgrounds · TEST environment only</span>
+        <span>© 2026 Payments Playground · TEST environment only</span>
         <a href="/disclaimer">Disclaimer</a>
       </footer>
     </main>

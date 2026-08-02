@@ -230,7 +230,7 @@ export function AppShell(props: {
         <div class="app-content">
           <main id="main-content" tabindex={-1}>{props.children}</main>
           <footer class="app-footer">
-            <span>© 2026 Adyen TEST playgrounds</span>
+            <span>© 2026 Payments Playground · TEST environment only</span>
             <span>
               {props.subtitle} · Adyen Web 6.41.0 · Checkout API v72 ·{" "}
               <a href="/disclaimer">Disclaimer</a>

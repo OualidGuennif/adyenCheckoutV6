@@ -8,7 +8,7 @@ export default define.page(function BackOfficePage() {
     <IppLayout path="/back-office">
       <PageHeader
         eyebrow="Reconciliation"
-        title="IPP Back Office"
+        title="Back Office"
         description="Correlate Cloud Device API requests, sanitized responses, asynchronous terminal notifications and operator actions."
       />
       <TerminalBackOffice />

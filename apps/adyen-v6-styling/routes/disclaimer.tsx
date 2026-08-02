@@ -17,7 +17,7 @@ export default define.page(function Disclaimer() {
         <a class="button button--quiet button--small" href="/">Back to the playground</a>
       </div>
       <div class="legal-shell">
-        <DisclaimerPage appName="Adyen V6 Styling" repositoryUrl={REPOSITORY} />
+        <DisclaimerPage appName="Drop-in Styling" repositoryUrl={REPOSITORY} />
       </div>
     </main>
   );

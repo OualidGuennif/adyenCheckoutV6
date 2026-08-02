@@ -1,4 +1,4 @@
-# Adyen Digital
+# Digital Checkout
 
 An online checkout playground covering five integration paths against Adyen TEST, with a Back Office
 that correlates what each one produced.

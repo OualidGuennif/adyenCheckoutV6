@@ -6,7 +6,7 @@ export default define.page(function Disclaimer() {
   return (
     <DigitalLayout path="/disclaimer">
       <DisclaimerPage
-        appName="Adyen Digital"
+        appName="Digital Checkout"
         repositoryUrl="https://github.com/OualidGuennif/adyenCheckoutV6"
       />
     </DigitalLayout>

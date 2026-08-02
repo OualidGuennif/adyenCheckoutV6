@@ -6,7 +6,7 @@ export default define.page(function Disclaimer() {
   return (
     <IppLayout path="/disclaimer">
       <DisclaimerPage
-        appName="IPP Endless Aisle"
+        appName="Endless Aisle"
         repositoryUrl="https://github.com/OualidGuennif/adyenCheckoutV6"
       />
     </IppLayout>

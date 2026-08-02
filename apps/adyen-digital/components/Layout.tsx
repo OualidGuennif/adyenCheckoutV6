@@ -8,7 +8,7 @@ export function DigitalLayout(props: {
 }) {
   return (
     <AppShell
-      title="Adyen Digital"
+      title="Digital Checkout"
       subtitle="Online payment lifecycle"
       currentPath={props.path}
       ownTestingDataset={props.ownTestingDataset}

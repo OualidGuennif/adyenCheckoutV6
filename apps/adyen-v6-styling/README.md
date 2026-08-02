@@ -1,4 +1,4 @@
-# Adyen V6 Styling
+# Drop-in Styling
 
 A workbench for theming the Adyen Web Drop-in. The checkout is live on the left, every option Adyen
 exposes is on the right, and it re-renders as you change things. Copy the result out as a JSON

@@ -1,7 +1,7 @@
-# Adyen TEST Playground Suite
+# Payments Playground
 
-Four self-contained Fresh + Hono apps for exploring Adyen integrations, sharing one platform and UI
-package.
+Four self-contained Fresh + Hono apps for exploring Adyen integrations against TEST, sharing one
+platform and UI package.
 
 > **TEST ENVIRONMENT ONLY**: never enter production credentials. Every endpoint, variable and
 > payment flow here targets Adyen TEST and will not work in production.
@@ -16,12 +16,12 @@ package.
 they are still being built, treat anything you see there as work in progress, not as a reference
 integration.
 
-| App                       | Covers                                                         | Status                     | Dev port |
-| ------------------------- | -------------------------------------------------------------- | -------------------------- | -------: |
-| `adyen-v6-styling`        | Drop-in styling options and CSS overrides                      | **Ready**                  |     8004 |
-| `adyen-digital`           | Sessions, Advanced, Pay by Link, MIT, API Only and Back Office | In progress · est. Q3 2026 |     8001 |
-| `adyen-ipp-endless-aisle` | Endless Aisle cart and Terminal API Cloud Device               | In progress · est. Q4 2026 |     8002 |
-| `adyen-agentic-commerce`  | Agentic checkout, with mock and real paths kept distinct       | In progress · est. Q1 2027 |     8003 |
+| App                       | Covers                                                                | Status                     | Dev port |
+| ------------------------- | --------------------------------------------------------------------- | -------------------------- | -------: |
+| `adyen-v6-styling`        | **Drop-in Styling** · theming options and CSS overrides               | **Ready**                  |     8004 |
+| `adyen-digital`           | **Digital Checkout** · Sessions, Advanced, Pay by Link, MIT, API Only | In progress · est. Q3 2026 |     8001 |
+| `adyen-ipp-endless-aisle` | **Endless Aisle** · in-person cart and Terminal API Cloud Device      | In progress · est. Q4 2026 |     8002 |
+| `adyen-agentic-commerce`  | **Agentic Commerce** · mock and real paths kept distinct              | In progress · est. Q1 2027 |     8003 |
 
 Dates are estimates for the end of the quarter, not commitments.
 

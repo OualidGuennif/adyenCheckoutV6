@@ -6,7 +6,7 @@ export default define.page(function Disclaimer() {
   return (
     <AgenticLayout path="/disclaimer">
       <DisclaimerPage
-        appName="Adyen Agentic Commerce"
+        appName="Agentic Commerce"
         repositoryUrl="https://github.com/OualidGuennif/adyenCheckoutV6"
       />
     </AgenticLayout>

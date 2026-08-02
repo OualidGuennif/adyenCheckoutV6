@@ -8,7 +8,7 @@ export default define.page(function App({ Component }) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="theme-color" content="#ffffff" />
         <meta name="robots" content="noindex,nofollow" />
-        <title>Adyen V6 Styling · TEST Playground</title>
+        <title>Drop-in Styling · TEST Playground</title>
       </head>
       <body>
         <Component />

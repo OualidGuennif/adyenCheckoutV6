@@ -1,4 +1,4 @@
-# Adyen Agentic Commerce
+# Agentic Commerce
 
 A teaching playground for agent-initiated purchases. Every step is labelled with what it actually
 is: executed locally, simulated, or unavailable.
