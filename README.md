@@ -5,6 +5,10 @@ package.
 
 > **TEST ENVIRONMENT ONLY** — never enter production credentials. Every endpoint, variable and
 > payment flow here targets Adyen TEST and will not work in production.
+>
+> **These are playgrounds, proofs of concept and test harnesses. None of them is intended to be
+> deployed to production as-is, and none is a reference or certified integration.** See
+> [Disclaimer](#disclaimer) before using any of this in your own work.
 
 ## Applications
 
@@ -87,6 +91,42 @@ Server-side Adyen calls go through the library's `HttpURLConnectionClient`. Two 
 were missing from Deno's node:http layer before 2.8.0, so `packages/platform/adyen.ts` works around
 both. The pinned runtime no longer needs those workarounds, but they are harmless and keep the suite
 runnable on an older local Deno; the comments there explain what and why.
+
+## Disclaimer
+
+**Purpose.** Everything in this repository exists to demonstrate, explore and test Adyen
+integrations against the Adyen **TEST** environment. It is written for learning, prototyping and
+proofs of concept. It is not a product, not a template to ship, and not a certified or reference
+integration — including the parts marked _Ready_, which means "usable as a playground", not
+"production-grade".
+
+**Not an Adyen product.** This is an independent personal project. It is not built, reviewed,
+endorsed or supported by Adyen, and it is not covered by any Adyen support agreement or SLA. Adyen's
+own documentation and Customer Area are the authoritative sources; where this repository and Adyen
+disagree, Adyen is right.
+
+**Merchant responsibility.** If you take anything from here into your own systems, you alone are
+responsible for the result. That includes, without limitation:
+
+- PCI DSS scope, obligations and validation for your integration
+- regulatory compliance, including PSD2/SCA, consumer protection, tax and local payment rules
+- security review, penetration testing, secret management, access control and monitoring
+- data protection and privacy, including GDPR obligations for any personal data you process
+- correctness, availability, reliability and error handling of your own payment flows
+- your commercial agreement with Adyen and with every payment method you enable
+
+Nothing here reduces those obligations, and no control in this code should be relied on as a
+compliance measure.
+
+**No warranty, no liability.** This project is provided **"as is"**, without warranty of any kind,
+under the [MIT Licence](./LICENSE). The authors and contributors accept no liability for any claim,
+damage, financial loss, chargeback, outage, regulatory penalty or other consequence arising from its
+use, whether in test or in production.
+
+**Never use LIVE credentials.** The code refuses LIVE endpoints and non-`test_` client keys, but
+that is a convenience guard, not a guarantee. Pointing any of this at a production account is
+entirely at your own risk. See [SECURITY.md](./docs/SECURITY.md) and
+[KNOWN_LIMITS.md](./docs/KNOWN_LIMITS.md) for what is and is not covered.
 
 ## Documentation
 

@@ -89,5 +89,15 @@ docker run --rm --env-file apps/adyen-digital/.env -p 8000:8000 adyen-digital:te
 The local `render.yaml` describes this service on its own; the one at the repository root deploys
 all four together. This app needs a persistent disk — it is the one that stores orders.
 
-TEST environment only. Never put LIVE credentials in this app — see
-[docs/SECURITY.md](../../docs/SECURITY.md).
+## Disclaimer
+
+A playground for exploring and testing Adyen against its **TEST** environment. Not a product, not a
+reference integration, and not intended to be deployed to production as-is. Not built or supported
+by Adyen.
+
+If you reuse any of this, you alone remain responsible for your own payment stack — PCI scope,
+regulatory compliance, security review and the correctness of your flows. Provided as is, with no
+warranty and no liability, under the MIT Licence.
+
+Full text: [Disclaimer](../../README.md#disclaimer) · [Security](../../docs/SECURITY.md) ·
+[Known limits](../../docs/KNOWN_LIMITS.md)

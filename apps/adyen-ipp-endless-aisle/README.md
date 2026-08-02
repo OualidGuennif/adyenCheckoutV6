@@ -82,5 +82,15 @@ docker run --rm --env-file apps/adyen-ipp-endless-aisle/.env -p 8000:8000 adyen-
 In the root `render.yaml` this service runs on the free plan with no disk, so it cold-starts and
 keeps nothing between deploys. Give it a disk if you want history to survive.
 
-TEST environment only. Never put LIVE credentials in this app — see
-[docs/SECURITY.md](../../docs/SECURITY.md).
+## Disclaimer
+
+A playground for exploring and testing Adyen against its **TEST** environment. Not a product, not a
+reference integration, and not intended to be deployed to production as-is. Not built or supported
+by Adyen.
+
+If you reuse any of this, you alone remain responsible for your own payment stack — PCI scope,
+regulatory compliance, security review and the correctness of your flows. Provided as is, with no
+warranty and no liability, under the MIT Licence.
+
+Full text: [Disclaimer](../../README.md#disclaimer) · [Security](../../docs/SECURITY.md) ·
+[Known limits](../../docs/KNOWN_LIMITS.md)
