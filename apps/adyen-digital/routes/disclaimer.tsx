@@ -7,7 +7,7 @@ export default define.page(function Disclaimer() {
     <DigitalLayout path="/disclaimer">
       <DisclaimerPage
         appName="Digital Checkout"
-        repositoryUrl="https://github.com/OualidGuennif/adyenCheckoutV6"
+        repositoryUrl="https://github.com/OualidGuennif/payments-playground"
       />
     </DigitalLayout>
   );
