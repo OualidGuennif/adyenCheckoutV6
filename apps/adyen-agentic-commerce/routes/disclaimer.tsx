@@ -7,7 +7,7 @@ export default define.page(function Disclaimer() {
     <AgenticLayout path="/disclaimer">
       <DisclaimerPage
         appName="Agentic Commerce"
-        repositoryUrl="https://github.com/OualidGuennif/adyenCheckoutV6"
+        repositoryUrl="https://github.com/OualidGuennif/payments-playground"
       />
     </AgenticLayout>
   );
