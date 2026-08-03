@@ -7,7 +7,7 @@ export default define.page(function Disclaimer() {
     <IppLayout path="/disclaimer">
       <DisclaimerPage
         appName="Endless Aisle"
-        repositoryUrl="https://github.com/OualidGuennif/adyenCheckoutV6"
+        repositoryUrl="https://github.com/OualidGuennif/payments-playground"
       />
     </IppLayout>
   );
