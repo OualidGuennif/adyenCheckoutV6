@@ -1,7 +1,7 @@
 import { DisclaimerPage, PlaygroundWordmark } from "@suite/ui/components.tsx";
 import { define } from "../utils.ts";
 
-const REPOSITORY = "https://github.com/OualidGuennif/adyenCheckoutV6";
+const REPOSITORY = "https://github.com/OualidGuennif/payments-playground";
 
 export default define.page(function Disclaimer() {
   return (
