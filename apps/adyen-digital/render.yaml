@@ -7,7 +7,7 @@ services:
     healthCheckPath: /healthz
     envVars:
       - key: PUBLIC_ORIGIN
-        value: https://adyen-digital.onrender.com
+        value: https://digital.payments-playground.com
       - key: DATABASE_PATH
         value: /var/data/digital.sqlite
       - key: PROFILE_ENCRYPTION_KEY
