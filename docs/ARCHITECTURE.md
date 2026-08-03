@@ -10,7 +10,7 @@ deliberately do _not_ do, see [KNOWN_LIMITS.md](KNOWN_LIMITS.md); for the trust 
 ## The shape of it
 
 ```
-adyenCheckoutV6/
+payments-playground/
 ├── apps/                        four independent servers, plus the landing page
 │   ├── adyen-digital/           online checkout: sessions, advanced, API-only, MIT, pay-by-link
 │   ├── adyen-ipp-endless-aisle/ in-person payments against a Cloud terminal
