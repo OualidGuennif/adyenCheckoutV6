@@ -7,7 +7,7 @@ services:
     healthCheckPath: /healthz
     envVars:
       - key: PUBLIC_ORIGIN
-        value: https://adyen-agentic-commerce.onrender.com
+        value: https://agentic.payments-playground.com
       - key: DATABASE_PATH
         value: /var/data/agentic.sqlite
       - key: AGENTIC_REAL_ENABLED
