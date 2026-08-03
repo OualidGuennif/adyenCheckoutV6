@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: adyen-v6-styling
+    name: dropin-styling
     runtime: docker
     dockerfilePath: ./apps/adyen-v6-styling/Dockerfile
     dockerContext: .

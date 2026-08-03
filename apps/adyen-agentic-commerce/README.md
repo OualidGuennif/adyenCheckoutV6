@@ -76,8 +76,8 @@ Copy `.env.example` to `.env`. **Mock mode runs with an empty file.**
 ## Docker and Render
 
 ```bash
-docker build -f apps/adyen-agentic-commerce/Dockerfile -t adyen-agentic:test .
-docker run --rm --env-file apps/adyen-agentic-commerce/.env -p 8000:8000 adyen-agentic:test
+docker build -f apps/adyen-agentic-commerce/Dockerfile -t agentic-commerce:test .
+docker run --rm --env-file apps/adyen-agentic-commerce/.env -p 8000:8000 agentic-commerce:test
 ```
 
 In the root `render.yaml` this service runs on the free plan with no disk, so it cold-starts and

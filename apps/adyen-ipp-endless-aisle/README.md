@@ -75,8 +75,8 @@ API webhook configuration.
 ## Docker and Render
 
 ```bash
-docker build -f apps/adyen-ipp-endless-aisle/Dockerfile -t adyen-ipp:test .
-docker run --rm --env-file apps/adyen-ipp-endless-aisle/.env -p 8000:8000 adyen-ipp:test
+docker build -f apps/adyen-ipp-endless-aisle/Dockerfile -t endless-aisle:test .
+docker run --rm --env-file apps/adyen-ipp-endless-aisle/.env -p 8000:8000 endless-aisle:test
 ```
 
 In the root `render.yaml` this service runs on the free plan with no disk, so it cold-starts and

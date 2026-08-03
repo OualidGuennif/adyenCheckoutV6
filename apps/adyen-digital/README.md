@@ -82,8 +82,8 @@ to be edited without touching flow code.
 ## Docker and Render
 
 ```bash
-docker build -f apps/adyen-digital/Dockerfile -t adyen-digital:test .
-docker run --rm --env-file apps/adyen-digital/.env -p 8000:8000 adyen-digital:test
+docker build -f apps/adyen-digital/Dockerfile -t digital-checkout:test .
+docker run --rm --env-file apps/adyen-digital/.env -p 8000:8000 digital-checkout:test
 ```
 
 The local `render.yaml` describes this service on its own; the one at the repository root deploys

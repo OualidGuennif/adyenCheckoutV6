@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: adyen-agentic-commerce
+    name: agentic-commerce
     runtime: docker
     dockerfilePath: ./apps/adyen-agentic-commerce/Dockerfile
     dockerContext: .

@@ -61,8 +61,8 @@ production build, so it needs a `build` first.
 Docker images build from the repo root and each has a `HEALTHCHECK` on `/healthz`:
 
 ```bash
-docker build -f apps/adyen-digital/Dockerfile -t adyen-digital:test .
-docker run --rm --env-file apps/adyen-digital/.env -p 8000:8000 adyen-digital:test
+docker build -f apps/adyen-digital/Dockerfile -t digital-checkout:test .
+docker run --rm --env-file apps/adyen-digital/.env -p 8000:8000 digital-checkout:test
 ```
 
 On Render, the root `render.yaml` describes all four services; each app also has its own for an

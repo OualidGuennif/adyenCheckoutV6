@@ -96,8 +96,8 @@ quietly. **It needs network access**: offline it fails on the fetch, not on a re
 ## Docker
 
 ```bash
-docker build -f apps/adyen-v6-styling/Dockerfile -t adyen-styling:test .
-docker run --rm --env-file apps/adyen-v6-styling/.env -p 8000:8000 adyen-styling:test
+docker build -f apps/adyen-v6-styling/Dockerfile -t dropin-styling:test .
+docker run --rm --env-file apps/adyen-v6-styling/.env -p 8000:8000 dropin-styling:test
 ```
 
 ## Troubleshooting

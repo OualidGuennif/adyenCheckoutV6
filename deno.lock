@@ -42,6 +42,7 @@
     "jsr:@std/path@^1.1.5": "1.1.6",
     "jsr:@std/semver@^1.0.6": "1.0.8",
     "jsr:@std/uuid@^1.0.9": "1.1.1",
+    "jsr:@std/yaml@1": "1.2.0",
     "npm:@adyen/adyen-web@6.41.0": "6.41.0",
     "npm:@adyen/api-library@32.0.0": "32.0.0",
     "npm:@babel/core@^7.28.0": "7.29.7",
@@ -217,6 +218,9 @@
       "dependencies": [
         "jsr:@std/bytes"
       ]
+    },
+    "@std/yaml@1.2.0": {
+      "integrity": "20beb41e4983ba3437dbefac62b14061ab058e8a187596f19d28ff9035f6e6cf"
     }
   },
   "npm": {

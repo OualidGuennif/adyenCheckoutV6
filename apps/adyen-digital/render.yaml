@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: adyen-digital
+    name: digital-checkout
     runtime: docker
     dockerfilePath: ./apps/adyen-digital/Dockerfile
     dockerContext: .
