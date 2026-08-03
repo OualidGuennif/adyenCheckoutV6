@@ -25,7 +25,7 @@ services:
     healthCheckPath: /healthz
     envVars:
       - key: PUBLIC_ORIGIN
-        value: https://adyen-digital.onrender.com
+        value: https://digital.payments-playground.com
       - key: DATABASE_PATH
         value: /var/data/digital.sqlite
       - key: PROFILE_ENCRYPTION_KEY
@@ -54,7 +54,7 @@ services:
     healthCheckPath: /healthz
     envVars:
       - key: PUBLIC_ORIGIN
-        value: https://ipp-endless-aisle.onrender.com
+        value: https://terminal.payments-playground.com
       - key: PROFILE_ENCRYPTION_KEY
         generateValue: true
       - key: SESSION_SIGNING_SECRET
@@ -77,7 +77,7 @@ services:
     healthCheckPath: /healthz
     envVars:
       - key: PUBLIC_ORIGIN
-        value: https://adyen-agentic-commerce.onrender.com
+        value: https://agentic.payments-playground.com
       - key: AGENTIC_REAL_ENABLED
         value: "false"
       - key: PROFILE_ENCRYPTION_KEY
@@ -102,7 +102,7 @@ services:
     healthCheckPath: /healthz
     envVars:
       - key: PUBLIC_ORIGIN
-        value: https://adyen-v6-styling.onrender.com
+        value: https://styling.payments-playground.com
       - key: DATABASE_PATH
         value: /var/data/styling.sqlite
       - key: PROFILE_ENCRYPTION_KEY
