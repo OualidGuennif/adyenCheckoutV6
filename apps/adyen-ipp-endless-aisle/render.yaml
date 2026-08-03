@@ -7,7 +7,7 @@ services:
     healthCheckPath: /healthz
     envVars:
       - key: PUBLIC_ORIGIN
-        value: https://ipp-endless-aisle.onrender.com
+        value: https://terminal.payments-playground.com
       - key: DATABASE_PATH
         value: /var/data/ipp.sqlite
       - key: PROFILE_ENCRYPTION_KEY
